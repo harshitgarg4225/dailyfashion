@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { copy } from '../lib/copy'
 import { generateInsights, type GenerateInput } from '../lib/insights'
 import { Photo } from '../app/Photo'
@@ -36,6 +36,20 @@ export function InsightsScreen({
 }) {
   const { gate, insights } = useMemo(() => generateInsights(input), [input])
   const [index, setIndex] = useState(0)
+  const progressRef = useRef<HTMLSpanElement>(null)
+
+  /*
+   * Applied through the CSSOM rather than as a `style` attribute.
+   *
+   * It is the only dynamic style left in the app, and setting it this way is
+   * what lets the Content-Security-Policy drop `unsafe-inline` from
+   * `style-src` — CSP blocks literal style attributes, not properties set from
+   * script. One line of indirection buys a materially stricter policy.
+   */
+  const progress = gate.unlocked ? 1 : Math.min(1, gate.ratedEntries / gate.needed)
+  useEffect(() => {
+    if (progressRef.current) progressRef.current.style.transform = `scaleX(${progress})`
+  }, [progress])
 
   if (gate.softened) {
     return (
@@ -54,7 +68,6 @@ export function InsightsScreen({
 
   if (!gate.unlocked) {
     const remaining = Math.max(0, gate.needed - gate.ratedEntries)
-    const progress = Math.min(1, gate.ratedEntries / gate.needed)
 
     return (
       <div className="screen">
@@ -69,7 +82,7 @@ export function InsightsScreen({
           * count does not do that; a filling rule does.
           */}
         <div className="progress" role="img" aria-label={copy.insights.thin(gate.ratedEntries, gate.needed)}>
-          <span className="progress-fill" style={{ transform: `scaleX(${progress})` }} />
+          <span ref={progressRef} className="progress-fill" />
         </div>
 
         <p className="progress-label">{copy.insights.countdown(remaining)}</p>

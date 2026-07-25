@@ -72,7 +72,7 @@ Three findings dominate everything below.
 | U4 | No skeleton or empty-state treatment while the log loads; the app renders a blank `.app` div. On a cold start with 200 entries this is a visible flash of nothing. | P1 | TODO |
 | U5 | Onboarding's buttons are both labelled "Next" with no sense of length or position beyond three dots. | P2 | TODO |
 | U6 | The grid caps consecutive gap cells at 21, which is right, but a returning user still scrolls three weeks of blank squares before reaching their history. | P2 | TODO |
-| U7 | No haptic feedback on shutter or felt selection. On a phone this is most of what "responsive" means. | P2 | TODO |
+| U7 | No haptic feedback on shutter or felt selection. On a phone this is most of what "responsive" means. | P2 | DONE |
 | U8 | Insight cards render all at once in a scroll. The spec says one at a time, which is a materially different experience — a stack of five observations is a dashboard. | P1 | DONE |
 | U9 | Nothing explains what happens after the felt tap. A one-line "this is what builds your patterns" would connect the daily chore to the payoff. | P2 | TODO |
 
@@ -91,7 +91,7 @@ confidence in white space**. Concretely, what changes:
 | D6 | Motion: slow, few, and only on state changes. No bounce, no scale-on-press beyond a subtle opacity shift. | P1 | DONE |
 | D7 | The felt scale currently uses circle glyphs (`◦◌○◍●`) that read as a rating widget. Needs a treatment that feels like choosing a word, not scoring yourself. | P1 | DONE |
 | D8 | No favicon/app icon refinement — the generated ring is a placeholder, not a mark. | P2 | TODO |
-| D9 | `style-src 'unsafe-inline'` is required today only because several components use inline `style` props. Removing them tightens the CSP **and** forces the spacing scale to be real. | P1 | TODO |
+| D9 | `style-src 'unsafe-inline'` is required today only because several components use inline `style` props. Removing them tightens the CSP **and** forces the spacing scale to be real. | P1 | DONE |
 
 ## 4. End-user problem solving
 
@@ -109,7 +109,7 @@ confidence in white space**. Concretely, what changes:
 | S1 | Photos are stored unencrypted in IndexedDB. Any process with the profile can read them. With the passcode lock (F8) they should be encrypted at rest via WebCrypto with a key derived from the passcode. | P1 | TODO |
 | S2 | Export writes a zip of every photo to the Downloads folder — outside the app sandbox, often synced to a cloud drive by the OS. This is the one moment the privacy promise legitimately ends, and the UI must say so plainly before the download starts. | P0 | DONE |
 | S3 | `newId` falls back to `Math.random()` when `crypto.randomUUID` is absent. Predictable ids are harmless here, but the fallback is dead weight on every target browser and should just use `crypto.getRandomValues`. | P2 | DONE |
-| S4 | `style-src 'unsafe-inline'` — see D9. | P1 | TODO |
+| S4 | `style-src 'unsafe-inline'` — see D9. | P1 | DONE |
 | S5 | No `Clear-Site-Data` on wipe. `deleteDatabase` handles our data; the service worker cache still holds the shell (harmless, but worth being exact about). | P2 | TODO |
 | S6 | The service worker has no version/skipWaiting story beyond a constant, so a deploy can leave a stale shell against a new asset manifest. | P1 | TODO |
 
@@ -173,4 +173,5 @@ Import (F14) and IndexedDB migration scaffolding (C4) are in; M2's install
 guidance shipped with Phase 3. C1 (reload on every write) and C5 (grid image loading) are done, as is F7
 (outfit aggregates recomputed on rating). Still open: C3 (fingerprinting on the
 main thread), S1 (encryption at rest), M3 (camera orientation), U2 (immediate
-undo), F13 (export progress), and D9/S4 (dropping `unsafe-inline`).
+undo), F13 (export progress), and D8 (a real app mark).
+`unsafe-inline` is gone from `style-src`.

@@ -20,6 +20,10 @@
 
       `frame-ancestors` is deliberately absent here — browsers ignore it in a
       meta tag. It is sent as a real header by server.js instead.
+
+      `style-src` carries no 'unsafe-inline': the app sets its one dynamic
+      style through the CSSOM, which CSP permits, rather than through a style
+      attribute, which it does not.
     -->
     <meta
       http-equiv="Content-Security-Policy"
@@ -27,7 +31,7 @@
                connect-src 'none';
                img-src 'self' blob: data:;
                media-src 'self' blob:;
-               style-src 'self' 'unsafe-inline';
+               style-src 'self';
                script-src 'self';
                form-action 'none';
                base-uri 'self'"

@@ -1,6 +1,7 @@
 import type { ChipId, FeltScore } from '../types'
 import { CHIPS } from '../lib/chips'
 import { copy } from '../lib/copy'
+import { haptic } from '../lib/haptics'
 
 /**
  * The two evening questions, as controls.
@@ -34,7 +35,10 @@ export function FeltScale({
           type="button"
           className="felt-option"
           aria-pressed={value === score}
-          onClick={() => onChange(score)}
+          onClick={() => {
+            haptic('tap')
+            onChange(score)
+          }}
         >
           <span className="marker" aria-hidden="true" />
           {copy.tonight.feltLabels[score]}
@@ -59,7 +63,10 @@ export function ChipRow({
           type="button"
           className="chip"
           aria-pressed={selected.includes(chip.id)}
-          onClick={() => onToggle(chip.id)}
+          onClick={() => {
+            haptic('tap')
+            onToggle(chip.id)
+          }}
         >
           {chip.label}
         </button>

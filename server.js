@@ -48,7 +48,7 @@ const CSP = [
   "connect-src 'none'",
   "img-src 'self' blob: data:",
   "media-src 'self' blob:",
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self'",
   "script-src 'self'",
   "form-action 'none'",
   "frame-ancestors 'none'",

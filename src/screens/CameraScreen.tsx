@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { copy } from '../lib/copy'
 import { captureFrame, preparePhoto } from '../lib/capture'
+import { haptic } from '../lib/haptics'
 import type { Settings } from '../types'
 
 /**
@@ -94,6 +95,7 @@ export function CameraScreen({
     }
 
     setBusy(true)
+    haptic('confirm')
     try {
       const raw = await captureFrame(video)
       const prepared = await preparePhoto(raw)
