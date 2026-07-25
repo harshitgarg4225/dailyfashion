@@ -30,6 +30,16 @@ export interface LogState {
 
 export interface Log extends LogState {
   refresh: () => Promise<void>
+  /**
+   * Swaps one entry in place without touching the database.
+   *
+   * The hot paths — tapping a felt score, setting a temperature — used to
+   * trigger a full reload of every entry, item, link and setting. That is an
+   * O(n) round trip for a one-field change, and by a few hundred entries it is
+   * felt as lag on the single most frequent interaction in the app. Structural
+   * changes (linking, deleting, importing) still go through `refresh`.
+   */
+  patchEntry: (entry: Entry) => void
 }
 
 const EMPTY: LogState = {
@@ -67,9 +77,16 @@ export function useLog(): Log {
     setState({ loading: false, entries, outfits, items, entryItems, settings, dismissed })
   }, [])
 
+  const patchEntry = useCallback((entry: Entry) => {
+    setState((current) => ({
+      ...current,
+      entries: current.entries.map((existing) => (existing.id === entry.id ? entry : existing)),
+    }))
+  }, [])
+
   useEffect(() => {
     void refresh()
   }, [refresh])
 
-  return { ...state, refresh }
+  return { ...state, refresh, patchEntry }
 }

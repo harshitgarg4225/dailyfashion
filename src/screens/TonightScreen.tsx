@@ -64,6 +64,7 @@ export function TonightScreen({
           photoId={entry.photo_id}
           alt={`What you wore on ${mediumLabel(entry.date)}`}
           className="tonight-photo"
+          eager
         />
       </div>
 

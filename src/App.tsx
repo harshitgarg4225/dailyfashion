@@ -337,9 +337,14 @@ export default function App() {
 
   const saveReflection = useCallback(
     async (entry: Entry, felt: FeltScore, chips: ChipId[]) => {
-      await putEntry({ ...entry, felt_score: felt, chips, rated_at: Date.now() })
+      const updated: Entry = { ...entry, felt_score: felt, chips, rated_at: Date.now() }
+      await putEntry(updated)
+      log.patchEntry(updated)
       // Answering resets the ignore run — the nudge worked, so stop counting.
       await saveSettings({ consecutive_ignores: 0, last_reminder_for: null })
+      // A rating changes an outfit's aggregates, so the cluster is recomputed
+      // rather than left to drift away from its entries.
+      if (updated.outfit_id) await recomputeOutfit(updated.outfit_id)
       await log.refresh()
       flash(copy.tonight.savedThanks)
       setScreen('log')

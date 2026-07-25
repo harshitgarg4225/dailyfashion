@@ -55,7 +55,7 @@ export function CaptureFollowUp({
       {match ? (
         <div className="field">
           <span className="field-label">{copy.link.ask(shortLabel(match.date))}</span>
-          <Photo photoId={match.photo_id} alt="" className="insight-photo" />
+          <Photo photoId={match.photo_id} alt="" className="insight-photo" eager />
           <div className="btn-row">
             <button
               type="button"

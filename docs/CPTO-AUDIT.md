@@ -53,7 +53,7 @@ Three findings dominate everything below.
 | F4 | `ShortlistScreen` is passed `tempBand: null` hard-coded from `App.tsx`, so J6's weather matching never engages and the header never earns its "days like today" claim. | P0 | DONE |
 | F5 | "Add a past day" opens the camera with today's date. J9 promises backdating up to 7 days; there is no date picker. | P1 | DONE |
 | F6 | J6's "wearing this again" sets state and opens the camera but never links the new entry to the chosen outfit. Repeat-wear is not one tap; it is a normal capture. | P1 | DONE |
-| F7 | `recomputeOutfit` runs on link but not after a rating changes, so `avg_felt` and `wear_count` on the `outfit` row drift from the entries. Nothing reads them yet, which is the only reason this is not already a bug. | P1 | TODO |
+| F7 | `recomputeOutfit` runs on link but not after a rating changes, so `avg_felt` and `wear_count` on the `outfit` row drift from the entries. Nothing reads them yet, which is the only reason this is not already a bug. | P1 | DONE |
 | F8 | Biometric/passcode lock exists in `Settings` and in copy, with no UI row and no enforcement. J4 lists it as a feature. | P1 | TODO |
 | F9 | `note` exists on `Entry` with no way to write one. Either build it or drop it from the schema. | P2 | TODO |
 | F10 | `deleteEntry` is implemented and unreachable. A single bad photo cannot be removed without wiping everything. | P1 | DONE |
@@ -117,11 +117,11 @@ confidence in white space**. Concretely, what changes:
 
 | # | Finding | Sev | Status |
 |---|---|---|---|
-| C1 | `useLog` reloads **every** entry, item, link, and setting after every single write. Each felt tap is an O(n) full reload. Fine at 30 entries, visibly slow at 1,000. | P1 | TODO |
+| C1 | `useLog` reloads **every** entry, item, link, and setting after every single write. Each felt tap is an O(n) full reload. Fine at 30 entries, visibly slow at 1,000. | P1 | DONE |
 | C2 | No `navigator.storage.persist()` request and no quota surfacing, so eviction is silent. See headline. | P0 | DONE |
 | C3 | Signature computation and JPEG re-encode run on the main thread during capture, blocking the UI at exactly the moment the app promised to be fast. Belongs in a Worker. | P1 | TODO |
 | C4 | `IDB_VERSION` is 1 with no migration scaffolding. The first schema change after launch will need one and it is much cheaper to add now. | P1 | DONE |
-| C5 | The log grid mounts a `Photo` per cell, each creating an object URL immediately. 200 entries means 200 decoded images held at once. Needs windowing. | P1 | TODO |
+| C5 | The log grid mounts a `Photo` per cell, each creating an object URL immediately. 200 entries means 200 decoded images held at once. Needs windowing. | P1 | DONE |
 | C6 | `generateInsights` runs on every render of the insights screen, over the whole log. Needs memoising on entry count + dismissals. | P2 | TODO |
 
 ## 7. Mobile
@@ -170,6 +170,7 @@ reopening a day from the grid, but there is no immediate undo after a save.
 
 **Phase 4 — durability at scale** — partially shipped
 Import (F14) and IndexedDB migration scaffolding (C4) are in; M2's install
-guidance shipped with Phase 3. Still open: C1 (full reload on every write),
-C3 (fingerprinting on the main thread), C5 (grid windowing), S1 (encryption at
-rest), M3 (camera orientation), and D9/S4 (dropping `unsafe-inline`).
+guidance shipped with Phase 3. C1 (reload on every write) and C5 (grid image loading) are done, as is F7
+(outfit aggregates recomputed on rating). Still open: C3 (fingerprinting on the
+main thread), S1 (encryption at rest), M3 (camera orientation), U2 (immediate
+undo), F13 (export progress), and D9/S4 (dropping `unsafe-inline`).
