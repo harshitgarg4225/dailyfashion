@@ -3,7 +3,7 @@ import { createZip, crc32, csvCell, csvRow } from './zip'
 
 const encoder = new TextEncoder()
 
-function bytes(text: string): Uint8Array {
+function bytes(text: string): Uint8Array<ArrayBuffer> {
   return encoder.encode(text)
 }
 

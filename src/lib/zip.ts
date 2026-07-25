@@ -34,7 +34,7 @@ export function crc32(bytes: Uint8Array): number {
 
 export interface ZipEntry {
   name: string
-  data: Uint8Array
+  data: Uint8Array<ArrayBuffer>
   /** Modification time written into the archive. Defaults to now. */
   date?: Date
 }
@@ -54,8 +54,8 @@ function dosDateTime(date: Date): { time: number; date: number } {
 
 export function createZip(entries: readonly ZipEntry[]): Blob {
   const encoder = new TextEncoder()
-  const chunks: Uint8Array[] = []
-  const central: Uint8Array[] = []
+  const chunks: Uint8Array<ArrayBuffer>[] = []
+  const central: Uint8Array<ArrayBuffer>[] = []
   let offset = 0
 
   for (const entry of entries) {

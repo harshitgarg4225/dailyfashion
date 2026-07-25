@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
+    />
+
+    <!--
+      J4, enforced rather than promised.
+
+      `connect-src 'none'` means fetch, XHR, WebSocket and EventSource all fail
+      at the browser level. Even if a future dependency tried to phone home, the
+      request would be blocked before it left the device — the privacy claim in
+      onboarding is a property of the page, not a policy someone has to remember.
+
+      `img-src` allows blob: and data: because that is how the app renders
+      photos out of IndexedDB. Neither can reach the network.
+
+      `frame-ancestors` is deliberately absent here — browsers ignore it in a
+      meta tag. It is sent as a real header by server.js instead.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               connect-src 'none';
+               img-src 'self' blob: data:;
+               media-src 'self' blob:;
+               style-src 'self' 'unsafe-inline';
+               script-src 'self';
+               form-action 'none';
+               base-uri 'self'"
+    />
+
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#12100f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Daily Fashion" />
+    <meta name="description" content="A private log of what you wore and how it went." />
+
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+
+    <title>Daily Fashion</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

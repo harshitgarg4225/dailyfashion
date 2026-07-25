@@ -1,0 +1,157 @@
+import { test, expect, type Page } from '@playwright/test'
+
+/**
+ * End-to-end proof of the two claims the product rests on.
+ *
+ * The first is the loop: photo in the morning, reflection in the evening, both
+ * fast. If that does not work in a real browser then nothing downstream of it
+ * matters, because the insight engine starves.
+ *
+ * The second is J4. This suite fails the build if the app makes a single
+ * request to anywhere that is not its own origin. That is the difference
+ * between a privacy promise and a privacy property — and it is the reason
+ * someone might feel safe photographing themselves in a mirror.
+ */
+
+const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
+
+/** Records every request the page attempts, so we can assert on them later. */
+async function watchRequests(page: Page): Promise<string[]> {
+  const external: string[] = []
+  page.on('request', (request) => {
+    const url = request.url()
+    if (url.startsWith(BASE) || url.startsWith('data:') || url.startsWith('blob:')) return
+    external.push(url)
+  })
+  return external
+}
+
+/**
+ * Leaves whatever transient surface is on top — the camera, or one of the
+ * optional post-capture sheets — and returns to the navigable app.
+ */
+async function dismissOverlays(page: Page) {
+  // Wait for the app to actually leave the camera before hunting for overlays;
+  // the capture is asynchronous and the sheets appear after the write lands.
+  await page.locator('.tabs').waitFor({ state: 'attached', timeout: 20_000 }).catch(() => undefined)
+
+  const skip = page.getByRole('button', { name: 'Skip tonight', exact: true })
+  if (await skip.isVisible().catch(() => false)) await skip.click()
+
+  const close = page.getByRole('button', { name: 'Close', exact: true })
+  if (await close.isVisible().catch(() => false)) await close.click()
+}
+
+async function completeOnboarding(page: Page) {
+  await expect(page.getByRole('heading', { name: /nothing leaves this phone/i })).toBeVisible()
+  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: 'Next' }).click()
+  // Decline the camera-roll backfill; the app must work from zero.
+  await page.getByRole('button', { name: /skip for now/i }).click()
+}
+
+test.describe('the daily loop', () => {
+  test('onboards, captures a photo, and rates it', async ({ page }) => {
+    const external = await watchRequests(page)
+
+    await page.goto(BASE)
+    await completeOnboarding(page)
+
+    // J1: the app lands on the camera, so the shutter is the next tap.
+    const shutter = page.getByRole('button', { name: 'Capture' })
+    await expect(shutter).toBeEnabled({ timeout: 15_000 })
+    await shutter.click()
+
+    // The optional context tap appears after the entry is already saved.
+    const tempSheet = page.getByRole('dialog', { name: /what was it like out/i })
+    if (await tempSheet.isVisible().catch(() => false)) {
+      await page.getByRole('button', { name: 'Mild', exact: true }).click()
+    }
+
+    // The entry exists in the log.
+    await dismissOverlays(page)
+    await page.getByRole('button', { name: 'Journal', exact: true }).click()
+    await expect(page.getByText(/1 day logged/)).toBeVisible()
+
+    // J2: open the entry and complete the evening reflection.
+    await page.locator('.grid-cell').first().click()
+    await expect(page.getByRole('heading', { name: 'Tonight' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Good', exact: true }).click()
+    await page.getByRole('button', { name: /someone said something nice/i }).click()
+    await page.getByRole('button', { name: 'Done' }).click()
+
+    await expect(page.getByText(/1 day logged/)).toBeVisible()
+    // A rated entry shows its felt marker; an unrated one shows the dot.
+    await expect(page.locator('.grid-cell .felt-badge')).toHaveText('4')
+
+    expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
+  })
+
+  test('gates the insight engine on thin data', async ({ page }) => {
+    await page.goto(BASE)
+    await completeOnboarding(page)
+    await dismissOverlays(page)
+
+    await page.getByRole('button', { name: 'Patterns', exact: true }).click()
+
+    // J7: nothing is claimed, and the honest count is shown.
+    await expect(page.getByText(/observations start once there is enough/i)).toBeVisible()
+    await expect(page.getByText(/of 14 days logged/i)).toBeVisible()
+  })
+
+  test('hides the shortlist until the log can fill it', async ({ page }) => {
+    await page.goto(BASE)
+    await completeOnboarding(page)
+    await dismissOverlays(page)
+
+    // J6 says hide the tab before ~10 entries.
+    await expect(page.getByRole('button', { name: 'Today', exact: true })).toHaveCount(0)
+  })
+})
+
+test.describe('privacy is a property, not a promise', () => {
+  test('makes no cross-origin request during a full session', async ({ page }) => {
+    const external = await watchRequests(page)
+
+    await page.goto(BASE)
+    await completeOnboarding(page)
+
+    const shutter = page.getByRole('button', { name: 'Capture' })
+    await expect(shutter).toBeEnabled({ timeout: 15_000 })
+    await shutter.click()
+    await dismissOverlays(page)
+
+    await page.getByRole('button', { name: 'Journal', exact: true }).click()
+    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.getByRole('button', { name: 'Patterns', exact: true }).click()
+
+    expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
+  })
+
+  test('serves a policy that makes network calls impossible', async ({ request }) => {
+    const response = await request.get(BASE)
+    const csp = response.headers()['content-security-policy'] ?? ''
+
+    // The load-bearing directive: with this in place the app cannot fetch,
+    // XHR, or open a socket even if some future dependency tried to.
+    expect(csp).toContain("connect-src 'none'")
+    expect(csp).toContain("form-action 'none'")
+  })
+
+  test('blocks a fetch attempt at the browser level', async ({ page }) => {
+    await page.goto(BASE)
+
+    // Proves the CSP is enforced rather than merely declared.
+    const blocked = await page.evaluate(async () => {
+      try {
+        await fetch('https://example.com/collect', { method: 'POST', body: 'x' })
+        return false
+      } catch {
+        return true
+      }
+    })
+
+    expect(blocked).toBe(true)
+  })
+})

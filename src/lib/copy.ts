@@ -87,6 +87,8 @@ export const copy = {
     denied: 'Camera access is off. You can turn it on in your browser settings, or add a photo from your library instead.',
     pickInstead: 'Add from library',
     alreadyToday: 'You already logged today.',
+    starting: 'Getting the camera ready…',
+    failed: 'That one did not save. Try again.',
     logAnyway: 'Log another',
   },
 
@@ -112,7 +114,7 @@ export const copy = {
   },
 
   log: {
-    title: 'Log',
+    title: 'Journal',
     empty: 'Your log starts with your first photo.',
     unrated: 'No reflection yet',
     // J9: a missed day is whitespace, not a gap to be explained.
