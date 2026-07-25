@@ -60,7 +60,7 @@ Three findings dominate everything below.
 | F11 | Dismissed insights are dismissed forever. A card about a jacket you have since worn twenty more times should be allowed to return with new evidence. | P2 | TODO |
 | F12 | The "welcome back" gap check reads `entries[1]`, which is the second-newest entry, not the gap before the current one. It will fire at the wrong times. | P1 | DONE |
 | F13 | Export has no progress indication. 200 photos is several seconds of frozen button. | P2 | TODO |
-| F14 | No import. Export exists, so a user can leave; they cannot return, or move to a new phone. For a local-only app with no sync, import **is** the migration story. | P1 | TODO |
+| F14 | No import. Export exists, so a user can leave; they cannot return, or move to a new phone. For a local-only app with no sync, import **is** the migration story. | P1 | DONE |
 
 ## 2. UX & ease of use
 
@@ -120,7 +120,7 @@ confidence in white space**. Concretely, what changes:
 | C1 | `useLog` reloads **every** entry, item, link, and setting after every single write. Each felt tap is an O(n) full reload. Fine at 30 entries, visibly slow at 1,000. | P1 | TODO |
 | C2 | No `navigator.storage.persist()` request and no quota surfacing, so eviction is silent. See headline. | P0 | DONE |
 | C3 | Signature computation and JPEG re-encode run on the main thread during capture, blocking the UI at exactly the moment the app promised to be fast. Belongs in a Worker. | P1 | TODO |
-| C4 | `IDB_VERSION` is 1 with no migration scaffolding. The first schema change after launch will need one and it is much cheaper to add now. | P1 | TODO |
+| C4 | `IDB_VERSION` is 1 with no migration scaffolding. The first schema change after launch will need one and it is much cheaper to add now. | P1 | DONE |
 | C5 | The log grid mounts a `Photo` per cell, each creating an object URL immediately. 200 entries means 200 decoded images held at once. Needs windowing. | P1 | TODO |
 | C6 | `generateInsights` runs on every render of the insights screen, over the whole log. Needs memoising on entry count + dismissals. | P2 | TODO |
 
@@ -168,5 +168,8 @@ One-card-at-a-time insights, progress toward the first observation, backdating,
 one-tap repeat wear, entry removal. U2 (undo) remains: re-rating is possible by
 reopening a day from the grid, but there is no immediate undo after a save.
 
-**Phase 4 — durability at scale** (C1, C3, C4, C5, F14, S1, M2, M3)
-Workers, windowing, migrations, import, encryption, install guidance.
+**Phase 4 — durability at scale** — partially shipped
+Import (F14) and IndexedDB migration scaffolding (C4) are in; M2's install
+guidance shipped with Phase 3. Still open: C1 (full reload on every write),
+C3 (fingerprinting on the main thread), C5 (grid windowing), S1 (encryption at
+rest), M3 (camera orientation), and D9/S4 (dropping `unsafe-inline`).

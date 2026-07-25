@@ -1,7 +1,18 @@
-import { allEntries, allEntryItems, allItems, allOutfits, getPhoto } from '../db/db'
+import {
+  allEntries,
+  allEntryItems,
+  allItems,
+  allOutfits,
+  getPhoto,
+  newId,
+  putEntry,
+  putPhoto,
+  recomputeOutfit,
+} from '../db/db'
 import { chipLabel } from './chips'
 import { parseDateKey } from './dates'
-import { createZip, csvRow, type ZipEntry } from './zip'
+import { createZip, csvRow, readZip, type ZipEntry } from './zip'
+import type { Entry, EntryItem, Item, Outfit } from '../types'
 
 /**
  * J10: "get my stuff out."
@@ -60,6 +71,14 @@ export async function buildExport(): Promise<ExportResult> {
   ])
 
   const rows: string[] = [header]
+  /*
+   * Recorded explicitly rather than re-derived on import.
+   *
+   * The filename rule is a detail of this function; making the importer
+   * reproduce it means any future change to naming silently orphans every
+   * photograph in every archive already in the wild.
+   */
+  const photoNames: Record<string, string> = {}
 
   // Oldest first in the CSV — a log reads forwards even though the app shows
   // it newest-first.
@@ -67,6 +86,7 @@ export async function buildExport(): Promise<ExportResult> {
 
   for (const [index, entry] of chronological.entries()) {
     const photoName = photoFilename(entry.date, index, entry.id)
+    photoNames[entry.id] = photoName
     const created = new Date(entry.created_at)
 
     rows.push(
@@ -97,6 +117,21 @@ export async function buildExport(): Promise<ExportResult> {
 
   const encoder = new TextEncoder()
   files.unshift({ name: 'log.csv', data: encoder.encode(rows.join('\r\n')) })
+
+  /*
+   * The CSV is for the user; this is for the app.
+   *
+   * A spreadsheet cannot round-trip an image fingerprint, an outfit cluster or
+   * a stable id, so importing from the CSV alone would silently discard the
+   * accumulated knowledge that makes the log worth keeping. The JSON carries
+   * everything, and costs a few kilobytes.
+   */
+  files.unshift({
+    name: 'log.json',
+    data: encoder.encode(
+      JSON.stringify({ version: 1, entries, outfits, items, entryItems, photoNames }, null, 2),
+    ),
+  })
 
   files.push({
     name: 'README.txt',
@@ -134,4 +169,78 @@ export function triggerDownload(blob: Blob, filename: string): void {
   link.remove()
   // Give the download a moment to start before releasing the object URL.
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}
+
+// --- import ----------------------------------------------------------------
+
+/**
+ * The other half of J10, and the migration story for a product with no sync.
+ *
+ * Export alone means a user can leave. Without import they cannot come back,
+ * cannot move to a new phone, and cannot recover from the browser eviction
+ * this app spends real effort trying to prevent. For something whose entire
+ * value is accumulated history, that is not a missing nicety.
+ *
+ * Merges rather than replaces, and skips ids that already exist, so importing
+ * the same archive twice is harmless.
+ */
+export interface ImportResult {
+  added: number
+  skipped: number
+}
+
+interface ExportManifest {
+  version: number
+  entries: Entry[]
+  outfits: Outfit[]
+  items: Item[]
+  entryItems: EntryItem[]
+  photoNames: Record<string, string>
+}
+
+export async function importArchive(blob: Blob): Promise<ImportResult> {
+  const files = await readZip(blob)
+
+  const manifestFile = files.find((f) => f.name === 'log.json')
+  if (!manifestFile) throw new Error('missing log.json')
+
+  const manifest = JSON.parse(new TextDecoder().decode(manifestFile.data)) as ExportManifest
+  if (!Array.isArray(manifest.entries)) throw new Error('unreadable log.json')
+
+  const photos = new Map(
+    files.filter((f) => f.name.startsWith('photos/')).map((f) => [f.name, f.data]),
+  )
+
+  const existing = new Set((await allEntries()).map((entry) => entry.id))
+
+  let added = 0
+  let skipped = 0
+  const touchedOutfits = new Set<string>()
+
+  for (const entry of manifest.entries) {
+    if (existing.has(entry.id)) {
+      skipped += 1
+      continue
+    }
+
+    const name = manifest.photoNames?.[entry.id]
+    const image = name ? photos.get(name) : undefined
+
+    // An entry whose photograph did not survive is not worth restoring — the
+    // photo *is* the record.
+    if (!image) {
+      skipped += 1
+      continue
+    }
+
+    const photoId = newId('photo')
+    await putPhoto(photoId, new Blob([image], { type: 'image/jpeg' }))
+    await putEntry({ ...entry, photo_id: photoId })
+    if (entry.outfit_id) touchedOutfits.add(entry.outfit_id)
+    added += 1
+  }
+
+  for (const outfitId of touchedOutfits) await recomputeOutfit(outfitId)
+
+  return { added, skipped }
 }

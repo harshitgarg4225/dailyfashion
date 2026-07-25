@@ -467,6 +467,7 @@ export default function App() {
           <SettingsScreen
             settings={log.settings}
             onChange={(patch) => void updateSettings(patch)}
+            onImported={() => void log.refresh()}
             onWiped={() => {
               __resetDbForTests()
               window.location.reload()

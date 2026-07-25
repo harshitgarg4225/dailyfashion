@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Settings } from '../types'
 import { copy } from '../lib/copy'
 import { Sheet, Switch } from '../app/controls'
-import { buildExport, triggerDownload } from '../lib/exportData'
+import { buildExport, importArchive, triggerDownload } from '../lib/exportData'
 import { wipeEverything } from '../db/db'
 import { permissionState, requestReminderPermission } from '../lib/reminders'
 import {
@@ -24,10 +24,12 @@ export function SettingsScreen({
   settings,
   onChange,
   onWiped,
+  onImported,
 }: {
   settings: Settings
   onChange: (patch: Partial<Settings>) => void
   onWiped: () => void
+  onImported: () => void
 }) {
   const [exporting, setExporting] = useState(false)
   const [confirmExport, setConfirmExport] = useState(false)
@@ -37,6 +39,29 @@ export function SettingsScreen({
   const [persistence, setPersistence] = useState<PersistenceState>('unsupported')
   const [used, setUsed] = useState<string | null>(null)
   const [notifications, setNotifications] = useState(permissionState())
+  const [importing, setImporting] = useState(false)
+  const importRef = useRef<HTMLInputElement>(null)
+
+  /**
+   * F14: the other half of the door.
+   *
+   * Export alone lets someone leave. Without import they cannot come back,
+   * cannot move to a new phone, and cannot recover from the storage eviction
+   * this app works to prevent — which for a log whose whole value is
+   * accumulated history is the difference between a product and a demo.
+   */
+  const runImport = async (file: File) => {
+    setImporting(true)
+    try {
+      const result = await importArchive(file)
+      setStatus(copy.settings.importDone(result.added, result.skipped))
+      onImported()
+    } catch {
+      setStatus(copy.settings.importFailed)
+    } finally {
+      setImporting(false)
+    }
+  }
 
   useEffect(() => {
     void currentPersistence().then(setPersistence)
@@ -174,6 +199,33 @@ export function SettingsScreen({
             {exporting ? copy.settings.exporting : copy.settings.export}
           </button>
         </div>
+
+        <div className="row">
+          <span className="row-text">
+            {copy.settings.import}
+            <small>{copy.settings.importHint}</small>
+          </span>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            disabled={importing}
+            onClick={() => importRef.current?.click()}
+          >
+            {importing ? copy.settings.importing : copy.settings.import}
+          </button>
+        </div>
+
+        <input
+          ref={importRef}
+          type="file"
+          accept=".zip,application/zip"
+          className="visually-hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            if (file) void runImport(file)
+            event.target.value = ''
+          }}
+        />
       </div>
 
       <div className="panel">

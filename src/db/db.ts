@@ -13,6 +13,16 @@ import { toDateKey } from '../lib/dates'
  */
 
 const DB_NAME = 'dailyfashion'
+
+/**
+ * Bump this and add a migration below for any schema change.
+ *
+ * Scaffolding this before launch rather than after is the whole point: once
+ * there are logs in the wild, the first schema change has to work on databases
+ * created by every version that shipped before it, and retrofitting an upgrade
+ * path onto a bare `createObjectStore` block is where local-first apps lose
+ * people's data.
+ */
 const DB_VERSION = 1
 
 export const STORES = {
@@ -45,35 +55,43 @@ export function openDb(): Promise<IDBDatabase> {
   dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result
+      const from = event.oldVersion
 
-      if (!db.objectStoreNames.contains(STORES.entries)) {
-        const entries = db.createObjectStore(STORES.entries, { keyPath: 'id' })
-        entries.createIndex('by_date', 'date')
-        entries.createIndex('by_outfit', 'outfit_id')
+      // v1: initial schema. Every creation is guarded so this block is also
+      // safe to run against a partially-created database.
+      if (from < 1) {
+        if (!db.objectStoreNames.contains(STORES.entries)) {
+          const entries = db.createObjectStore(STORES.entries, { keyPath: 'id' })
+          entries.createIndex('by_date', 'date')
+          entries.createIndex('by_outfit', 'outfit_id')
+        }
+        if (!db.objectStoreNames.contains(STORES.photos)) {
+          db.createObjectStore(STORES.photos)
+        }
+        if (!db.objectStoreNames.contains(STORES.outfits)) {
+          db.createObjectStore(STORES.outfits, { keyPath: 'id' })
+        }
+        if (!db.objectStoreNames.contains(STORES.items)) {
+          const items = db.createObjectStore(STORES.items, { keyPath: 'id' })
+          items.createIndex('by_label', 'label', { unique: true })
+        }
+        if (!db.objectStoreNames.contains(STORES.entryItems)) {
+          const links = db.createObjectStore(STORES.entryItems, { autoIncrement: true })
+          links.createIndex('by_entry', 'entry_id')
+          links.createIndex('by_item', 'item_id')
+        }
+        if (!db.objectStoreNames.contains(STORES.settings)) {
+          db.createObjectStore(STORES.settings)
+        }
+        if (!db.objectStoreNames.contains(STORES.dismissed)) {
+          db.createObjectStore(STORES.dismissed)
+        }
       }
-      if (!db.objectStoreNames.contains(STORES.photos)) {
-        db.createObjectStore(STORES.photos)
-      }
-      if (!db.objectStoreNames.contains(STORES.outfits)) {
-        db.createObjectStore(STORES.outfits, { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains(STORES.items)) {
-        const items = db.createObjectStore(STORES.items, { keyPath: 'id' })
-        items.createIndex('by_label', 'label', { unique: true })
-      }
-      if (!db.objectStoreNames.contains(STORES.entryItems)) {
-        const links = db.createObjectStore(STORES.entryItems, { autoIncrement: true })
-        links.createIndex('by_entry', 'entry_id')
-        links.createIndex('by_item', 'item_id')
-      }
-      if (!db.objectStoreNames.contains(STORES.settings)) {
-        db.createObjectStore(STORES.settings)
-      }
-      if (!db.objectStoreNames.contains(STORES.dismissed)) {
-        db.createObjectStore(STORES.dismissed)
-      }
+
+      // Future migrations go here, each guarded by `from < N` and each written
+      // to run after every earlier one — never as a replacement for them.
     }
 
     request.onsuccess = () => resolve(request.result)

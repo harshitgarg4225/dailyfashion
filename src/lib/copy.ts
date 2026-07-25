@@ -204,6 +204,14 @@ export const copy = {
     blurHint: 'Photos stay blurred until you tap one.',
     lock: 'Require unlock to open',
     lockHint: 'Uses your device unlock.',
+    import: 'Restore from an export',
+    importHint: 'Bring a log back from a zip made by this app — a new phone, or after a reset.',
+    importing: 'Restoring…',
+    importDone: (added: number, skipped: number) =>
+      added === 0
+        ? 'Everything in that file was already here.'
+        : `Restored ${added} day${added === 1 ? '' : 's'}${skipped > 0 ? `, ${skipped} already here` : ''}.`,
+    importFailed: 'That file could not be read. It needs to be a zip exported by this app.',
     export: 'Export everything',
     exportHint: 'A zip with your photos and a spreadsheet of your log.',
     exporting: 'Preparing your export…',

@@ -132,3 +132,86 @@ export function csvCell(value: string | number | null | undefined): string {
 export function csvRow(cells: readonly (string | number | null | undefined)[]): string {
   return cells.map(csvCell).join(',')
 }
+
+// --- reading ---------------------------------------------------------------
+
+/**
+ * Reads an archive produced by `createZip` (and most others).
+ *
+ * Parsing the central directory rather than walking local headers, because the
+ * directory is the authoritative index — local headers can carry deferred
+ * sizes that are only resolvable by scanning.
+ *
+ * Store and deflate are both handled. We only ever write store, but a user who
+ * unzipped an export, edited a file and rezipped it with their OS will hand
+ * back deflate, and refusing their own data at that point would be absurd.
+ */
+export interface ReadZipEntry {
+  name: string
+  data: Uint8Array<ArrayBuffer>
+}
+
+const EOCD_SIGNATURE = 0x06054b50
+const CENTRAL_SIGNATURE = 0x02014b50
+
+export async function readZip(blob: Blob): Promise<ReadZipEntry[]> {
+  const buffer = await blob.arrayBuffer()
+  const view = new DataView(buffer)
+  const bytes = new Uint8Array(buffer)
+
+  // The end-of-central-directory record sits in the last 64KB or so; scan back
+  // for its signature rather than assuming a zero-length comment.
+  let eocd = -1
+  const lowest = Math.max(0, view.byteLength - 66_000)
+  for (let i = view.byteLength - 22; i >= lowest; i--) {
+    if (view.getUint32(i, true) === EOCD_SIGNATURE) {
+      eocd = i
+      break
+    }
+  }
+  if (eocd < 0) throw new Error('not a zip archive')
+
+  const count = view.getUint16(eocd + 10, true)
+  let pointer = view.getUint32(eocd + 16, true)
+
+  const decoder = new TextDecoder()
+  const out: ReadZipEntry[] = []
+
+  for (let i = 0; i < count; i++) {
+    if (view.getUint32(pointer, true) !== CENTRAL_SIGNATURE) break
+
+    const method = view.getUint16(pointer + 10, true)
+    const compressedSize = view.getUint32(pointer + 20, true)
+    const nameLength = view.getUint16(pointer + 28, true)
+    const extraLength = view.getUint16(pointer + 30, true)
+    const commentLength = view.getUint16(pointer + 32, true)
+    const localOffset = view.getUint32(pointer + 42, true)
+
+    const name = decoder.decode(bytes.subarray(pointer + 46, pointer + 46 + nameLength))
+
+    // The local header repeats the name and extra fields, and its extra length
+    // routinely differs from the central one — read it rather than reusing.
+    const localNameLength = view.getUint16(localOffset + 26, true)
+    const localExtraLength = view.getUint16(localOffset + 28, true)
+    const dataStart = localOffset + 30 + localNameLength + localExtraLength
+
+    const raw = bytes.slice(dataStart, dataStart + compressedSize)
+
+    let data: Uint8Array<ArrayBuffer>
+    if (method === 0) {
+      data = raw
+    } else if (method === 8 && typeof DecompressionStream !== 'undefined') {
+      const stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
+      data = new Uint8Array(await new Response(stream).arrayBuffer())
+    } else {
+      throw new Error(`unsupported compression in ${name}`)
+    }
+
+    // Directory markers carry no payload.
+    if (!name.endsWith('/')) out.push({ name, data })
+
+    pointer += 46 + nameLength + extraLength + commentLength
+  }
+
+  return out
+}
