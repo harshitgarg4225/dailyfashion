@@ -152,4 +152,10 @@ export interface Settings {
    * offered to soften (J8). Suppresses insight cards until cleared.
    */
   softened_at: number | null
+  /**
+   * When the last reminder was armed for. Checked on the next launch to work
+   * out whether it went unanswered, since the page is rarely running at the
+   * moment a notification is ignored.
+   */
+  last_reminder_for: number | null
 }

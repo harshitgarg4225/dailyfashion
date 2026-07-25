@@ -1,9 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Settings } from '../types'
 import { copy } from '../lib/copy'
-import { Switch } from '../app/controls'
+import { Sheet, Switch } from '../app/controls'
 import { buildExport, triggerDownload } from '../lib/exportData'
 import { wipeEverything } from '../db/db'
+import { permissionState, requestReminderPermission } from '../lib/reminders'
+import {
+  currentPersistence,
+  formatBytes,
+  storageUsage,
+  type PersistenceState,
+} from '../lib/storage'
 
 /**
  * Settings, including the two things J10 insists must exist.
@@ -23,11 +30,21 @@ export function SettingsScreen({
   onWiped: () => void
 }) {
   const [exporting, setExporting] = useState(false)
+  const [confirmExport, setConfirmExport] = useState(false)
   const [confirmWipe, setConfirmWipe] = useState(false)
   const [typed, setTyped] = useState('')
   const [status, setStatus] = useState<string | null>(null)
+  const [persistence, setPersistence] = useState<PersistenceState>('unsupported')
+  const [used, setUsed] = useState<string | null>(null)
+  const [notifications, setNotifications] = useState(permissionState())
+
+  useEffect(() => {
+    void currentPersistence().then(setPersistence)
+    void storageUsage().then((usage) => setUsed(usage ? formatBytes(usage.usedBytes) : null))
+  }, [])
 
   const runExport = async () => {
+    setConfirmExport(false)
     setExporting(true)
     try {
       const result = await buildExport()
@@ -35,6 +52,25 @@ export function SettingsScreen({
     } finally {
       setExporting(false)
     }
+  }
+
+  /*
+   * Turning the reminder on has to ask for the notification permission in the
+   * same gesture. Storing `reminder_enabled: true` while the browser refuses to
+   * show anything would leave the setting quietly lying about what happens.
+   */
+  const toggleReminder = async (next: boolean) => {
+    if (!next) {
+      onChange({ reminder_enabled: false })
+      return
+    }
+    const granted = await requestReminderPermission()
+    setNotifications(granted)
+    onChange({
+      reminder_enabled: granted === 'granted',
+      consecutive_ignores: 0,
+      last_reminder_for: null,
+    })
   }
 
   const runWipe = async () => {
@@ -60,20 +96,40 @@ export function SettingsScreen({
           <Switch
             checked={settings.reminder_enabled}
             label={copy.settings.reminder}
-            onChange={(next) => onChange({ reminder_enabled: next, consecutive_ignores: 0 })}
+            onChange={(next) => void toggleReminder(next)}
           />
         </div>
 
         {settings.reminder_enabled ? (
-          <div className="row">
-            <span className="row-text">{copy.settings.reminderTime}</span>
-            <input
-              type="time"
-              value={settings.reminder_time}
-              onChange={(event) => onChange({ reminder_time: event.target.value })}
-            />
-          </div>
+          <>
+            <div className="row">
+              <span className="row-text">{copy.settings.reminderTime}</span>
+              <input
+                type="time"
+                value={settings.reminder_time}
+                onChange={(event) => onChange({ reminder_time: event.target.value })}
+              />
+            </div>
+            <p className="note">{copy.settings.reminderCaveat}</p>
+          </>
         ) : null}
+
+        {notifications === 'denied' ? (
+          <p className="note">{copy.settings.notificationsBlocked}</p>
+        ) : null}
+      </div>
+
+      {/* C2: storage durability, stated plainly enough to act on. */}
+      <div className="panel">
+        <div className="row">
+          <span className="row-text">
+            {copy.settings.storage}
+            <small>
+              {persistence === 'persisted' ? copy.settings.storageSafe : copy.settings.storageAtRisk}
+            </small>
+          </span>
+        </div>
+        {used ? <p className="note">{copy.settings.storageUsed(used)}</p> : null}
       </div>
 
       <div className="panel">
@@ -109,7 +165,12 @@ export function SettingsScreen({
             {copy.settings.export}
             <small>{copy.settings.exportHint}</small>
           </span>
-          <button type="button" className="btn btn--ghost" disabled={exporting} onClick={runExport}>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            disabled={exporting}
+            onClick={() => setConfirmExport(true)}
+          >
             {exporting ? copy.settings.exporting : copy.settings.export}
           </button>
         </div>
@@ -167,6 +228,33 @@ export function SettingsScreen({
         <p className="note note--centred" role="status">
           {status}
         </p>
+      ) : null}
+
+      {/*
+        * S2: the one moment the privacy promise legitimately ends. The zip
+        * lands in the downloads folder, outside the app, and many devices sync
+        * that folder to a cloud drive. Saying so is not a dark pattern — it is
+        * the opposite, and it is the only honest way to offer the button.
+        */}
+      {confirmExport ? (
+        <Sheet
+          title={copy.settings.exportWarnTitle}
+          body={copy.settings.exportWarnBody}
+          onDismiss={() => setConfirmExport(false)}
+        >
+          <div className="stack">
+            <button type="button" className="btn btn--primary btn--block" onClick={runExport}>
+              {copy.settings.exportWarnGo}
+            </button>
+            <button
+              type="button"
+              className="btn btn--quiet btn--block"
+              onClick={() => setConfirmExport(false)}
+            >
+              {copy.settings.wipeCancel}
+            </button>
+          </div>
+        </Sheet>
       ) : null}
 
       <p className="eyebrow settings-footer">{copy.onboarding.privacyTitle}</p>

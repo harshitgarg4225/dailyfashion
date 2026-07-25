@@ -2,6 +2,8 @@ import type { Entry } from '../types'
 import { copy } from '../lib/copy'
 import { agoLabel, daysBetween, mediumLabel, type DateKey } from '../lib/dates'
 import { buildShortlist, type ShortlistContext } from '../lib/shortlist'
+import { TEMP_BANDS } from '../lib/context'
+import type { TempBand } from '../types'
 import { Photo } from '../app/Photo'
 
 /**
@@ -18,10 +20,14 @@ import { Photo } from '../app/Photo'
 export function ShortlistScreen({
   entries,
   context,
+  tempBand,
+  onTempBand,
   onWearAgain,
 }: {
   entries: readonly Entry[]
   context: ShortlistContext
+  tempBand: TempBand | null
+  onTempBand: (band: TempBand | null) => void
   onWearAgain: (entry: Entry) => void
 }) {
   const result = buildShortlist(entries, context)
@@ -46,6 +52,28 @@ export function ShortlistScreen({
       <div className="screen-head">
         <span className="eyebrow">{copy.app.name}</span>
         <h1>{copy.shortlist.title}</h1>
+      </div>
+
+      {/*
+        * The three-way tap that keeps the airplane-mode promise intact. Without
+        * it the header can never honestly claim "days like today", because the
+        * app has no idea what today is like and refuses to guess over a network.
+        */}
+      <div className="field">
+        <span className="field-label">{copy.shortlist.tempPrompt}</span>
+        <div className="btn-row">
+          {TEMP_BANDS.map((band) => (
+            <button
+              key={band.id}
+              type="button"
+              className="btn btn--ghost btn--flex"
+              aria-pressed={tempBand === band.id}
+              onClick={() => onTempBand(tempBand === band.id ? null : band.id)}
+            >
+              {band.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <p className="note">

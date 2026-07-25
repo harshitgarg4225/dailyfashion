@@ -35,6 +35,12 @@ async function dismissOverlays(page: Page) {
   // the capture is asynchronous and the sheets appear after the write lands.
   await page.locator('.tabs').waitFor({ state: 'attached', timeout: 20_000 }).catch(() => undefined)
 
+  // The single post-capture sheet.
+  const followUp = page.getByRole('dialog', { name: /anything to add/i })
+  if (await followUp.isVisible().catch(() => false)) {
+    await followUp.getByRole('button', { name: 'Done', exact: true }).click()
+  }
+
   const skip = page.getByRole('button', { name: 'Skip tonight', exact: true })
   if (await skip.isVisible().catch(() => false)) await skip.click()
 
@@ -63,10 +69,12 @@ test.describe('the daily loop', () => {
     await shutter.click()
 
     // The optional context tap appears after the entry is already saved.
-    const tempSheet = page.getByRole('dialog', { name: /what was it like out/i })
-    if (await tempSheet.isVisible().catch(() => false)) {
-      await page.getByRole('button', { name: 'Mild', exact: true }).click()
-    }
+    // Everything after the shutter now lives on one sheet, and every control
+    // on it is optional (U1).
+    const followUp = page.getByRole('dialog', { name: /anything to add/i })
+    await expect(followUp).toBeVisible({ timeout: 10_000 })
+    await followUp.getByRole('button', { name: 'Mild', exact: true }).click()
+    await followUp.getByRole('button', { name: 'Done', exact: true }).click()
 
     // The entry exists in the log.
     await dismissOverlays(page)

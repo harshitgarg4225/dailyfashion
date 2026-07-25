@@ -93,6 +93,11 @@ export const copy = {
   },
 
   // J2 / the reframe: felt first, events second, both answerable in seconds.
+  reminder: {
+    notificationTitle: 'How did today go?',
+    notificationBody: 'Two taps and it is logged.',
+  },
+
   tonight: {
     title: 'Tonight',
     prompt: 'How did today feel?',
@@ -119,6 +124,10 @@ export const copy = {
     unrated: 'No reflection yet',
     // J9: a missed day is whitespace, not a gap to be explained.
     addPast: 'Add a past day',
+    installTitle: 'Keep this on your home screen',
+    installBodyIos:
+      'Tap the share button, then “Add to Home Screen”. Browsers clear data for sites that are only open in a tab — on the home screen your log is far safer.',
+    installDismiss: 'Not now',
     backdateLimit: 'You can add days from the past week.',
     entryCount: (n: number) => (n === 1 ? '1 day logged' : `${n} days logged`),
   },
@@ -133,12 +142,22 @@ export const copy = {
     tagSave: 'Add',
   },
 
+  // Everything asked after the shutter, on one surface.
+  followUp: {
+    title: 'Anything to add?',
+    body: 'All optional. Your photo is already saved.',
+    tempPrompt: 'What was it like out?',
+    tempHint: 'This stops the log blaming a jacket for the weather.',
+    done: 'Done',
+  },
+
   // J6: a shortlist of what already worked. Not advice, not generated text.
   shortlist: {
     title: 'Today',
     headerWeather: 'You felt best in these on days like today.',
     headerGeneral: 'You felt best in these lately.',
     wearAgain: 'Wearing this again',
+    tempPrompt: 'What is it like out?',
     locked: 'This opens once you have about ten days logged.',
     remaining: (n: number) => `${n} more to go.`,
   },
@@ -180,6 +199,24 @@ export const copy = {
     // J8: the softening offer.
     pauseInsights: 'Pause observations',
     resumeInsights: 'Turn observations back on',
+
+    // Storage durability (C2). Named plainly, because a user who does not
+    // understand this cannot protect against it.
+    storage: 'Storage',
+    storageSafe: 'Your log is set to be kept. Your browser will not clear it to free space.',
+    storageAtRisk:
+      'Your browser may clear this app’s data if the device runs low on space. Adding it to your home screen makes that far less likely.',
+    storageUsed: (used: string) => `Using ${used} on this device.`,
+
+    // S2: the one moment the privacy promise legitimately ends.
+    exportWarnTitle: 'This file leaves the app',
+    exportWarnBody:
+      'The zip is saved to your downloads, outside this app. Some phones and computers back that folder up to a cloud drive automatically. Everything inside is readable by anything that can open the file.',
+    exportWarnGo: 'Save it anyway',
+    notificationsBlocked:
+      'Your browser is blocking notifications for this site, so the reminder cannot be shown.',
+    reminderCaveat:
+      'The reminder needs the app to have been opened that day. It is scheduled on your device, never by a server.',
   },
 
   // J8: shown when felt-scores trend low for 7+ days. Offers less, not more.

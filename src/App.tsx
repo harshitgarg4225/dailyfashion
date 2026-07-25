@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ChipId, Entry, FeltScore, ImageSignature, Settings, TempBand } from './types'
 import { useLog } from './app/useLog'
 import { Sheet, Toast } from './app/controls'
-import { Photo } from './app/Photo'
 import { CameraScreen } from './screens/CameraScreen'
 import { TonightScreen } from './screens/TonightScreen'
 import { LogScreen } from './screens/LogScreen'
@@ -10,9 +9,10 @@ import { ShortlistScreen } from './screens/ShortlistScreen'
 import { InsightsScreen } from './screens/InsightsScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { OnboardingScreen, type SeedPhoto } from './screens/OnboardingScreen'
+import { CaptureFollowUp, type FollowUpResult } from './screens/CaptureFollowUp'
 import { copy } from './lib/copy'
-import { captureContext, launchIntent, TEMP_BANDS } from './lib/context'
-import { daysBetween, shortLabel, toDateKey, type DateKey } from './lib/dates'
+import { captureContext, launchIntent } from './lib/context'
+import { daysBetween, toDateKey, type DateKey } from './lib/dates'
 import { bestMatch, SIMILARITY_WINDOW } from './lib/signature'
 import { shouldOfferSoftening } from './lib/insights'
 import { SHORTLIST_MIN_ENTRIES } from './lib/shortlist'
@@ -27,6 +27,14 @@ import {
   __resetDbForTests,
 } from './db/db'
 import { preparePhoto } from './lib/capture'
+import {
+  cancelReminder,
+  countsAsIgnored,
+  MAX_CONSECUTIVE_IGNORES,
+  msUntilNext,
+  scheduleReminder,
+} from './lib/reminders'
+import { requestPersistence } from './lib/storage'
 
 type Screen = 'camera' | 'tonight' | 'log' | 'shortlist' | 'insights' | 'settings'
 
@@ -53,12 +61,17 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null)
 
   // Post-capture flow state.
-  const [pendingTemp, setPendingTemp] = useState<{ entryId: string } | null>(null)
-  const [pendingLink, setPendingLink] = useState<{ entryId: string; matchId: string } | null>(null)
-  const [tagFor, setTagFor] = useState<string | null>(null)
-  const [tagText, setTagText] = useState('')
+  const [followUp, setFollowUp] = useState<{ entryId: string; matchId: string | null } | null>(null)
   const [openEntry, setOpenEntry] = useState<Entry | null>(null)
   const [softenOffer, setSoftenOffer] = useState(false)
+  /**
+   * What it is like out today, for J6's shortlist.
+   *
+   * Taken from today's entry when there is one, since the follow-up already
+   * asked. Otherwise the shortlist offers the same three-way tap — someone
+   * deciding what to wear has not necessarily photographed anything yet.
+   */
+  const [tappedTemp, setTappedTemp] = useState<TempBand | null>(null)
 
   const today = toDateKey(new Date())
 
@@ -74,6 +87,8 @@ export default function App() {
     () => new Map(log.entries.map((e) => [e.id, e])),
     [log.entries],
   )
+
+  const todayTempBand = entriesToday.find((e) => e.context.temp_band)?.context.temp_band ?? tappedTemp
 
   const flash = useCallback((message: string) => {
     setToast(message)
@@ -100,6 +115,64 @@ export default function App() {
 
     setScreen(intent)
   }, [log.loading, log.settings.onboarded, screen, entriesToday.length, unrated.length])
+
+  /*
+   * C2: ask the browser to keep this data.
+   *
+   * Without it IndexedDB is "best effort" and can be evicted under storage
+   * pressure with no prompt and no recovery — which for a local-only log means
+   * silently losing someone's year of history. Requested once the user has
+   * committed to the app rather than on first paint, since browsers weigh
+   * engagement when deciding.
+   */
+  useEffect(() => {
+    if (log.loading || !log.settings.onboarded) return
+    void requestPersistence()
+  }, [log.loading, log.settings.onboarded])
+
+  /*
+   * J2 + J9: arm the evening reminder, and notice when one went unanswered.
+   *
+   * The ignore check happens on launch rather than live, because the page is
+   * almost never running at the moment a notification is dismissed. Five in a
+   * row and the app stops asking — J9's rule that the product backs off rather
+   * than nudging harder.
+   */
+  useEffect(() => {
+    if (log.loading || !log.settings.onboarded) return
+
+    const pending = unrated[0] ?? null
+
+    const wasIgnored = countsAsIgnored(log.settings.last_reminder_for, pending !== null)
+    if (wasIgnored) {
+      const ignores = log.settings.consecutive_ignores + 1
+      void saveSettings({
+        consecutive_ignores: ignores,
+        last_reminder_for: null,
+        // Auto-mute, with a plain re-opt-in left in Settings.
+        reminder_enabled: ignores >= MAX_CONSECUTIVE_IGNORES ? false : log.settings.reminder_enabled,
+      }).then(() => log.refresh())
+      return
+    }
+
+    const armed = scheduleReminder({
+      settings: log.settings,
+      pendingEntryId: pending?.id ?? null,
+      title: copy.reminder.notificationTitle,
+      body: copy.reminder.notificationBody,
+    })
+
+    if (armed) {
+      const delay = msUntilNext(log.settings.reminder_time)
+      const firesAt = delay === null ? null : Date.now() + delay
+      if (firesAt !== null && firesAt !== log.settings.last_reminder_for) {
+        void saveSettings({ last_reminder_for: firesAt })
+      }
+    }
+
+    return cancelReminder
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [log.loading, log.settings, unrated])
 
   // --- J8: offer to soften after a low stretch --------------------------
 
@@ -155,13 +228,11 @@ export default function App() {
 
       if (options.skipPrompts) return entry
 
-      // "Worn before?" against the most recent entries only.
+      // "Worn before?" against the most recent entries only. The follow-up is
+      // shown either way — temperature must be asked on repeat wears too, since
+      // those are exactly the entries J7 needs context for.
       const match = bestMatch(signature, log.entries.slice(0, SIMILARITY_WINDOW))
-      if (match) {
-        setPendingLink({ entryId: entry.id, matchId: match.entry.id })
-      } else {
-        setPendingTemp({ entryId: entry.id })
-      }
+      setFollowUp({ entryId: entry.id, matchId: match?.entry.id ?? null })
 
       return entry
     },
@@ -206,6 +277,8 @@ export default function App() {
   const saveReflection = useCallback(
     async (entry: Entry, felt: FeltScore, chips: ChipId[]) => {
       await putEntry({ ...entry, felt_score: felt, chips, rated_at: Date.now() })
+      // Answering resets the ignore run — the nudge worked, so stop counting.
+      await saveSettings({ consecutive_ignores: 0, last_reminder_for: null })
       await log.refresh()
       flash(copy.tonight.savedThanks)
       setScreen('log')
@@ -213,16 +286,24 @@ export default function App() {
     [flash, log],
   )
 
-  const setTempBand = useCallback(
-    async (entryId: string, band: TempBand | null) => {
-      const entry = entriesById.get(entryId) ?? log.entries.find((e) => e.id === entryId)
-      if (entry) {
-        await putEntry({ ...entry, context: { ...entry.context, temp_band: band } })
-        await log.refresh()
+  const applyFollowUp = useCallback(
+    async (entryId: string, result: FollowUpResult) => {
+      setFollowUp(null)
+
+      const entry = log.entries.find((e) => e.id === entryId)
+      if (entry && result.tempBand !== entry.context.temp_band) {
+        await putEntry({
+          ...entry,
+          context: { ...entry.context, temp_band: result.tempBand },
+        })
       }
-      setPendingTemp(null)
+
+      if (result.linkTo) await linkEntries(entryId, result.linkTo)
+      if (result.tag) await tagEntry(entryId, result.tag)
+
+      await log.refresh()
     },
-    [entriesById, log],
+    [log],
   )
 
   // --- notification tap carrying an inline rating (J2) -------------------
@@ -268,10 +349,15 @@ export default function App() {
 
       case 'tonight': {
         const target = openEntry ?? unrated[0] ?? null
-        const gapDays =
-          log.entries.length > 1 && log.entries[1]
-            ? daysBetween(log.entries[1].date, today)
-            : 0
+        /*
+         * The gap before *this* entry, not the gap between the two newest.
+         * The old form compared the second-newest to today, which fires the
+         * welcome-back message at essentially arbitrary moments.
+         */
+        const previous = target
+          ? log.entries.find((e) => e.date < target.date)
+          : undefined
+        const gapDays = target && previous ? daysBetween(previous.date, target.date) : 0
         return (
           <TonightScreen
             entry={target}
@@ -289,7 +375,9 @@ export default function App() {
         return (
           <ShortlistScreen
             entries={log.entries}
-            context={{ today, tempBand: null }}
+            context={{ today, tempBand: todayTempBand }}
+            tempBand={todayTempBand}
+            onTempBand={setTappedTemp}
             onWearAgain={(entry) => {
               setOpenEntry(entry)
               setScreen('camera')
@@ -376,123 +464,13 @@ export default function App() {
         </>
       ) : null}
 
-      {/* J3: one tap links two days into an outfit. Declining is equally fast. */}
-      {pendingLink ? (
-        <Sheet
-          title={copy.link.ask(shortLabel(entriesById.get(pendingLink.matchId)?.date ?? today))}
-          onDismiss={() => setPendingLink(null)}
-        >
-          {entriesById.get(pendingLink.matchId) ? (
-            <Photo
-              photoId={entriesById.get(pendingLink.matchId)!.photo_id}
-              alt=""
-              className="insight-photo"
-            />
-          ) : null}
-          <div className="stack">
-            <button
-              type="button"
-              className="btn btn--primary btn--block"
-              onClick={() => {
-                const { entryId, matchId } = pendingLink
-                setPendingLink(null)
-                setTagFor(entryId)
-                void linkEntries(entryId, matchId).then(() => log.refresh())
-              }}
-            >
-              {copy.link.yes}
-            </button>
-            <button
-              type="button"
-              className="btn btn--quiet btn--block"
-              onClick={() => setPendingLink(null)}
-            >
-              {copy.link.no}
-            </button>
-          </div>
-        </Sheet>
-      ) : null}
-
-      {/* Optional one-word tag. Never required, never blocking. */}
-      {tagFor ? (
-        <Sheet
-          title={copy.link.tagPrompt}
-          body={copy.link.tagHint}
-          onDismiss={() => {
-            setTagFor(null)
-            setTagText('')
-          }}
-        >
-          <input
-            type="text"
-            value={tagText}
-            list="item-suggestions"
-            placeholder="blue jacket"
-            onChange={(event) => setTagText(event.target.value)}
-          />
-          <datalist id="item-suggestions">
-            {log.items.map((item) => (
-              <option key={item.id} value={item.label} />
-            ))}
-          </datalist>
-          <div className="spacer" />
-          <div className="stack">
-            <button
-              type="button"
-              className="btn btn--primary btn--block"
-              disabled={tagText.trim().length === 0}
-              onClick={() => {
-                const id = tagFor
-                const label = tagText
-                setTagFor(null)
-                setTagText('')
-                void tagEntry(id, label).then(() => log.refresh())
-              }}
-            >
-              {copy.link.tagSave}
-            </button>
-            <button
-              type="button"
-              className="btn btn--quiet btn--block"
-              onClick={() => {
-                setTagFor(null)
-                setTagText('')
-              }}
-            >
-              {copy.common.close}
-            </button>
-          </div>
-        </Sheet>
-      ) : null}
-
-      {/* The manual temperature tap — the one thing we ask for, and it is skippable. */}
-      {pendingTemp ? (
-        <Sheet
-          title="What was it like out?"
-          body="Optional. It stops the log blaming a jacket for the weather."
-          onDismiss={() => void setTempBand(pendingTemp.entryId, null)}
-        >
-          <div className="btn-row">
-            {TEMP_BANDS.map((band) => (
-              <button
-                key={band.id}
-                type="button"
-                className="btn btn--ghost btn--flex"
-                onClick={() => void setTempBand(pendingTemp.entryId, band.id)}
-              >
-                {band.label}
-              </button>
-            ))}
-          </div>
-          <div className="spacer" />
-          <button
-            type="button"
-            className="btn btn--quiet btn--block"
-            onClick={() => void setTempBand(pendingTemp.entryId, null)}
-          >
-            {copy.tonight.skip}
-          </button>
-        </Sheet>
+      {/* J3 + context capture, on one surface. Dismissing costs nothing. */}
+      {followUp ? (
+        <CaptureFollowUp
+          match={followUp.matchId ? (entriesById.get(followUp.matchId) ?? null) : null}
+          suggestions={log.items.map((item) => item.label)}
+          onDone={(result) => void applyFollowUp(followUp.entryId, result)}
+        />
       ) : null}
 
       {/* J8: after a low stretch, offer less rather than more. */}

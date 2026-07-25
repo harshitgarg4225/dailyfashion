@@ -47,10 +47,10 @@ Three findings dominate everything below.
 
 | # | Finding | Sev | Status |
 |---|---|---|---|
-| F1 | Evening reminder never scheduled. No timer, no permission request, no re-arm on launch. J2's lock-screen mechanic is inert. | P0 | TODO |
-| F2 | `consecutive_ignores` is written to the schema but never incremented, so J9's "auto-mute after 5 ignores" cannot fire. | P0 | TODO |
-| F3 | Temperature is only asked when the similarity matcher finds **no** match — the `else` branch. Every repeat-wear is logged with `temp_band: null`, which is exactly the population J7's confound suppression needs most. | P0 | TODO |
-| F4 | `ShortlistScreen` is passed `tempBand: null` hard-coded from `App.tsx`, so J6's weather matching never engages and the header never earns its "days like today" claim. | P0 | TODO |
+| F1 | Evening reminder never scheduled. No timer, no permission request, no re-arm on launch. J2's lock-screen mechanic is inert. | P0 | DONE |
+| F2 | `consecutive_ignores` is written to the schema but never incremented, so J9's "auto-mute after 5 ignores" cannot fire. | P0 | DONE |
+| F3 | Temperature is only asked when the similarity matcher finds **no** match — the `else` branch. Every repeat-wear is logged with `temp_band: null`, which is exactly the population J7's confound suppression needs most. | P0 | DONE |
+| F4 | `ShortlistScreen` is passed `tempBand: null` hard-coded from `App.tsx`, so J6's weather matching never engages and the header never earns its "days like today" claim. | P0 | DONE |
 | F5 | "Add a past day" opens the camera with today's date. J9 promises backdating up to 7 days; there is no date picker. | P1 | TODO |
 | F6 | J6's "wearing this again" sets state and opens the camera but never links the new entry to the chosen outfit. Repeat-wear is not one tap; it is a normal capture. | P1 | TODO |
 | F7 | `recomputeOutfit` runs on link but not after a rating changes, so `avg_felt` and `wear_count` on the `outfit` row drift from the entries. Nothing reads them yet, which is the only reason this is not already a bug. | P1 | TODO |
@@ -58,7 +58,7 @@ Three findings dominate everything below.
 | F9 | `note` exists on `Entry` with no way to write one. Either build it or drop it from the schema. | P2 | TODO |
 | F10 | `deleteEntry` is implemented and unreachable. A single bad photo cannot be removed without wiping everything. | P1 | TODO |
 | F11 | Dismissed insights are dismissed forever. A card about a jacket you have since worn twenty more times should be allowed to return with new evidence. | P2 | TODO |
-| F12 | The "welcome back" gap check reads `entries[1]`, which is the second-newest entry, not the gap before the current one. It will fire at the wrong times. | P1 | TODO |
+| F12 | The "welcome back" gap check reads `entries[1]`, which is the second-newest entry, not the gap before the current one. It will fire at the wrong times. | P1 | DONE |
 | F13 | Export has no progress indication. 200 photos is several seconds of frozen button. | P2 | TODO |
 | F14 | No import. Export exists, so a user can leave; they cannot return, or move to a new phone. For a local-only app with no sync, import **is** the migration story. | P1 | TODO |
 
@@ -66,7 +66,7 @@ Three findings dominate everything below.
 
 | # | Finding | Sev | Status |
 |---|---|---|---|
-| U1 | Post-capture sheets chain: link → tag, or temp. Up to three modal decisions after a shutter tap that promised "no confirm screen". The prompts are individually cheap and collectively a gauntlet. | P0 | TODO |
+| U1 | Post-capture sheets chain: link → tag, or temp. Up to three modal decisions after a shutter tap that promised "no confirm screen". The prompts are individually cheap and collectively a gauntlet. | P0 | DONE |
 | U2 | No undo. A mis-tapped felt score is permanent unless the user finds the entry in the grid and re-opens it. | P1 | TODO |
 | U3 | The tab bar carries `Capture` alongside four sections, so the primary action is a peer of Settings. It should be a distinct, always-present affordance. | P1 | DONE |
 | U4 | No skeleton or empty-state treatment while the log loads; the app renders a blank `.app` div. On a cold start with 200 entries this is a visible flash of nothing. | P1 | TODO |
@@ -107,8 +107,8 @@ confidence in white space**. Concretely, what changes:
 | # | Finding | Sev | Status |
 |---|---|---|---|
 | S1 | Photos are stored unencrypted in IndexedDB. Any process with the profile can read them. With the passcode lock (F8) they should be encrypted at rest via WebCrypto with a key derived from the passcode. | P1 | TODO |
-| S2 | Export writes a zip of every photo to the Downloads folder — outside the app sandbox, often synced to a cloud drive by the OS. This is the one moment the privacy promise legitimately ends, and the UI must say so plainly before the download starts. | P0 | TODO |
-| S3 | `newId` falls back to `Math.random()` when `crypto.randomUUID` is absent. Predictable ids are harmless here, but the fallback is dead weight on every target browser and should just use `crypto.getRandomValues`. | P2 | TODO |
+| S2 | Export writes a zip of every photo to the Downloads folder — outside the app sandbox, often synced to a cloud drive by the OS. This is the one moment the privacy promise legitimately ends, and the UI must say so plainly before the download starts. | P0 | DONE |
+| S3 | `newId` falls back to `Math.random()` when `crypto.randomUUID` is absent. Predictable ids are harmless here, but the fallback is dead weight on every target browser and should just use `crypto.getRandomValues`. | P2 | DONE |
 | S4 | `style-src 'unsafe-inline'` — see D9. | P1 | TODO |
 | S5 | No `Clear-Site-Data` on wipe. `deleteDatabase` handles our data; the service worker cache still holds the shell (harmless, but worth being exact about). | P2 | TODO |
 | S6 | The service worker has no version/skipWaiting story beyond a constant, so a deploy can leave a stale shell against a new asset manifest. | P1 | TODO |
@@ -118,7 +118,7 @@ confidence in white space**. Concretely, what changes:
 | # | Finding | Sev | Status |
 |---|---|---|---|
 | C1 | `useLog` reloads **every** entry, item, link, and setting after every single write. Each felt tap is an O(n) full reload. Fine at 30 entries, visibly slow at 1,000. | P1 | TODO |
-| C2 | No `navigator.storage.persist()` request and no quota surfacing, so eviction is silent. See headline. | P0 | TODO |
+| C2 | No `navigator.storage.persist()` request and no quota surfacing, so eviction is silent. See headline. | P0 | DONE |
 | C3 | Signature computation and JPEG re-encode run on the main thread during capture, blocking the UI at exactly the moment the app promised to be fast. Belongs in a Worker. | P1 | TODO |
 | C4 | `IDB_VERSION` is 1 with no migration scaffolding. The first schema change after launch will need one and it is much cheaper to add now. | P1 | TODO |
 | C5 | The log grid mounts a `Photo` per cell, each creating an object URL immediately. 200 entries means 200 decoded images held at once. Needs windowing. | P1 | TODO |
@@ -154,11 +154,11 @@ sat directly on the core loop.
 
 The sequence is chosen so each phase is shippable on its own.
 
-**Phase 1 — trust and the loop** (F1, F2, F3, F4, F12, C2, S2, U1)
+**Phase 1 — trust and the loop** (F1, F2, F3, F4, F12, C2, S2, U1) — **shipped**
 Without the reminder there is no rating; without the rating there is no insight;
 without durable storage the whole premise leaks. Plus the honesty fixes.
 
-**Phase 2 — the maison** (D1–D7)
+**Phase 2 — the maison** (D1–D7) — **shipped**
 The full design language, applied across every screen.
 
 **Phase 3 — retention** (U8, P3a, F5, F6, F10, U2)

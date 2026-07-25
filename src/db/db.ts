@@ -34,6 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
   onboarded: false,
   camera_facing: 'user',
   softened_at: null,
+  last_reminder_for: null,
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null
@@ -104,13 +105,14 @@ function done(transaction: IDBTransaction): Promise<void> {
 // --- ids ------------------------------------------------------------------
 
 export function newId(prefix: string): string {
-  // crypto.randomUUID is available in every browser that has the camera APIs
-  // this app needs; the fallback is only here for older test environments.
-  const uuid =
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`
-  return `${prefix}_${uuid}`
+  const source = globalThis.crypto
+  if (typeof source?.randomUUID === 'function') return `${prefix}_${source.randomUUID()}`
+
+  // Every browser with the camera APIs this app needs has getRandomValues.
+  // Math.random has no business generating identifiers, even harmless ones.
+  const bytes = source.getRandomValues(new Uint8Array(16))
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return `${prefix}_${hex}`
 }
 
 // --- entries --------------------------------------------------------------

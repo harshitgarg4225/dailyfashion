@@ -300,6 +300,17 @@ p {
   color: var(--ink-soft);
 }
 
+/*
+ * Selected state for the toggle-style buttons (temperature, "same outfit?").
+ * Without this the control looks identical before and after a tap, which reads
+ * as the tap not having registered.
+ */
+.btn[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
 .btn--quiet {
   border-color: transparent;
   color: var(--ink-muted);
