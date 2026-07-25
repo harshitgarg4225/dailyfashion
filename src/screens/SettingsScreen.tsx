@@ -51,7 +51,7 @@ export function SettingsScreen({
         <h1>{copy.settings.title}</h1>
       </div>
 
-      <div className="card">
+      <div className="panel">
         <div className="row">
           <span className="row-text">
             {copy.settings.reminder}
@@ -70,14 +70,13 @@ export function SettingsScreen({
             <input
               type="time"
               value={settings.reminder_time}
-              style={{ width: 130 }}
               onChange={(event) => onChange({ reminder_time: event.target.value })}
             />
           </div>
         ) : null}
       </div>
 
-      <div className="card">
+      <div className="panel">
         <div className="row">
           <span className="row-text">
             {copy.settings.blur}
@@ -104,7 +103,7 @@ export function SettingsScreen({
         </div>
       </div>
 
-      <div className="card">
+      <div className="panel">
         <div className="row">
           <span className="row-text">
             {copy.settings.export}
@@ -116,7 +115,7 @@ export function SettingsScreen({
         </div>
       </div>
 
-      <div className="card">
+      <div className="panel">
         {confirmWipe ? (
           <>
             <p className="note">{copy.settings.wipeConfirmPrompt}</p>
@@ -165,14 +164,12 @@ export function SettingsScreen({
       </div>
 
       {status ? (
-        <p className="note" role="status" style={{ textAlign: 'center' }}>
+        <p className="note note--centred" role="status">
           {status}
         </p>
       ) : null}
 
-      <p className="note" style={{ textAlign: 'center', marginTop: 24 }}>
-        {copy.onboarding.privacyTitle}.
-      </p>
+      <p className="eyebrow settings-footer">{copy.onboarding.privacyTitle}</p>
     </div>
   )
 }

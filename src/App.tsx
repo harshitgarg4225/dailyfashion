@@ -349,32 +349,31 @@ export default function App() {
       {body}
 
       {screen !== 'camera' ? (
-        <nav className="tabs" aria-label="Sections">
+        <>
           <button
             type="button"
-            className="tab"
+            className="capture-bar"
             onClick={() => setScreen('camera')}
-            aria-label={TAB_LABELS.camera}
           >
-            <span className="tab-dot" />
             {TAB_LABELS.camera}
           </button>
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className="tab"
-              aria-current={screen === tab ? 'page' : undefined}
-              onClick={() => {
-                setOpenEntry(null)
-                setScreen(tab)
-              }}
-            >
-              <span className="tab-dot" />
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
-        </nav>
+          <nav className="tabs" aria-label="Sections">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                className="tab"
+                aria-current={screen === tab ? 'page' : undefined}
+                onClick={() => {
+                  setOpenEntry(null)
+                  setScreen(tab)
+                }}
+              >
+                {TAB_LABELS[tab]}
+              </button>
+            ))}
+          </nav>
+        </>
       ) : null}
 
       {/* J3: one tap links two days into an outfit. Declining is equally fast. */}
@@ -384,9 +383,11 @@ export default function App() {
           onDismiss={() => setPendingLink(null)}
         >
           {entriesById.get(pendingLink.matchId) ? (
-            <div style={{ marginBottom: 16 }}>
-              <Photo photoId={entriesById.get(pendingLink.matchId)!.photo_id} alt="" />
-            </div>
+            <Photo
+              photoId={entriesById.get(pendingLink.matchId)!.photo_id}
+              alt=""
+              className="insight-photo"
+            />
           ) : null}
           <div className="stack">
             <button
@@ -476,8 +477,7 @@ export default function App() {
               <button
                 key={band.id}
                 type="button"
-                className="btn btn--ghost"
-                style={{ flex: 1 }}
+                className="btn btn--ghost btn--flex"
                 onClick={() => void setTempBand(pendingTemp.entryId, band.id)}
               >
                 {band.label}

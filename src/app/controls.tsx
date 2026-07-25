@@ -10,13 +10,14 @@ import { copy } from '../lib/copy'
  * at that moment is how a daily habit becomes a weekly one (J2).
  */
 
-const FELT_FACES: Record<FeltScore, string> = {
-  1: '◦',
-  2: '◌',
-  3: '○',
-  4: '◍',
-  5: '●',
-}
+/**
+ * Listed best-first on purpose.
+ *
+ * A scale that runs 1→5 left to right is a rating instrument, and it anchors
+ * on the bad end. Reading down from "really good" makes this feel like picking
+ * the word that fits the day, which is the only thing being asked (J8).
+ */
+const FELT_ORDER = [5, 4, 3, 2, 1] as const satisfies readonly FeltScore[]
 
 export function FeltScale({
   value,
@@ -27,17 +28,16 @@ export function FeltScale({
 }) {
   return (
     <div className="felt" role="group" aria-label={copy.tonight.prompt}>
-      {([1, 2, 3, 4, 5] as const).map((score) => (
+      {FELT_ORDER.map((score) => (
         <button
           key={score}
           type="button"
           className="felt-option"
           aria-pressed={value === score}
-          aria-label={copy.tonight.feltLabels[score]}
           onClick={() => onChange(score)}
         >
-          <span aria-hidden="true">{FELT_FACES[score]}</span>
-          <small>{copy.tonight.feltLabels[score]}</small>
+          <span className="marker" aria-hidden="true" />
+          {copy.tonight.feltLabels[score]}
         </button>
       ))}
     </div>

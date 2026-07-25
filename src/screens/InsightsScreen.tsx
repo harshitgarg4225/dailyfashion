@@ -67,11 +67,7 @@ export function InsightsScreen({
           const entry = card.subject.entryId ? entriesById.get(card.subject.entryId) : undefined
           return (
             <article key={card.id} className="card">
-              {entry ? (
-                <div style={{ marginBottom: 14 }}>
-                  <Photo photoId={entry.photo_id} alt="" className="insight-photo" />
-                </div>
-              ) : null}
+              {entry ? <Photo photoId={entry.photo_id} alt="" className="insight-photo" /> : null}
 
               <h2>{card.observation}</h2>
               <p className="evidence">{card.evidence}</p>

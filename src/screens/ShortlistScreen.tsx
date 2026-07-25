@@ -44,6 +44,7 @@ export function ShortlistScreen({
   return (
     <div className="screen">
       <div className="screen-head">
+        <span className="eyebrow">{copy.app.name}</span>
         <h1>{copy.shortlist.title}</h1>
       </div>
 

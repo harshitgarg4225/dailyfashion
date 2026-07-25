@@ -1,31 +1,68 @@
 /*
- * Dark by default, and quiet.
+ * Daily Fashion — visual language.
  *
- * This app gets opened half-dressed at 7am and exhausted at 11pm. It should
- * feel like a notebook, not a dashboard — no charts, no progress rings, no
- * celebration animations, nothing that performs enthusiasm at someone having a
- * hard week (J8, J9).
+ * The reference is a maison, not an app: ivory paper, ink, one restrained
+ * brown, hairline rules, and a great deal of air. Three rules govern
+ * everything below.
+ *
+ *  1. **Square.** Radius is 0. Rounded corners read as software; luxury
+ *     print, packaging and retail are square.
+ *
+ *  2. **Rules, not surfaces.** Hierarchy comes from 1px lines and white space
+ *     rather than filled cards and shadows. Nothing floats.
+ *
+ *  3. **Photographs are the only colour.** The palette is near-monochrome on
+ *     purpose, so the one saturated thing on any screen is the user's own
+ *     photograph, presented as an object with margin around it.
+ *
+ * The typeface strategy is dictated by the privacy constraint: `connect-src
+ * 'none'` forbids a font CDN, and shipping a webfont binary is weight on every
+ * cold launch. So the display face is a stack of the editorial serifs that
+ * already ship with the platforms this audience uses — Didot on Apple devices,
+ * Noto Serif on Android — costing zero bytes and zero requests.
+ *
+ * The camera stays black. That is not a theme decision: bright viewfinder
+ * chrome ruins the preview and misleads the eye about exposure.
  */
 
 :root {
-  --bg: #12100f;
-  --surface: #1c1a18;
-  --surface-high: #262320;
-  --line: #322e2a;
-  --text: #f2ede7;
-  --muted: #a49c93;
-  --faint: #6d655d;
-  --accent: #d9a441;
-  --accent-ink: #2a1f0c;
-  --danger: #c2685c;
+  /* Paper and ink. */
+  --paper: #f7f4ef;
+  --paper-warm: #efe9e0;
+  --ink: #1a1714;
+  --ink-soft: #4a423a;
+  --ink-muted: #857a6d;
+  --ink-faint: #b3a99b;
 
-  --radius: 14px;
-  --radius-lg: 20px;
+  /* The single accent. At most one use per screen. */
+  --brown: #4e3629;
+
+  --line: #ddd5c8;
+  --danger: #8c3b30;
+
+  --radius: 0px;
+
+  /* Spacing scale. Editorial layouts want more air than app layouts. */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+
+  --page-x: var(--s5);
+
+  --font-display: 'Didot', 'Bodoni 72', 'Hoefler Text', 'Noto Serif', Garamond,
+    'Times New Roman', serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI',
+    system-ui, sans-serif;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -37,17 +74,19 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: ui-rounded, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  font-size: 17px;
-  line-height: 1.45;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
 }
 
 #root {
-  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -61,23 +100,57 @@ button {
   padding: 0;
 }
 
+/* --- type -------------------------------------------------------------- */
+
 h1,
 h2,
 h3 {
   margin: 0;
-  font-weight: 620;
-  letter-spacing: -0.015em;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 1.18;
 }
 
 h1 {
-  font-size: 1.55rem;
+  font-size: 2rem;
 }
+
 h2 {
-  font-size: 1.2rem;
+  font-size: 1.35rem;
 }
 
 p {
-  margin: 0 0 0.85em;
+  margin: 0 0 0.9em;
+}
+
+/**
+ * The eyebrow: letterspaced uppercase at small size. This one treatment does
+ * most of the work of making the interface feel considered rather than
+ * assembled, and it is why almost nothing here needs a filled background.
+ */
+.eyebrow {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.note {
+  color: var(--ink-muted);
+  font-size: 0.87rem;
+}
+
+.empty {
+  color: var(--ink-muted);
+  text-align: center;
+  padding: var(--s8) var(--s5);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.5;
 }
 
 /* --- layout ------------------------------------------------------------ */
@@ -91,681 +164,41 @@ p {
 
 .screen {
   flex: 1;
-  padding: calc(var(--safe-top) + 20px) 20px 24px;
-  max-width: 640px;
+  /*
+   * The trailing space clears the sticky capture bar and tab row. Without it
+   * the last control on any screen sits underneath them and cannot be tapped.
+   */
+  padding: calc(var(--safe-top) + var(--s6)) var(--page-x) 132px;
+  max-width: 680px;
   width: 100%;
   margin: 0 auto;
-}
-
-.screen--flush {
-  padding: 0;
-  max-width: none;
 }
 
 .screen-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.screen-head .sub {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-/* --- tab bar ----------------------------------------------------------- */
-
-.tabs {
-  position: sticky;
-  bottom: 0;
-  display: flex;
-  gap: 4px;
-  padding: 8px 12px calc(var(--safe-bottom) + 8px);
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid var(--line);
-}
-
-.tab {
-  flex: 1;
-  padding: 9px 4px;
-  border-radius: var(--radius);
-  color: var(--faint);
-  font-size: 0.72rem;
-  font-weight: 560;
-  letter-spacing: 0.02em;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  transition: color 0.15s ease;
-}
-
-.tab[aria-current='page'] {
-  color: var(--text);
-}
-
-.tab-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-  opacity: 0;
-}
-
-.tab[aria-current='page'] .tab-dot {
-  opacity: 1;
-}
-
-/* --- buttons ----------------------------------------------------------- */
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 50px;
-  padding: 0 20px;
-  border-radius: var(--radius);
-  background: var(--surface-high);
-  color: var(--text);
-  font-weight: 560;
-  transition: transform 0.08s ease, background 0.15s ease;
-}
-
-.btn:active {
-  transform: scale(0.985);
-}
-
-.btn--primary {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-.btn--ghost {
-  background: transparent;
-  border: 1px solid var(--line);
-}
-
-.btn--quiet {
-  background: transparent;
-  color: var(--muted);
-  min-height: 44px;
-}
-
-.btn--danger {
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
-  color: var(--danger);
-}
-
-.btn--block {
-  display: flex;
-  width: 100%;
-}
-
-.btn:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.btn-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* --- camera ------------------------------------------------------------ */
-
-.camera {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #000;
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-.camera video,
-.camera .camera-frame {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.camera video.mirrored {
-  transform: scaleX(-1);
-}
-
-.camera-controls {
-  position: relative;
-  margin-top: auto;
-  padding: 24px 24px calc(var(--safe-bottom) + 28px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.65) 45%);
-}
-
-.shutter {
-  width: 74px;
-  height: 74px;
-  border-radius: 50%;
-  background: #fff;
-  border: 5px solid rgba(255, 255, 255, 0.35);
-  background-clip: padding-box;
-  flex: none;
-}
-
-.shutter:disabled {
-  opacity: 0.4;
-}
-
-.shutter:active {
-  transform: scale(0.94);
-}
-
-.camera-side {
-  width: 74px;
-  display: flex;
-  justify-content: center;
-}
-
-.camera-chip {
-  padding: 9px 14px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  font-size: 0.78rem;
-  color: #fff;
-  backdrop-filter: blur(6px);
-}
-
-.camera-chip[aria-pressed='true'] {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-color: transparent;
-}
-
-.camera-close {
-  position: absolute;
-  top: calc(var(--safe-top) + 14px);
-  left: 16px;
-  z-index: 2;
-  padding: 9px 16px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #fff;
-  font-size: 0.8rem;
-  backdrop-filter: blur(6px);
-}
-
-.camera-hint {
-  position: absolute;
-  top: calc(var(--safe-top) + 22px);
-  left: 0;
-  right: 0;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.9rem;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
-  padding: 0 24px;
-}
-
-.camera-countdown {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 5rem;
-  font-weight: 300;
-  color: #fff;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);
-}
-
-.camera-fallback {
-  position: relative;
-  margin: auto;
-  padding: 32px 24px;
-  text-align: center;
-  color: var(--muted);
-  max-width: 380px;
-}
-
-/* --- felt scale -------------------------------------------------------- */
-
-.felt {
-  display: flex;
-  gap: 8px;
-}
-
-.felt-option {
-  flex: 1;
-  aspect-ratio: 1;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  font-size: 1.35rem;
-  transition: background 0.12s ease, border-color 0.12s ease;
-}
-
-.felt-option small {
-  font-size: 0.6rem;
-  color: var(--faint);
-  letter-spacing: 0.01em;
-  text-align: center;
-  line-height: 1.15;
-  padding: 0 3px;
-}
-
-.felt-option[aria-pressed='true'] {
-  background: var(--accent);
-  border-color: transparent;
-  color: var(--accent-ink);
-}
-
-.felt-option[aria-pressed='true'] small {
-  color: var(--accent-ink);
-  opacity: 0.75;
-}
-
-/* --- chips ------------------------------------------------------------- */
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.chip {
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  font-size: 0.86rem;
-  color: var(--muted);
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.chip[aria-pressed='true'] {
-  background: var(--surface-high);
-  border-color: var(--faint);
-  color: var(--text);
-}
-
-/* --- cards ------------------------------------------------------------- */
-
-.card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 18px;
-  margin-bottom: 14px;
-}
-
-.card h2 {
-  margin-bottom: 8px;
-}
-
-.card .evidence {
-  color: var(--muted);
-  font-size: 0.92rem;
-}
-
-.card .question {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-  color: var(--text);
-  font-size: 0.95rem;
-}
-
-.sample {
-  display: inline-block;
-  margin-top: 10px;
-  font-size: 0.72rem;
-  color: var(--faint);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.note {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.empty {
-  color: var(--faint);
-  text-align: center;
-  padding: 48px 24px;
-}
-
-/*
- * Entry photos shown at full width (the evening reflection, insight cards).
- *
- * The height cap is load-bearing, not decorative: an uncapped portrait photo
- * pushes the felt scale off-screen and its own bounding box swallows the taps
- * meant for the controls underneath it.
- */
-.tonight-photo,
-.insight-photo {
-  display: block;
-  width: 100%;
-  max-height: 42vh;
-  object-fit: cover;
-  border-radius: var(--radius);
-  background: var(--surface-high);
-}
-
-.insight-photo {
-  max-height: 30vh;
-}
-
-/* --- photo grid -------------------------------------------------------- */
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.grid-cell {
-  position: relative;
-  aspect-ratio: 3 / 4;
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--surface);
-  display: block;
-}
-
-.grid-cell img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.grid-cell.blurred img {
-  filter: blur(14px);
-  transform: scale(1.1);
-}
-
-/*
- * J9: a day with no entry is whitespace. Not a dotted outline, not a grey
- * "missed" tile, nothing that reads as an accusation.
- */
-.grid-gap {
-  aspect-ratio: 3 / 4;
-}
-
-.grid-cell .felt-badge {
-  position: absolute;
-  left: 6px;
-  bottom: 6px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(4px);
-  font-size: 0.7rem;
-}
-
-.grid-cell .unrated-dot {
-  position: absolute;
-  right: 7px;
-  top: 7px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-/* --- photo strip (shortlist) ------------------------------------------- */
-
-.strip {
-  display: grid;
-  gap: 12px;
-}
-
-.strip-item {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 10px;
-  text-align: left;
-  width: 100%;
-}
-
-.strip-item img {
-  width: 76px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 10px;
-  flex: none;
-}
-
-.strip-meta {
-  min-width: 0;
-}
-
-.strip-meta strong {
-  display: block;
-  font-weight: 560;
-}
-
-/* --- sheet ------------------------------------------------------------- */
-
-.sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 40;
-  padding: 16px;
-}
-
-.sheet {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  width: 100%;
-  max-width: 480px;
-  max-height: 85vh;
-  overflow-y: auto;
-  padding-bottom: calc(20px + var(--safe-bottom));
-}
-
-.sheet h2 {
-  margin-bottom: 6px;
-}
-
-.sheet .sheet-body {
-  color: var(--muted);
-  font-size: 0.92rem;
-  margin-bottom: 16px;
-}
-
-/* --- forms ------------------------------------------------------------- */
-
-.field {
-  display: block;
-  margin-bottom: 16px;
-}
-
-.field-label {
-  display: block;
-  font-size: 0.82rem;
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-
-input[type='text'],
-input[type='time'],
-input[type='date'] {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 14px;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--text);
-  font: inherit;
-}
-
-input:focus-visible,
-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 15px 0;
+  margin-bottom: var(--s6);
+  padding-bottom: var(--s4);
   border-bottom: 1px solid var(--line);
 }
 
-.row:last-child {
-  border-bottom: none;
+.screen-head h1 {
+  margin-top: var(--s2);
 }
 
-.row-text {
-  min-width: 0;
-}
-
-.row-text small {
+.screen-head .sub {
   display: block;
-  color: var(--faint);
-  font-size: 0.78rem;
-  margin-top: 2px;
-}
-
-/* Switch */
-.switch {
-  width: 50px;
-  height: 30px;
-  border-radius: 999px;
-  background: var(--surface-high);
-  border: 1px solid var(--line);
-  position: relative;
-  flex: none;
-  transition: background 0.15s ease;
-}
-
-.switch[aria-checked='true'] {
-  background: var(--accent);
-  border-color: transparent;
-}
-
-.switch::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--text);
-  transition: transform 0.15s ease;
-}
-
-.switch[aria-checked='true']::after {
-  transform: translateX(20px);
-  background: var(--accent-ink);
-}
-
-/* --- onboarding -------------------------------------------------------- */
-
-.onboard {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: calc(var(--safe-top) + 40px) 24px calc(var(--safe-bottom) + 28px);
-  max-width: 480px;
-  margin: 0 auto;
-}
-
-.onboard-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.onboard h1 {
-  margin-bottom: 14px;
-}
-
-.onboard p {
-  color: var(--muted);
-}
-
-.onboard .proof {
-  color: var(--faint);
-  font-size: 0.85rem;
-}
-
-.dots {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.dots span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--line);
-}
-
-.dots span.on {
-  background: var(--accent);
-}
-
-/* --- misc -------------------------------------------------------------- */
-
-.toast {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(var(--safe-bottom) + 92px);
-  background: var(--surface-high);
-  border: 1px solid var(--line);
-  padding: 11px 18px;
-  border-radius: 999px;
-  font-size: 0.88rem;
-  z-index: 60;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  margin-top: var(--s3);
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
 }
 
 .stack {
   display: grid;
-  gap: 10px;
+  gap: var(--s3);
 }
 
 .spacer {
-  height: 18px;
+  height: var(--s5);
 }
 
 .visually-hidden {
@@ -777,9 +210,746 @@ button:focus-visible {
   white-space: nowrap;
 }
 
+/* --- navigation -------------------------------------------------------- */
+
+.tabs {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: stretch;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  padding-bottom: var(--safe-bottom);
+  z-index: 20;
+}
+
+.tab {
+  flex: 1;
+  padding: var(--s4) var(--s1);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border-top: 1px solid transparent;
+  margin-top: -1px;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.tab[aria-current='page'] {
+  color: var(--ink);
+  border-top-color: var(--ink);
+}
+
+/**
+ * Capture is the one action repeated every day, so it is not a peer of
+ * Settings in a row of tabs — it is a full-width bar directly above them.
+ */
+.capture-bar {
+  position: sticky;
+  bottom: 0;
+  display: block;
+  width: 100%;
+  padding: var(--s4);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  z-index: 21;
+  transition: opacity 0.2s ease;
+}
+
+.capture-bar:active {
+  opacity: 0.82;
+}
+
+/* --- buttons ----------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: 52px;
+  padding: 0 var(--s5);
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: opacity 0.2s ease;
+}
+
+.btn:active {
+  opacity: 0.7;
+}
+
+.btn--primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.btn--ghost {
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+
+.btn--quiet {
+  border-color: transparent;
+  color: var(--ink-muted);
+  min-height: 46px;
+  letter-spacing: 0.12em;
+}
+
+.btn--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn--block {
+  display: flex;
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.btn-row {
+  display: flex;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+
+/* --- camera (stays dark) ----------------------------------------------- */
+
+.camera {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.camera video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /*
+   * `contain` rather than `cover`: a cropped preview quietly loses the shoes
+   * and the hem, and those are exactly what a later observation depends on.
+   * Letterboxing is the honest choice — what you frame is what gets stored.
+   */
+  object-fit: contain;
+  background: #000;
+}
+
+.camera video.mirrored {
+  transform: scaleX(-1);
+}
+
+.camera-controls {
+  position: relative;
+  margin-top: auto;
+  padding: var(--s5) var(--s5) calc(var(--safe-bottom) + var(--s6));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s5);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 50%);
+}
+
+.shutter {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  outline: 1px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 5px;
+  background-clip: padding-box;
+  flex: none;
+  transition: opacity 0.2s ease;
+}
+
+.shutter:disabled {
+  opacity: 0.35;
+}
+
+.shutter:active:not(:disabled) {
+  opacity: 0.75;
+}
+
+.camera-side {
+  width: 72px;
+  display: flex;
+  justify-content: center;
+}
+
+.camera-chip,
+.camera-close {
+  padding: var(--s2) var(--s4);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+
+.camera-chip[aria-pressed='true'] {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+.camera-close {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--s4));
+  left: var(--s4);
+  z-index: 2;
+}
+
+.camera-hint {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--s5));
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0 96px;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+}
+
+.camera-countdown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 6rem;
+  color: #fff;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.7);
+}
+
+.camera-fallback {
+  position: relative;
+  margin: auto;
+  padding: var(--s6) var(--s5);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 360px;
+}
+
+.camera-fallback .btn {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+
+.camera-fallback .btn--primary {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+/* --- felt scale -------------------------------------------------------- */
+
+/*
+ * Choosing a word, not scoring yourself.
+ *
+ * The first version used graded circles, which reads as a rating widget — the
+ * exact framing J8 exists to avoid. This is a list of five phrases: the number
+ * never appears, and selection shows as a drawn rule rather than a filled box.
+ */
+.felt {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+
+.felt-option {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  width: 100%;
+  padding: var(--s4) var(--s1);
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  transition: color 0.2s ease;
+}
+
+.felt-option .marker {
+  width: 22px;
+  height: 1px;
+  background: var(--line);
+  flex: none;
+  transition: background 0.2s ease, width 0.25s ease;
+}
+
+.felt-option[aria-pressed='true'] {
+  color: var(--ink);
+}
+
+.felt-option[aria-pressed='true'] .marker {
+  background: var(--brown);
+  width: 40px;
+}
+
+/* --- chips ------------------------------------------------------------- */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.chip {
+  padding: var(--s3) var(--s4);
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--line);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* --- insights ---------------------------------------------------------- */
+
+/*
+ * Not a card. A page.
+ *
+ * An observation is the most important thing the product ever says, so it gets
+ * the treatment of an editorial spread — full measure, a hairline above, the
+ * claim in the display face, and the evidence set quietly beneath it.
+ */
+.card {
+  border-top: 1px solid var(--ink);
+  padding: var(--s5) 0 var(--s6);
+  margin-bottom: var(--s5);
+}
+
+.card h2 {
+  margin-bottom: var(--s4);
+}
+
+.card .evidence {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.card .question {
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.sample {
+  display: block;
+  margin-top: var(--s4);
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--ink-faint);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Settings groups use rules rather than filled panels. */
+.panel {
+  border-top: 1px solid var(--line);
+  margin-bottom: var(--s6);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding: var(--s4) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.row-text {
+  min-width: 0;
+  font-size: 0.95rem;
+}
+
+.row-text small {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  margin-top: var(--s1);
+}
+
+/* --- photographs ------------------------------------------------------- */
+
+.tonight-photo,
+.insight-photo {
+  display: block;
+  width: 100%;
+  max-height: 44vh;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--paper-warm);
+}
+
+.insight-photo {
+  max-height: 32vh;
+  margin-bottom: var(--s5);
+}
+
+.plate {
+  margin-bottom: var(--s5);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s3);
+}
+
+.grid-cell {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--paper-warm);
+  display: block;
+  border-radius: var(--radius);
+}
+
+.grid-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.25s ease;
+}
+
+.grid-cell:active img {
+  opacity: 0.85;
+}
+
+.grid-cell.blurred img {
+  filter: blur(16px);
+  transform: scale(1.12);
+}
+
+/* J9: a skipped day is whitespace. Never an outline, never a placeholder. */
+.grid-gap {
+  aspect-ratio: 3 / 4;
+}
+
+.grid-cell .felt-badge {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  padding: 3px 7px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.grid-cell .unrated-dot {
+  position: absolute;
+  right: var(--s2);
+  top: var(--s2);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brown);
+}
+
+/* --- shortlist --------------------------------------------------------- */
+
+.strip {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+
+.strip-item {
+  display: flex;
+  gap: var(--s4);
+  align-items: center;
+  padding: var(--s4) 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  width: 100%;
+  transition: opacity 0.2s ease;
+}
+
+.strip-item:active {
+  opacity: 0.7;
+}
+
+.strip-item img {
+  width: 72px;
+  height: 96px;
+  object-fit: cover;
+  flex: none;
+  background: var(--paper-warm);
+}
+
+.strip-meta {
+  min-width: 0;
+}
+
+.strip-meta strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin-bottom: var(--s1);
+}
+
+/* --- sheets ------------------------------------------------------------ */
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 23, 20, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 40;
+}
+
+.sheet {
+  background: var(--paper);
+  border-top: 1px solid var(--ink);
+  padding: var(--s6) var(--page-x) calc(var(--s6) + var(--safe-bottom));
+  width: 100%;
+  max-width: 680px;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.sheet h2 {
+  margin-bottom: var(--s3);
+}
+
+.sheet .sheet-body {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  margin-bottom: var(--s5);
+}
+
+/* --- forms ------------------------------------------------------------- */
+
+.field {
+  display: block;
+  margin-bottom: var(--s6);
+}
+
+.field-hint {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  margin: calc(var(--s4) * -1) 0 var(--s4);
+}
+
+.field-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: var(--s4);
+}
+
+input[type='text'],
+input[type='time'],
+input[type='date'] {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 var(--s3);
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 1px solid var(--brown);
+  outline-offset: 3px;
+}
+
+/* Switch, squared off. */
+.switch {
+  width: 46px;
+  height: 26px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--line);
+  position: relative;
+  flex: none;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.switch[aria-checked='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: var(--ink-faint);
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.switch[aria-checked='true']::after {
+  transform: translateX(20px);
+  background: var(--paper);
+}
+
+/* --- onboarding -------------------------------------------------------- */
+
+.onboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: calc(var(--safe-top) + var(--s8)) var(--page-x)
+    calc(var(--safe-bottom) + var(--s6));
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.onboard-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.onboard h1 {
+  font-size: 2.3rem;
+  margin-bottom: var(--s5);
+}
+
+.onboard p {
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.onboard .proof {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.wordmark {
+  text-align: center;
+  margin-bottom: var(--s7);
+}
+
+.wordmark .name {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  text-indent: 0.34em;
+}
+
+.dots {
+  display: flex;
+  gap: var(--s2);
+  margin-bottom: var(--s6);
+}
+
+.dots span {
+  height: 1px;
+  width: 28px;
+  background: var(--line);
+  transition: background 0.3s ease;
+}
+
+.dots span.on {
+  background: var(--ink);
+}
+
+/* --- toast ------------------------------------------------------------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--safe-bottom) + 112px);
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--s3) var(--s5);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  z-index: 60;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.note--centred {
+  text-align: center;
+  margin-top: var(--s4);
+}
+
+.settings-footer {
+  text-align: center;
+  margin-top: var(--s7);
+}
+
+input[type='time'] {
+  width: auto;
+  min-width: 128px;
+}
+
+.btn--flex {
+  flex: 1;
 }

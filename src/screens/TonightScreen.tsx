@@ -34,6 +34,7 @@ export function TonightScreen({
     return (
       <div className="screen">
         <div className="screen-head">
+          <span className="eyebrow">{copy.app.name}</span>
           <h1>{copy.tonight.title}</h1>
         </div>
         <p className="empty">{copy.tonight.nothingToRate}</p>
@@ -49,13 +50,13 @@ export function TonightScreen({
   return (
     <div className="screen">
       <div className="screen-head">
+        <span className="eyebrow">{mediumLabel(entry.date)}</span>
         <h1>{copy.tonight.title}</h1>
-        <span className="sub">{mediumLabel(entry.date)}</span>
       </div>
 
       {showWelcomeBack ? <p className="note">{copy.tonight.welcomeBack}</p> : null}
 
-      <div className="card" style={{ padding: 10 }}>
+      <div className="plate">
         <Photo
           photoId={entry.photo_id}
           alt={`What you wore on ${mediumLabel(entry.date)}`}
@@ -69,9 +70,8 @@ export function TonightScreen({
       </div>
 
       <div className="field">
-        <span className="field-label">
-          {copy.tonight.chipsPrompt} <span className="note">{copy.tonight.chipsHint}</span>
-        </span>
+        <span className="field-label">{copy.tonight.chipsPrompt}</span>
+        <span className="field-hint">{copy.tonight.chipsHint}</span>
         <ChipRow selected={chips} onToggle={toggle} />
       </div>
 

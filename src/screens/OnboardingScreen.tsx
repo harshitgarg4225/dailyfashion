@@ -124,6 +124,10 @@ export function OnboardingScreen({ onDone }: { onDone: (seeds: SeedPhoto[]) => v
 
   return (
     <div className="onboard">
+      <div className="wordmark">
+        <span className="name">{copy.app.name}</span>
+      </div>
+
       <div className="onboard-body">
         <div className="dots">
           {steps.map((s, i) => (

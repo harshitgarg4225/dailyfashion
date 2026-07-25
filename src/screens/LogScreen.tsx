@@ -59,6 +59,7 @@ export function LogScreen({
   return (
     <div className="screen">
       <div className="screen-head">
+        <span className="eyebrow">{copy.app.name}</span>
         <h1>{copy.log.title}</h1>
         <span className="sub">{copy.log.entryCount(entries.length)}</span>
       </div>
@@ -98,7 +99,7 @@ export function LogScreen({
           </button>
 
           {ratedCount < entries.length ? (
-            <p className="note" style={{ marginTop: 14, textAlign: 'center' }}>
+            <p className="note note--centred">
               {entries.length - ratedCount} waiting for a reflection.
             </p>
           ) : null}
