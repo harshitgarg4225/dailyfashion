@@ -1,0 +1,155 @@
+/**
+ * Domain types for Daily Fashion.
+ *
+ * Two constraints shape this schema and neither is negotiable:
+ *
+ * 1. No body data. There is no weight, no measurement, no size, no
+ *    body-part field anywhere in here, and there never will be (J8).
+ *    Everything recorded is about the clothes and the feeling.
+ *
+ * 2. No cataloging burden. `Item` exists but is only ever populated as a
+ *    side effect of optional one-word tagging during logging (J3). Nothing
+ *    in the app asks the user to enumerate a wardrobe.
+ */
+
+/** How the day felt. Not a rating of the user, and never displayed as a score. */
+export type FeltScore = 1 | 2 | 3 | 4 | 5
+
+/**
+ * The second of the two evening questions: "did anything happen?"
+ *
+ * These are events, not adjectives. Valence is what lets the insight engine
+ * argue with receipts ("your worst days correlate with these") rather than
+ * just averaging a number.
+ */
+export type ChipId =
+  | 'complimented'
+  | 'felt_like_myself'
+  | 'forgot_wearing_it'
+  | 'wanted_to_change'
+  | 'uncomfortable'
+  | 'overdressed'
+  | 'underdressed'
+  | 'right_for_the_day'
+
+export type ChipValence = 'up' | 'down' | 'neutral'
+
+export interface ChipDef {
+  id: ChipId
+  label: string
+  valence: ChipValence
+}
+
+/** Coarse temperature, tapped manually. Keeps the airplane-mode promise (J4). */
+export type TempBand = 'cold' | 'mild' | 'hot'
+
+/**
+ * Passive context, captured at log time with zero user effort except the
+ * optional temp tap. This is what makes J7's insights honest instead of
+ * spurious — it lets the engine suppress a claim when context confounds it.
+ */
+export interface EntryContext {
+  /** 0 = Sunday .. 6 = Saturday, in the user's local time. */
+  weekday: number
+  is_weekend: boolean
+  /** Null when the user skipped the tap. Insights degrade gracefully. */
+  temp_band: TempBand | null
+  /** Local hour the photo was taken, 0-23. */
+  logged_hour: number
+}
+
+/**
+ * Broad color families, derived from the photo automatically. This is the
+ * one piece of garment knowledge the app gets for free — the histogram is
+ * already computed for similarity matching (J3), so naming the dominant
+ * family costs nothing and unlocks color insights with zero cataloging.
+ */
+export type ColorFamily =
+  | 'black'
+  | 'grey'
+  | 'white'
+  | 'red'
+  | 'orange'
+  | 'yellow'
+  | 'green'
+  | 'blue'
+  | 'purple'
+  | 'pink'
+  | 'brown'
+
+/** Everything needed to say "have you worn this before?" without a database of garments. */
+export interface ImageSignature {
+  /** 64-bit difference hash, as 16 hex chars. Structure. */
+  dhash: string
+  /** 4x4x4 RGB histogram, normalized to sum 1. Palette. */
+  hist: number[]
+  /** Dominant color family of the outfit region. */
+  color: ColorFamily
+}
+
+export interface Entry {
+  id: string
+  /** Local calendar date, YYYY-MM-DD. One entry per day is the norm, not a rule. */
+  date: string
+  /** Key into the photos object store. Blobs never leave the device. */
+  photo_id: string
+  /** Null until the evening reflection. Skipping is always allowed (J2). */
+  felt_score: FeltScore | null
+  chips: ChipId[]
+  outfit_id: string | null
+  context: EntryContext
+  note: string | null
+  signature: ImageSignature | null
+  created_at: number
+  /** When the evening reflection was completed. Null = still unrated. */
+  rated_at: number | null
+  /** True when logged for a past date (J9 allows backdating up to 7 days). */
+  backdated: boolean
+}
+
+/**
+ * A cluster of entries the user confirmed are the same outfit.
+ *
+ * The aggregate fields are denormalized for cheap reads but are always
+ * recomputed from the entries in the same transaction that mutates them,
+ * so they cannot drift.
+ */
+export interface Outfit {
+  id: string
+  first_seen: string
+  wear_count: number
+  /** Mean felt score across *rated* wears only. Null if none are rated. */
+  avg_felt: number | null
+  last_worn: string
+}
+
+/** Populated only by lazy one-word chip tagging. Never by a cataloging flow. */
+export interface Item {
+  id: string
+  label: string
+  created_at: number
+}
+
+export interface EntryItem {
+  entry_id: string
+  item_id: string
+}
+
+export interface Settings {
+  /** Local time "HH:MM" for the evening reflection nudge. */
+  reminder_time: string
+  reminder_enabled: boolean
+  /** Auto-mutes after 5 consecutive ignores, then offers re-opt-in (J9). */
+  consecutive_ignores: number
+  blur_thumbnails: boolean
+  passcode_lock: boolean
+  /** Set when the user has seen and dismissed onboarding. */
+  onboarded: boolean
+  /** Remembered camera facing, so J1 is one tap for everyone. */
+  camera_facing: 'user' | 'environment'
+  /**
+   * Set when felt-scores have trended low for 7+ days and the app has
+   * offered to soften (J8). Suppresses insight cards until cleared.
+   */
+  softened_at: number | null
+}

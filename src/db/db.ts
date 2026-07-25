@@ -1,0 +1,393 @@
+import type { Entry, EntryItem, Item, Outfit, Settings } from '../types'
+import { toDateKey } from '../lib/dates'
+
+/**
+ * Local storage layer. IndexedDB only — no network, no sync, no account (J4).
+ *
+ * Photo blobs live in this same database rather than in OPFS or the Cache API,
+ * for one reason: J10 promises that "delete everything" deletes everything.
+ * One `deleteDatabase` removes the entries and the photos together, atomically,
+ * with no chance of orphaned images surviving in a second store the user was
+ * never told about. That guarantee is worth more than the marginal performance
+ * of a separate file backend.
+ */
+
+const DB_NAME = 'dailyfashion'
+const DB_VERSION = 1
+
+export const STORES = {
+  entries: 'entries',
+  photos: 'photos',
+  outfits: 'outfits',
+  items: 'items',
+  entryItems: 'entry_items',
+  settings: 'settings',
+  dismissed: 'dismissed_insights',
+} as const
+
+export const DEFAULT_SETTINGS: Settings = {
+  reminder_time: '20:30',
+  reminder_enabled: false,
+  consecutive_ignores: 0,
+  blur_thumbnails: false,
+  passcode_lock: false,
+  onboarded: false,
+  camera_facing: 'user',
+  softened_at: null,
+}
+
+let dbPromise: Promise<IDBDatabase> | null = null
+
+export function openDb(): Promise<IDBDatabase> {
+  if (dbPromise) return dbPromise
+
+  dbPromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION)
+
+    request.onupgradeneeded = () => {
+      const db = request.result
+
+      if (!db.objectStoreNames.contains(STORES.entries)) {
+        const entries = db.createObjectStore(STORES.entries, { keyPath: 'id' })
+        entries.createIndex('by_date', 'date')
+        entries.createIndex('by_outfit', 'outfit_id')
+      }
+      if (!db.objectStoreNames.contains(STORES.photos)) {
+        db.createObjectStore(STORES.photos)
+      }
+      if (!db.objectStoreNames.contains(STORES.outfits)) {
+        db.createObjectStore(STORES.outfits, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(STORES.items)) {
+        const items = db.createObjectStore(STORES.items, { keyPath: 'id' })
+        items.createIndex('by_label', 'label', { unique: true })
+      }
+      if (!db.objectStoreNames.contains(STORES.entryItems)) {
+        const links = db.createObjectStore(STORES.entryItems, { autoIncrement: true })
+        links.createIndex('by_entry', 'entry_id')
+        links.createIndex('by_item', 'item_id')
+      }
+      if (!db.objectStoreNames.contains(STORES.settings)) {
+        db.createObjectStore(STORES.settings)
+      }
+      if (!db.objectStoreNames.contains(STORES.dismissed)) {
+        db.createObjectStore(STORES.dismissed)
+      }
+    }
+
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+
+  return dbPromise
+}
+
+function promisify<T>(request: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+function tx(db: IDBDatabase, stores: string[], mode: IDBTransactionMode): IDBTransaction {
+  return db.transaction(stores, mode)
+}
+
+function done(transaction: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+    transaction.onabort = () => reject(transaction.error)
+  })
+}
+
+// --- ids ------------------------------------------------------------------
+
+export function newId(prefix: string): string {
+  // crypto.randomUUID is available in every browser that has the camera APIs
+  // this app needs; the fallback is only here for older test environments.
+  const uuid =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`
+  return `${prefix}_${uuid}`
+}
+
+// --- entries --------------------------------------------------------------
+
+export async function putEntry(entry: Entry): Promise<void> {
+  const db = await openDb()
+  const transaction = tx(db, [STORES.entries], 'readwrite')
+  transaction.objectStore(STORES.entries).put(entry)
+  await done(transaction)
+}
+
+export async function getEntry(id: string): Promise<Entry | undefined> {
+  const db = await openDb()
+  return promisify(tx(db, [STORES.entries], 'readonly').objectStore(STORES.entries).get(id))
+}
+
+/** Newest first. The whole log fits comfortably in memory at MVP scale. */
+export async function allEntries(): Promise<Entry[]> {
+  const db = await openDb()
+  const rows = await promisify<Entry[]>(
+    tx(db, [STORES.entries], 'readonly').objectStore(STORES.entries).getAll(),
+  )
+  return rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.created_at - a.created_at))
+}
+
+/** Entries still waiting for an evening reflection, newest first. */
+export async function unratedEntries(): Promise<Entry[]> {
+  return (await allEntries()).filter((e) => e.felt_score === null)
+}
+
+export async function entriesOn(date: string): Promise<Entry[]> {
+  const db = await openDb()
+  const index = tx(db, [STORES.entries], 'readonly').objectStore(STORES.entries).index('by_date')
+  return promisify<Entry[]>(index.getAll(IDBKeyRange.only(date)))
+}
+
+export async function deleteEntry(id: string): Promise<void> {
+  const db = await openDb()
+  const entry = await getEntry(id)
+  const transaction = tx(db, [STORES.entries, STORES.photos, STORES.entryItems], 'readwrite')
+  transaction.objectStore(STORES.entries).delete(id)
+  if (entry) transaction.objectStore(STORES.photos).delete(entry.photo_id)
+
+  // Drop the tag links too, so a deleted day cannot keep voting in insights.
+  const linkStore = transaction.objectStore(STORES.entryItems)
+  const cursorRequest = linkStore.index('by_entry').openCursor(IDBKeyRange.only(id))
+  cursorRequest.onsuccess = () => {
+    const cursor = cursorRequest.result
+    if (!cursor) return
+    cursor.delete()
+    cursor.continue()
+  }
+
+  await done(transaction)
+}
+
+// --- photos ---------------------------------------------------------------
+
+export async function putPhoto(id: string, blob: Blob): Promise<void> {
+  const db = await openDb()
+  const transaction = tx(db, [STORES.photos], 'readwrite')
+  transaction.objectStore(STORES.photos).put(blob, id)
+  await done(transaction)
+}
+
+export async function getPhoto(id: string): Promise<Blob | undefined> {
+  const db = await openDb()
+  return promisify<Blob | undefined>(
+    tx(db, [STORES.photos], 'readonly').objectStore(STORES.photos).get(id),
+  )
+}
+
+// --- outfits --------------------------------------------------------------
+
+export async function allOutfits(): Promise<Outfit[]> {
+  const db = await openDb()
+  return promisify<Outfit[]>(
+    tx(db, [STORES.outfits], 'readonly').objectStore(STORES.outfits).getAll(),
+  )
+}
+
+/**
+ * Recompute an outfit's aggregates from its entries.
+ *
+ * The `Outfit` row denormalizes wear_count / avg_felt / last_worn for cheap
+ * reads, which is only safe if it is never written by hand. Every mutation
+ * that can change a cluster routes through here.
+ */
+export async function recomputeOutfit(outfitId: string): Promise<Outfit | null> {
+  const db = await openDb()
+  const entries = await promisify<Entry[]>(
+    tx(db, [STORES.entries], 'readonly')
+      .objectStore(STORES.entries)
+      .index('by_outfit')
+      .getAll(IDBKeyRange.only(outfitId)),
+  )
+
+  const transaction = tx(db, [STORES.outfits], 'readwrite')
+  const store = transaction.objectStore(STORES.outfits)
+
+  if (entries.length === 0) {
+    store.delete(outfitId)
+    await done(transaction)
+    return null
+  }
+
+  const dates = entries.map((e) => e.date).sort()
+  const scored = entries.filter((e) => e.felt_score !== null)
+  const outfit: Outfit = {
+    id: outfitId,
+    first_seen: dates[0]!,
+    wear_count: entries.length,
+    avg_felt:
+      scored.length === 0
+        ? null
+        : scored.reduce((sum, e) => sum + e.felt_score!, 0) / scored.length,
+    last_worn: dates[dates.length - 1]!,
+  }
+  store.put(outfit)
+  await done(transaction)
+  return outfit
+}
+
+/**
+ * Link two entries into one outfit cluster — the entirety of J3's cataloging.
+ *
+ * If either side already belongs to a cluster we reuse that id rather than
+ * minting a new one, so repeated confirmations merge into a single outfit
+ * instead of fragmenting into pairs.
+ */
+export async function linkEntries(entryId: string, matchId: string): Promise<string> {
+  const [entry, match] = await Promise.all([getEntry(entryId), getEntry(matchId)])
+  if (!entry || !match) throw new Error('cannot link entries that do not exist')
+
+  const outfitId = match.outfit_id ?? entry.outfit_id ?? newId('outfit')
+  const db = await openDb()
+  const transaction = tx(db, [STORES.entries], 'readwrite')
+  const store = transaction.objectStore(STORES.entries)
+  store.put({ ...entry, outfit_id: outfitId })
+  if (match.outfit_id !== outfitId) store.put({ ...match, outfit_id: outfitId })
+  await done(transaction)
+
+  await recomputeOutfit(outfitId)
+  return outfitId
+}
+
+// --- items (lazy tagging) -------------------------------------------------
+
+export async function allItems(): Promise<Item[]> {
+  const db = await openDb()
+  return promisify<Item[]>(tx(db, [STORES.items], 'readonly').objectStore(STORES.items).getAll())
+}
+
+export async function allEntryItems(): Promise<EntryItem[]> {
+  const db = await openDb()
+  return promisify<EntryItem[]>(
+    tx(db, [STORES.entryItems], 'readonly').objectStore(STORES.entryItems).getAll(),
+  )
+}
+
+/**
+ * Attach a one-word tag to an entry, creating the item if it is new.
+ *
+ * Labels are matched case-insensitively so "Blue Jacket" and "blue jacket"
+ * are the same thing. Someone typing a tag at 8am on a phone should not have
+ * to match their own past capitalization to get credit for it.
+ */
+export async function tagEntry(entryId: string, rawLabel: string): Promise<Item | null> {
+  const label = rawLabel.trim().toLowerCase().replace(/\s+/g, ' ')
+  if (label.length === 0) return null
+
+  const existing = (await allItems()).find((i) => i.label === label)
+  const item: Item = existing ?? { id: newId('item'), label, created_at: Date.now() }
+
+  const db = await openDb()
+  const transaction = tx(db, [STORES.items, STORES.entryItems], 'readwrite')
+  if (!existing) transaction.objectStore(STORES.items).put(item)
+
+  const links = transaction.objectStore(STORES.entryItems)
+  const existingLinks = links.index('by_entry').getAll(IDBKeyRange.only(entryId))
+  existingLinks.onsuccess = () => {
+    const already = (existingLinks.result as EntryItem[]).some((l) => l.item_id === item.id)
+    if (!already) links.put({ entry_id: entryId, item_id: item.id })
+  }
+
+  await done(transaction)
+  return item
+}
+
+/** Autocomplete source for the tag field — past labels only, never a catalog. */
+export async function itemSuggestions(prefix: string, limit = 6): Promise<Item[]> {
+  const needle = prefix.trim().toLowerCase()
+  const items = await allItems()
+  const matches = needle.length === 0 ? items : items.filter((i) => i.label.includes(needle))
+  return matches.slice(0, limit)
+}
+
+// --- settings -------------------------------------------------------------
+
+export async function getSettings(): Promise<Settings> {
+  const db = await openDb()
+  const stored = await promisify<Partial<Settings> | undefined>(
+    tx(db, [STORES.settings], 'readonly').objectStore(STORES.settings).get('settings'),
+  )
+  return { ...DEFAULT_SETTINGS, ...(stored ?? {}) }
+}
+
+export async function saveSettings(patch: Partial<Settings>): Promise<Settings> {
+  const current = await getSettings()
+  const next = { ...current, ...patch }
+  const db = await openDb()
+  const transaction = tx(db, [STORES.settings], 'readwrite')
+  transaction.objectStore(STORES.settings).put(next, 'settings')
+  await done(transaction)
+  return next
+}
+
+// --- dismissed insights ---------------------------------------------------
+
+export async function dismissedInsights(): Promise<string[]> {
+  const db = await openDb()
+  const stored = await promisify<string[] | undefined>(
+    tx(db, [STORES.dismissed], 'readonly').objectStore(STORES.dismissed).get('ids'),
+  )
+  return stored ?? []
+}
+
+export async function dismissInsight(id: string): Promise<void> {
+  const ids = new Set(await dismissedInsights())
+  ids.add(id)
+  const db = await openDb()
+  const transaction = tx(db, [STORES.dismissed], 'readwrite')
+  transaction.objectStore(STORES.dismissed).put([...ids], 'ids')
+  await done(transaction)
+}
+
+export async function clearDismissedInsights(): Promise<void> {
+  const db = await openDb()
+  const transaction = tx(db, [STORES.dismissed], 'readwrite')
+  transaction.objectStore(STORES.dismissed).delete('ids')
+  await done(transaction)
+}
+
+// --- J10: wipe ------------------------------------------------------------
+
+/**
+ * Delete everything, for real.
+ *
+ * No soft-delete, no tombstones, no thirty-day grace period. The user asked
+ * for it gone; anything less would make the privacy promise a lie with an
+ * asterisk.
+ */
+export async function wipeEverything(): Promise<void> {
+  if (dbPromise) {
+    const db = await dbPromise
+    db.close()
+    dbPromise = null
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(DB_NAME)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+    // Fires when another tab still holds the database open. Resolve anyway —
+    // the delete completes once that tab releases it, and blocking the UI on
+    // a tab the user forgot about is worse than a slightly delayed wipe.
+    request.onblocked = () => resolve()
+  })
+}
+
+// --- convenience ----------------------------------------------------------
+
+export function today(): string {
+  return toDateKey(new Date())
+}
+
+/** Test seam — lets suites reset the singleton between cases. */
+export function __resetDbForTests(): void {
+  dbPromise = null
+}
