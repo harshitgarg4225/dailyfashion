@@ -310,6 +310,22 @@ export async function itemSuggestions(prefix: string, limit = 6): Promise<Item[]
   return matches.slice(0, limit)
 }
 
+/**
+ * Copies an existing photo blob under a fresh id.
+ *
+ * Used by J6's "wearing this again", which must be one tap. Re-photographing
+ * would be two taps and a camera launch; pointing two entries at one blob
+ * would mean deleting either day destroys the other's image. Copying costs a
+ * few hundred kilobytes and keeps every entry independently deletable.
+ */
+export async function clonePhoto(sourceId: string): Promise<string | null> {
+  const blob = await getPhoto(sourceId)
+  if (!blob) return null
+  const id = newId('photo')
+  await putPhoto(id, blob)
+  return id
+}
+
 // --- settings -------------------------------------------------------------
 
 export async function getSettings(): Promise<Settings> {

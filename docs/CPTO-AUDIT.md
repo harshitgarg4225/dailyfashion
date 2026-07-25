@@ -51,12 +51,12 @@ Three findings dominate everything below.
 | F2 | `consecutive_ignores` is written to the schema but never incremented, so J9's "auto-mute after 5 ignores" cannot fire. | P0 | DONE |
 | F3 | Temperature is only asked when the similarity matcher finds **no** match — the `else` branch. Every repeat-wear is logged with `temp_band: null`, which is exactly the population J7's confound suppression needs most. | P0 | DONE |
 | F4 | `ShortlistScreen` is passed `tempBand: null` hard-coded from `App.tsx`, so J6's weather matching never engages and the header never earns its "days like today" claim. | P0 | DONE |
-| F5 | "Add a past day" opens the camera with today's date. J9 promises backdating up to 7 days; there is no date picker. | P1 | TODO |
-| F6 | J6's "wearing this again" sets state and opens the camera but never links the new entry to the chosen outfit. Repeat-wear is not one tap; it is a normal capture. | P1 | TODO |
+| F5 | "Add a past day" opens the camera with today's date. J9 promises backdating up to 7 days; there is no date picker. | P1 | DONE |
+| F6 | J6's "wearing this again" sets state and opens the camera but never links the new entry to the chosen outfit. Repeat-wear is not one tap; it is a normal capture. | P1 | DONE |
 | F7 | `recomputeOutfit` runs on link but not after a rating changes, so `avg_felt` and `wear_count` on the `outfit` row drift from the entries. Nothing reads them yet, which is the only reason this is not already a bug. | P1 | TODO |
 | F8 | Biometric/passcode lock exists in `Settings` and in copy, with no UI row and no enforcement. J4 lists it as a feature. | P1 | TODO |
 | F9 | `note` exists on `Entry` with no way to write one. Either build it or drop it from the schema. | P2 | TODO |
-| F10 | `deleteEntry` is implemented and unreachable. A single bad photo cannot be removed without wiping everything. | P1 | TODO |
+| F10 | `deleteEntry` is implemented and unreachable. A single bad photo cannot be removed without wiping everything. | P1 | DONE |
 | F11 | Dismissed insights are dismissed forever. A card about a jacket you have since worn twenty more times should be allowed to return with new evidence. | P2 | TODO |
 | F12 | The "welcome back" gap check reads `entries[1]`, which is the second-newest entry, not the gap before the current one. It will fire at the wrong times. | P1 | DONE |
 | F13 | Export has no progress indication. 200 photos is several seconds of frozen button. | P2 | TODO |
@@ -73,7 +73,7 @@ Three findings dominate everything below.
 | U5 | Onboarding's buttons are both labelled "Next" with no sense of length or position beyond three dots. | P2 | TODO |
 | U6 | The grid caps consecutive gap cells at 21, which is right, but a returning user still scrolls three weeks of blank squares before reaching their history. | P2 | TODO |
 | U7 | No haptic feedback on shutter or felt selection. On a phone this is most of what "responsive" means. | P2 | TODO |
-| U8 | Insight cards render all at once in a scroll. The spec says one at a time, which is a materially different experience — a stack of five observations is a dashboard. | P1 | TODO |
+| U8 | Insight cards render all at once in a scroll. The spec says one at a time, which is a materially different experience — a stack of five observations is a dashboard. | P1 | DONE |
 | U9 | Nothing explains what happens after the felt tap. A one-line "this is what builds your patterns" would connect the daily chore to the payoff. | P2 | TODO |
 
 ## 3. Design — the Louis Vuitton direction
@@ -99,7 +99,7 @@ confidence in white space**. Concretely, what changes:
 |---|---|---|---|
 | P1a | The killer insight ("you rate it highly and never wear it") needs 5 wears of one outfit, which needs the similarity matcher to cluster reliably. If clustering under-fires, the best card never appears. There is no instrumentation to know whether it fires. | P0 | TODO |
 | P2a | Item-level findings ("your worst days correlate with those shoes") require lazy tags, which are optional and easy to skip. Realistically a minority of users ever reach n≥5 on an item. The colour card is the honest early substitute and should be foregrounded. | P1 | TODO |
-| P3a | Nothing shows the user their own trajectory toward the first insight beyond a bare count. "You are 6 days from your first observation" is the retention hook of the first fortnight. | P1 | TODO |
+| P3a | Nothing shows the user their own trajectory toward the first insight beyond a bare count. "You are 6 days from your first observation" is the retention hook of the first fortnight. | P1 | DONE |
 | P4a | No insight explains *itself*. A "how was this worked out?" disclosure would convert scepticism into trust, which is the whole product. | P2 | TODO |
 
 ## 5. Security & privacy
@@ -129,7 +129,7 @@ confidence in white space**. Concretely, what changes:
 | # | Finding | Sev | Status |
 |---|---|---|---|
 | M1 | iOS PWAs cannot use notification actions, so J2's two-tap lock-screen rating degrades to tap-through. Documented in `sw.js`, but the user is never told, and iOS is the platform this audience is on. | P1 | TODO |
-| M2 | No "Add to Home Screen" guidance. On iOS there is no install prompt, so without instructions most users stay in a Safari tab — where storage eviction is far more aggressive. This compounds C2 directly. | P0 | TODO |
+| M2 | No "Add to Home Screen" guidance. On iOS there is no install prompt, so without instructions most users stay in a Safari tab — where storage eviction is far more aggressive. This compounds C2 directly. | P0 | DONE |
 | M3 | No orientation handling on the camera; a landscape capture is stored rotated. | P1 | TODO |
 | M4 | No `apple-touch-startup-image`, so the installed app shows a white flash on cold launch. | P2 | TODO |
 | M5 | Tab bar does not account for landscape safe areas. | P2 | TODO |
@@ -149,6 +149,8 @@ sat directly on the core loop.
 | B3 | The evening reflection had no CSS for its photo. The image rendered at natural size and its bounding box covered the felt scale, making the screen impossible to complete. | P0 | DONE |
 | B4 | `frame-ancestors` was set in the meta CSP, where browsers ignore it. Now header-only. | P2 | DONE |
 | B5 | The camera preview used `object-fit: cover`, cropping the frame — losing the shoes and hem that later observations depend on. Now `contain`. | P1 | DONE |
+| B6 | "Add a past day" only rendered once the log was non-empty, locking backdating away from the exact person it helps most — someone on day one entering the days they remember. | P1 | DONE |
+| B7 | The insight gate counts evenings answered, but the copy said "days logged". Someone with a week of photos and no reflections read "0 of 14" as a broken app. | P2 | DONE |
 
 ## Build order
 
@@ -161,9 +163,10 @@ without durable storage the whole premise leaks. Plus the honesty fixes.
 **Phase 2 — the maison** (D1–D7) — **shipped**
 The full design language, applied across every screen.
 
-**Phase 3 — retention** (U8, P3a, F5, F6, F10, U2)
+**Phase 3 — retention** (U8, P3a, F5, F6, F10) — **shipped**
 One-card-at-a-time insights, progress toward the first observation, backdating,
-one-tap repeat wear, undo.
+one-tap repeat wear, entry removal. U2 (undo) remains: re-rating is possible by
+reopening a day from the grid, but there is no immediate undo after a save.
 
 **Phase 4 — durability at scale** (C1, C3, C4, C5, F14, S1, M2, M3)
 Workers, windowing, migrations, import, encryption, install guidance.

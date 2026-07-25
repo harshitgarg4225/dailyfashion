@@ -20,11 +20,14 @@ export function TonightScreen({
   entry,
   onSave,
   onSkip,
+  onRemove,
   showWelcomeBack,
 }: {
   entry: Entry | null
   onSave: (felt: FeltScore, chips: ChipId[]) => void
   onSkip: () => void
+  /** Only offered when opening an existing day, not on the evening prompt. */
+  onRemove?: (() => void) | undefined
   showWelcomeBack: boolean
 }) {
   const [felt, setFelt] = useState<FeltScore | null>(entry?.felt_score ?? null)
@@ -87,6 +90,13 @@ export function TonightScreen({
         <button type="button" className="btn btn--quiet btn--block" onClick={onSkip}>
           {copy.tonight.skip}
         </button>
+
+        {/* F10: one bad photo should not require wiping the whole log. */}
+        {onRemove ? (
+          <button type="button" className="btn btn--quiet btn--block" onClick={onRemove}>
+            {copy.tonight.remove}
+          </button>
+        ) : null}
       </div>
     </div>
   )

@@ -12,14 +12,17 @@ import { OnboardingScreen, type SeedPhoto } from './screens/OnboardingScreen'
 import { CaptureFollowUp, type FollowUpResult } from './screens/CaptureFollowUp'
 import { copy } from './lib/copy'
 import { captureContext, launchIntent } from './lib/context'
-import { daysBetween, toDateKey, type DateKey } from './lib/dates'
+import { addDays, BACKDATE_LIMIT_DAYS, daysBetween, mediumLabel, toDateKey, type DateKey } from './lib/dates'
 import { bestMatch, SIMILARITY_WINDOW } from './lib/signature'
 import { shouldOfferSoftening } from './lib/insights'
 import { SHORTLIST_MIN_ENTRIES } from './lib/shortlist'
 import {
+  clonePhoto,
+  deleteEntry,
   dismissInsight,
   linkEntries,
   newId,
+  recomputeOutfit,
   putEntry,
   putPhoto,
   saveSettings,
@@ -72,6 +75,11 @@ export default function App() {
    * deciding what to wear has not necessarily photographed anything yet.
    */
   const [tappedTemp, setTappedTemp] = useState<TempBand | null>(null)
+  /** Set when the user is adding a day in the past (J9's backdating). */
+  const [pendingDate, setPendingDate] = useState<DateKey | null>(null)
+  const [datePicker, setDatePicker] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState<Entry | null>(null)
+  const [installNudgeDismissed, setInstallNudgeDismissed] = useState(false)
 
   const today = toDateKey(new Date())
 
@@ -241,22 +249,75 @@ export default function App() {
 
   const onCaptured = useCallback(
     async (blob: Blob, signature: ImageSignature) => {
-      await saveEntry(blob, signature)
-      await updateSettings({})
+      await saveEntry(blob, signature, pendingDate ? { date: pendingDate } : {})
+      setPendingDate(null)
       flash(copy.camera.saved)
       setScreen('log')
     },
-    [flash, saveEntry, updateSettings],
+    [flash, pendingDate, saveEntry],
   )
 
   const onPickFile = useCallback(
     async (file: File) => {
       const prepared = await preparePhoto(file)
-      await saveEntry(prepared.blob, prepared.signature)
+      await saveEntry(prepared.blob, prepared.signature, pendingDate ? { date: pendingDate } : {})
+      setPendingDate(null)
       flash(copy.camera.saved)
       setScreen('log')
     },
-    [flash, saveEntry],
+    [flash, pendingDate, saveEntry],
+  )
+
+  /**
+   * J6's one tap: "wearing this again".
+   *
+   * Creates today's entry from the chosen day — same photograph, same outfit
+   * cluster, same tags — so a repeat wear costs exactly one tap rather than a
+   * camera launch. The photo is copied rather than shared so that removing
+   * either day cannot blank the other.
+   */
+  const wearAgain = useCallback(
+    async (source: Entry) => {
+      const photoId = await clonePhoto(source.photo_id)
+      if (!photoId) return
+
+      const entry: Entry = {
+        id: newId('entry'),
+        date: today,
+        photo_id: photoId,
+        felt_score: null,
+        chips: [],
+        outfit_id: source.outfit_id,
+        context: captureContext(today, todayTempBand),
+        note: null,
+        signature: source.signature,
+        created_at: Date.now(),
+        rated_at: null,
+        backdated: false,
+      }
+      await putEntry(entry)
+
+      // If the source was not yet part of a cluster, this pairing creates one.
+      if (!source.outfit_id) await linkEntries(entry.id, source.id)
+
+      await log.refresh()
+      flash(copy.log.loggedAgain)
+      setScreen('log')
+    },
+    [flash, log, today, todayTempBand],
+  )
+
+  const removeEntry = useCallback(
+    async (entry: Entry) => {
+      setConfirmRemove(null)
+      setOpenEntry(null)
+      await deleteEntry(entry.id)
+      if (entry.outfit_id) await recomputeOutfit(entry.outfit_id)
+      await log.refresh()
+      flash(copy.tonight.removed)
+      setScreen('log')
+    },
+    [flash, log],
   )
 
   const onSeedsDone = useCallback(
@@ -367,6 +428,7 @@ export default function App() {
               setOpenEntry(null)
               setScreen('log')
             }}
+            onRemove={openEntry ? () => setConfirmRemove(openEntry) : undefined}
           />
         )
       }
@@ -378,10 +440,7 @@ export default function App() {
             context={{ today, tempBand: todayTempBand }}
             tempBand={todayTempBand}
             onTempBand={setTappedTemp}
-            onWearAgain={(entry) => {
-              setOpenEntry(entry)
-              setScreen('camera')
-            }}
+            onWearAgain={(entry) => void wearAgain(entry)}
           />
         )
 
@@ -426,7 +485,9 @@ export default function App() {
               setOpenEntry(entry)
               setScreen('tonight')
             }}
-            onAddPast={() => setScreen('camera')}
+            onAddPast={() => setDatePicker(true)}
+            installNudgeDismissed={installNudgeDismissed}
+            onDismissInstallNudge={() => setInstallNudgeDismissed(true)}
           />
         )
     }
@@ -471,6 +532,65 @@ export default function App() {
           suggestions={log.items.map((item) => item.label)}
           onDone={(result) => void applyFollowUp(followUp.entryId, result)}
         />
+      ) : null}
+
+      {/* J9: backdating, up to a week. Always available, never nagged about. */}
+      {datePicker ? (
+        <Sheet
+          title={copy.log.pickDate}
+          body={copy.log.pickDateHint}
+          onDismiss={() => setDatePicker(false)}
+        >
+          <div className="stack">
+            {Array.from({ length: BACKDATE_LIMIT_DAYS }, (_, offset) => addDays(today, -(offset + 1))).map(
+              (date) => (
+                <button
+                  key={date}
+                  type="button"
+                  className="btn btn--ghost btn--block"
+                  onClick={() => {
+                    setPendingDate(date)
+                    setDatePicker(false)
+                    setScreen('camera')
+                  }}
+                >
+                  {mediumLabel(date)}
+                </button>
+              ),
+            )}
+            <button
+              type="button"
+              className="btn btn--quiet btn--block"
+              onClick={() => setDatePicker(false)}
+            >
+              {copy.common.cancel}
+            </button>
+          </div>
+        </Sheet>
+      ) : null}
+
+      {confirmRemove ? (
+        <Sheet
+          title={copy.tonight.removeConfirm}
+          onDismiss={() => setConfirmRemove(null)}
+        >
+          <div className="stack">
+            <button
+              type="button"
+              className="btn btn--danger btn--block"
+              onClick={() => void removeEntry(confirmRemove)}
+            >
+              {copy.tonight.removeGo}
+            </button>
+            <button
+              type="button"
+              className="btn btn--quiet btn--block"
+              onClick={() => setConfirmRemove(null)}
+            >
+              {copy.common.cancel}
+            </button>
+          </div>
+        </Sheet>
       ) : null}
 
       {/* J8: after a low stretch, offer less rather than more. */}

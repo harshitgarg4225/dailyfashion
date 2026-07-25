@@ -112,6 +112,10 @@ export const copy = {
     chipsHint: 'Optional. Tap any that apply.',
     save: 'Done',
     skip: 'Skip tonight',
+    remove: 'Remove this day',
+    removeConfirm: 'Remove this day from your log?',
+    removeGo: 'Remove',
+    removed: 'Removed.',
     nothingToRate: 'Nothing waiting for a reflection.',
     savedThanks: 'Logged.',
     // J9: returning after a gap is neutral, never a reprimand.
@@ -124,6 +128,9 @@ export const copy = {
     unrated: 'No reflection yet',
     // J9: a missed day is whitespace, not a gap to be explained.
     addPast: 'Add a past day',
+    pickDate: 'Which day?',
+    pickDateHint: 'You can add any day from the past week.',
+    loggedAgain: 'Added to today.',
     installTitle: 'Keep this on your home screen',
     installBodyIos:
       'Tap the share button, then “Add to Home Screen”. Browsers clear data for sites that are only open in a tab — on the home screen your log is far safer.',
@@ -167,10 +174,21 @@ export const copy = {
     title: 'What your log knows',
     empty: 'Nothing worth saying yet. Keep logging and this fills in.',
     // The honest version of "not enough data" — no false suspense.
+    // Counts evenings answered, not photos taken — say which, or someone with
+    // a week of photos and no reflections reads "0 of 14" as a broken app.
     thin: (have: number, need: number) =>
-      `${have} of ${need} days logged. Observations start once there is enough to be fair.`,
+      `${have} of ${need} evenings answered. Observations start once there is enough to be fair.`,
     sample: (n: number) => (n === 1 ? 'from 1 day' : `from ${n} days`),
+    // P3a: the payoff, made visible while it is still coming.
+    countdown: (n: number) =>
+      n === 0
+        ? 'Enough logged. Observations start now.'
+        : n === 1
+          ? 'One more day and the first observation can appear.'
+          : `${n} more days and the first observation can appear.`,
+    position: (index: number, total: number) => `${index} of ${total}`,
     dismiss: 'Got it',
+    next: 'Show me another',
     softened:
       'Observations are paused. You can turn them back on whenever you want.',
   },

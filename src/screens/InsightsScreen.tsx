@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { copy } from '../lib/copy'
 import { generateInsights, type GenerateInput } from '../lib/insights'
 import { Photo } from '../app/Photo'
@@ -9,11 +10,18 @@ import type { Entry } from '../types'
  * One card at a time, each one observation + evidence + a question, and every
  * card shows its sample size. The evidence is not decoration — it is the whole
  * argument. "Here is proof you already know what works" only lands if the
- * proof is visible and checkable, so the numbers are as prominent as the claim.
+ * proof is visible and checkable, so the numbers sit as prominently as the
+ * claim.
  *
- * When the log is too thin the screen says so plainly and shows the count.
- * A teaser would be a small lie about how much the app knows, and this is the
- * one screen where being trusted is the entire value.
+ * One at a time is a product decision, not a layout preference. Five
+ * observations in a scroll is a dashboard, and a dashboard invites skimming;
+ * a single card with a question at the bottom invites an answer. It also
+ * paces the payoff, so a user who has earned four cards has four separate
+ * reasons to come back rather than one long screen they have already read.
+ *
+ * When the log is too thin the screen says so plainly and shows the count. A
+ * teaser would be a small lie about how much the app knows, and this is the
+ * one screen where being believed is the entire value.
  */
 export function InsightsScreen({
   input,
@@ -26,12 +34,14 @@ export function InsightsScreen({
   onDismiss: (id: string) => void
   onResume: () => void
 }) {
-  const { gate, insights } = generateInsights(input)
+  const { gate, insights } = useMemo(() => generateInsights(input), [input])
+  const [index, setIndex] = useState(0)
 
   if (gate.softened) {
     return (
       <div className="screen">
         <div className="screen-head">
+          <span className="eyebrow">{copy.app.name}</span>
           <h1>{copy.insights.title}</h1>
         </div>
         <p className="empty">{copy.insights.softened}</p>
@@ -43,30 +53,50 @@ export function InsightsScreen({
   }
 
   if (!gate.unlocked) {
+    const remaining = Math.max(0, gate.needed - gate.ratedEntries)
+    const progress = Math.min(1, gate.ratedEntries / gate.needed)
+
     return (
       <div className="screen">
         <div className="screen-head">
+          <span className="eyebrow">{copy.app.name}</span>
           <h1>{copy.insights.title}</h1>
         </div>
+
+        {/*
+          * P3a: the first fortnight has no payoff, so the only thing keeping
+          * someone logging is being able to see the payoff approaching. A bare
+          * count does not do that; a filling rule does.
+          */}
+        <div className="progress" role="img" aria-label={copy.insights.thin(gate.ratedEntries, gate.needed)}>
+          <span className="progress-fill" style={{ transform: `scaleX(${progress})` }} />
+        </div>
+
+        <p className="progress-label">{copy.insights.countdown(remaining)}</p>
         <p className="empty">{copy.insights.thin(gate.ratedEntries, gate.needed)}</p>
       </div>
     )
   }
 
+  const card = insights[Math.min(index, insights.length - 1)]
+
   return (
     <div className="screen">
       <div className="screen-head">
+        <span className="eyebrow">
+          {insights.length > 1 ? copy.insights.position(index + 1, insights.length) : copy.app.name}
+        </span>
         <h1>{copy.insights.title}</h1>
         <span className="sub">{copy.insights.sample(gate.ratedEntries)}</span>
       </div>
 
-      {insights.length === 0 ? (
+      {!card ? (
         <p className="empty">{copy.insights.empty}</p>
       ) : (
-        insights.map((card) => {
+        (() => {
           const entry = card.subject.entryId ? entriesById.get(card.subject.entryId) : undefined
           return (
-            <article key={card.id} className="card">
+            <article className="card" key={card.id}>
               {entry ? <Photo photoId={entry.photo_id} alt="" className="insight-photo" /> : null}
 
               <h2>{card.observation}</h2>
@@ -76,16 +106,31 @@ export function InsightsScreen({
               <span className="sample">{copy.insights.sample(card.n)}</span>
 
               <div className="spacer" />
-              <button
-                type="button"
-                className="btn btn--quiet btn--block"
-                onClick={() => onDismiss(card.id)}
-              >
-                {copy.insights.dismiss}
-              </button>
+              <div className="stack">
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--block"
+                  onClick={() => {
+                    onDismiss(card.id)
+                    setIndex(0)
+                  }}
+                >
+                  {copy.insights.dismiss}
+                </button>
+
+                {insights.length > 1 ? (
+                  <button
+                    type="button"
+                    className="btn btn--quiet btn--block"
+                    onClick={() => setIndex((i) => (i + 1) % insights.length)}
+                  >
+                    {copy.insights.next}
+                  </button>
+                ) : null}
+              </div>
             </article>
           )
-        })
+        })()
       )}
     </div>
   )

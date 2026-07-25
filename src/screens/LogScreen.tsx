@@ -3,6 +3,7 @@ import type { Entry, Settings } from '../types'
 import { copy } from '../lib/copy'
 import { addDays, daysBetween, mediumLabel, type DateKey } from '../lib/dates'
 import { Photo } from '../app/Photo'
+import { isInstalled, isIos } from '../lib/storage'
 
 /**
  * The log grid.
@@ -22,13 +23,26 @@ export function LogScreen({
   today,
   onOpen,
   onAddPast,
+  installNudgeDismissed,
+  onDismissInstallNudge,
 }: {
   entries: readonly Entry[]
   settings: Settings
   today: DateKey
   onOpen: (entry: Entry) => void
   onAddPast: () => void
+  installNudgeDismissed: boolean
+  onDismissInstallNudge: () => void
 }) {
+  /*
+   * M2: on iOS this is a data-safety notice, not a growth prompt.
+   *
+   * Safari applies a seven-day eviction window to sites that are not installed
+   * to the home screen, and refuses `storage.persist()` entirely. For a
+   * local-only log that means a fortnight away from the app can take the whole
+   * history with it. Installing is the only defence, so the app has to say so.
+   */
+  const showInstallNudge = !installNudgeDismissed && isIos() && !isInstalled() && entries.length > 0
   /**
    * Entries newest-first with placeholder cells for skipped days, so the grid
    * stays calendar-shaped instead of collapsing a fortnight's absence into an
@@ -64,6 +78,16 @@ export function LogScreen({
         <span className="sub">{copy.log.entryCount(entries.length)}</span>
       </div>
 
+      {showInstallNudge ? (
+        <div className="notice">
+          <span className="eyebrow">{copy.log.installTitle}</span>
+          <p className="note">{copy.log.installBodyIos}</p>
+          <button type="button" className="btn btn--quiet" onClick={onDismissInstallNudge}>
+            {copy.log.installDismiss}
+          </button>
+        </div>
+      ) : null}
+
       {entries.length === 0 ? (
         <p className="empty">{copy.log.empty}</p>
       ) : (
@@ -93,11 +117,6 @@ export function LogScreen({
             )}
           </div>
 
-          <div className="spacer" />
-          <button type="button" className="btn btn--ghost btn--block" onClick={onAddPast}>
-            {copy.log.addPast}
-          </button>
-
           {ratedCount < entries.length ? (
             <p className="note note--centred">
               {entries.length - ratedCount} waiting for a reflection.
@@ -105,6 +124,17 @@ export function LogScreen({
           ) : null}
         </>
       )}
+
+      {/*
+        * Backdating sits outside the empty check on purpose. It was previously
+        * only rendered once the log had something in it, which locked out the
+        * exact person it helps most: someone on day one who wants to enter the
+        * few days they remember. J9 says backdating is always available.
+        */}
+      <div className="spacer" />
+      <button type="button" className="btn btn--ghost btn--block" onClick={onAddPast}>
+        {copy.log.addPast}
+      </button>
     </div>
   )
 }

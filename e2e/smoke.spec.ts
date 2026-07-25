@@ -105,7 +105,7 @@ test.describe('the daily loop', () => {
 
     // J7: nothing is claimed, and the honest count is shown.
     await expect(page.getByText(/observations start once there is enough/i)).toBeVisible()
-    await expect(page.getByText(/of 14 days logged/i)).toBeVisible()
+    await expect(page.getByText(/of 14 evenings answered/i)).toBeVisible()
   })
 
   test('hides the shortlist until the log can fill it', async ({ page }) => {
@@ -115,6 +115,38 @@ test.describe('the daily loop', () => {
 
     // J6 says hide the tab before ~10 entries.
     await expect(page.getByRole('button', { name: 'Today', exact: true })).toHaveCount(0)
+  })
+})
+
+test.describe('editing the log', () => {
+  test('backdates a day and removes it again', async ({ page }) => {
+    await page.goto(BASE)
+    await completeOnboarding(page)
+    await dismissOverlays(page)
+
+    await page.getByRole('button', { name: 'Journal', exact: true }).click()
+    await page.getByRole('button', { name: /add a past day/i }).click()
+
+    // J9 allows the past week, offered as plain dates rather than a calendar.
+    const picker = page.getByRole('dialog', { name: /which day/i })
+    await expect(picker).toBeVisible()
+    await picker.getByRole('button').first().click()
+
+    const shutter = page.getByRole('button', { name: 'Capture' })
+    await expect(shutter).toBeEnabled({ timeout: 15_000 })
+    await shutter.click()
+    await dismissOverlays(page)
+
+    await page.getByRole('button', { name: 'Journal', exact: true }).click()
+    await expect(page.getByText(/1 day logged/)).toBeVisible()
+
+    // F10: one bad photo must be removable without wiping everything.
+    await page.locator('.grid-cell').first().click()
+    await page.getByRole('button', { name: /remove this day/i }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Remove', exact: true }).click()
+
+    await page.getByRole('button', { name: 'Journal', exact: true }).click()
+    await expect(page.getByText(/your log starts with your first photo/i)).toBeVisible()
   })
 })
 

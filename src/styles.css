@@ -964,3 +964,43 @@ input[type='time'] {
 .btn--flex {
   flex: 1;
 }
+
+/* --- progress toward the first observation ----------------------------- */
+
+/*
+ * A rule that fills, not a bar that celebrates. There is no percentage, no
+ * colour change at the end, and nothing that congratulates — the point is to
+ * make the payoff visible while it is still coming, not to gamify the log.
+ */
+.progress {
+  display: block;
+  height: 1px;
+  background: var(--line);
+  overflow: hidden;
+  margin-bottom: var(--s3);
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: left center;
+  transition: transform 0.6s ease;
+}
+
+.progress-label {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+/* A quiet notice block — a framed aside, never a banner. */
+.notice {
+  border: 1px solid var(--line);
+  padding: var(--s4);
+  margin-bottom: var(--s5);
+}
+
+.notice .note {
+  margin: var(--s2) 0 var(--s3);
+}
