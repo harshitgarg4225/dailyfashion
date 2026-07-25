@@ -151,6 +151,7 @@ sat directly on the core loop.
 | B5 | The camera preview used `object-fit: cover`, cropping the frame — losing the shoes and hem that later observations depend on. Now `contain`. | P1 | DONE |
 | B6 | "Add a past day" only rendered once the log was non-empty, locking backdating away from the exact person it helps most — someone on day one entering the days they remember. | P1 | DONE |
 | B7 | The insight gate counts evenings answered, but the copy said "days logged". Someone with a week of photos and no reflections read "0 of 14" as a broken app. | P2 | DONE |
+| B8 | Grid photographs spilled outside their cells. A percentage height inside an `aspect-ratio` box does not resolve reliably, least of all on a `<button>` where the replaced content's intrinsic size wins. | P1 | DONE |
 
 ## Build order
 

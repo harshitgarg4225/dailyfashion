@@ -658,7 +658,17 @@ p {
   border-radius: var(--radius);
 }
 
+/*
+ * Pinned rather than sized at 100%.
+ *
+ * A percentage height inside an `aspect-ratio` box does not resolve reliably
+ * — especially on a <button>, where the intrinsic size of replaced content
+ * wins — and the photographs were spilling past their cells. Absolute
+ * positioning against the cell makes containment independent of that.
+ */
 .grid-cell img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
