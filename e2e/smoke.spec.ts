@@ -50,8 +50,9 @@ async function dismissOverlays(page: Page) {
 
 async function completeOnboarding(page: Page) {
   await expect(page.getByRole('heading', { name: /nothing leaves this phone/i })).toBeVisible()
-  await page.getByRole('button', { name: 'Next' }).click()
-  await page.getByRole('button', { name: 'Next' }).click()
+  // Each step's button names where it goes, rather than three identical "Next"s.
+  await page.getByRole('button', { name: /how it works/i }).click()
+  await page.getByRole('button', { name: /one last thing/i }).click()
   // Decline the camera-roll backfill; the app must work from zero.
   await page.getByRole('button', { name: /skip for now/i }).click()
 }

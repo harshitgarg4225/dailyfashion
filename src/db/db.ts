@@ -1,5 +1,6 @@
 import type { Entry, EntryItem, Item, Outfit, Settings } from '../types'
 import type { Dismissal } from '../lib/insights'
+import type { LockRecord } from '../lib/lock'
 import { toDateKey } from '../lib/dates'
 
 /**
@@ -365,6 +366,25 @@ export async function saveSettings(patch: Partial<Settings>): Promise<Settings> 
   return next
 }
 
+// --- passcode lock --------------------------------------------------------
+
+export async function getLock(): Promise<LockRecord | null> {
+  const db = await openDb()
+  const stored = await promisify<LockRecord | undefined>(
+    tx(db, [STORES.settings], 'readonly').objectStore(STORES.settings).get('lock'),
+  )
+  return stored ?? null
+}
+
+export async function saveLock(record: LockRecord | null): Promise<void> {
+  const db = await openDb()
+  const transaction = tx(db, [STORES.settings], 'readwrite')
+  const store = transaction.objectStore(STORES.settings)
+  if (record) store.put(record, 'lock')
+  else store.delete('lock')
+  await done(transaction)
+}
+
 // --- dismissed insights ---------------------------------------------------
 
 /**
@@ -408,6 +428,22 @@ export async function clearDismissedInsights(): Promise<void> {
  * asterisk.
  */
 export async function wipeEverything(): Promise<void> {
+  /*
+   * The database is the user's data, but the caches are also ours to clear.
+   * "Delete everything" that left the app shell and an old worker installed
+   * would be accurate-but-narrow in a way nobody asked for.
+   */
+  try {
+    if (typeof caches !== 'undefined') {
+      const keys = await caches.keys()
+      await Promise.all(keys.map((key) => caches.delete(key)))
+    }
+    const registrations = (await navigator.serviceWorker?.getRegistrations?.()) ?? []
+    await Promise.all(registrations.map((registration) => registration.unregister()))
+  } catch {
+    // Never let cache cleanup block the thing the user actually asked for.
+  }
+
   if (dbPromise) {
     const db = await dbPromise
     db.close()

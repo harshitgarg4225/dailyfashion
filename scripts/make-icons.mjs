@@ -14,8 +14,15 @@ import { resolve, dirname } from 'node:path'
  * and a garment icon would frame it as a wardrobe tool.
  */
 
-const BG = [0x12, 0x10, 0x0f]
-const RING = [0xd9, 0xa4, 0x41]
+/*
+ * Ivory paper and ink, matching the app.
+ *
+ * The first version was dark with an amber ring, from before the design
+ * settled — an icon that does not match the first screen reads as a different
+ * product, and it is the only part of the app someone sees before opening it.
+ */
+const BG = [0xf7, 0xf4, 0xef]
+const RING = [0x1a, 0x17, 0x14]
 
 function crc32(buf) {
   let c
@@ -44,19 +51,21 @@ function chunk(type, data) {
  * @param inset fraction of the canvas left as padding around the mark.
  *        Maskable icons need a generous safe zone or launchers crop the ring.
  */
-function renderPng(size, inset) {
-  const centre = (size - 1) / 2
-  const outer = (size / 2) * (1 - inset)
-  const thickness = Math.max(2, size * 0.085)
+function renderPng(size, inset, height = size) {
+  const centreX = (size - 1) / 2
+  const centreY = (height - 1) / 2
+  const outer = (Math.min(size, height) / 2) * (1 - inset)
+  // Thinner than before: the design language is hairlines, not heavy strokes.
+  const thickness = Math.max(2, Math.min(size, height) * 0.055)
   const inner = outer - thickness
 
   const rows = []
-  for (let y = 0; y < size; y++) {
+  for (let y = 0; y < height; y++) {
     const row = Buffer.alloc(1 + size * 3)
     row[0] = 0 // filter: none
     for (let x = 0; x < size; x++) {
-      const dx = x - centre
-      const dy = y - centre
+      const dx = x - centreX
+      const dy = y - centreY
       const distance = Math.sqrt(dx * dx + dy * dy)
 
       // Antialias the ring edges so it does not look like a jagged donut.
@@ -74,7 +83,7 @@ function renderPng(size, inset) {
 
   const ihdr = Buffer.alloc(13)
   ihdr.writeUInt32BE(size, 0)
-  ihdr.writeUInt32BE(size, 4)
+  ihdr.writeUInt32BE(height, 4)
   ihdr[8] = 8 // bit depth
   ihdr[9] = 2 // colour type: truecolour
   ihdr[10] = 0
@@ -90,8 +99,8 @@ function renderPng(size, inset) {
 }
 
 const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Fashion">
-  <rect width="512" height="512" rx="112" fill="#12100f"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#d9a441" stroke-width="44"/>
+  <rect width="512" height="512" fill="#f7f4ef"/>
+  <circle cx="256" cy="256" r="158" fill="none" stroke="#1a1714" stroke-width="28"/>
 </svg>
 `
 
@@ -103,6 +112,16 @@ const targets = [
   ['public/icon-maskable.png', renderPng(512, 0.3)],
   ['public/icon-180.png', renderPng(180, 0.14)],
   ['public/icon.svg', Buffer.from(SVG, 'utf8')],
+
+  /*
+   * iOS launch images. Without them an installed PWA flashes white before the
+   * first paint, which on an ivory app is a visible jolt every single launch.
+   * Three sizes cover the current iPhone range; iOS picks the closest match and
+   * a mismatch simply falls back to the flash we have today.
+   */
+  ['public/splash-1170x2532.png', renderPng(1170, 0.72, 2532)],
+  ['public/splash-1284x2778.png', renderPng(1284, 0.72, 2778)],
+  ['public/splash-1179x2556.png', renderPng(1179, 0.72, 2556)],
 ]
 
 for (const [path, data] of targets) {

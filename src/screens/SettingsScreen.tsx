@@ -3,7 +3,13 @@ import type { Settings } from '../types'
 import { copy } from '../lib/copy'
 import { Sheet, Switch } from '../app/controls'
 import { buildExport, importArchive, triggerDownload } from '../lib/exportData'
-import { wipeEverything } from '../db/db'
+import { saveLock, wipeEverything } from '../db/db'
+import {
+  createLock,
+  passcodeIsAcceptable,
+  verifyLock,
+  type LockRecord,
+} from '../lib/lock'
 import { permissionState, requestReminderPermission } from '../lib/reminders'
 import { isIos } from '../lib/storage'
 import {
@@ -26,11 +32,19 @@ export function SettingsScreen({
   onChange,
   onWiped,
   onImported,
+  lock,
+  onLockChange,
+  outfitCount,
+  entryCount,
 }: {
   settings: Settings
   onChange: (patch: Partial<Settings>) => void
   onWiped: () => void
   onImported: () => void
+  lock: LockRecord | null
+  onLockChange: (record: LockRecord | null) => void
+  outfitCount: number
+  entryCount: number
 }) {
   const [exporting, setExporting] = useState(false)
   const [confirmExport, setConfirmExport] = useState(false)
@@ -41,6 +55,44 @@ export function SettingsScreen({
   const [persistence, setPersistence] = useState<PersistenceState>('unsupported')
   const [used, setUsed] = useState<string | null>(null)
   const [notifications, setNotifications] = useState(permissionState())
+  const [lockStep, setLockStep] = useState<'off' | 'set' | 'remove'>('off')
+  const [pass1, setPass1] = useState('')
+  const [pass2, setPass2] = useState('')
+  const [lockError, setLockError] = useState<string | null>(null)
+
+  const closeLockForm = () => {
+    setLockStep('off')
+    setPass1('')
+    setPass2('')
+    setLockError(null)
+  }
+
+  const enableLock = async () => {
+    if (!passcodeIsAcceptable(pass1)) {
+      setLockError(copy.settings.lockTooShort)
+      return
+    }
+    if (pass1 !== pass2) {
+      setLockError(copy.settings.lockMismatch)
+      return
+    }
+    const record = await createLock(pass1)
+    await saveLock(record)
+    onChange({ passcode_lock: true })
+    onLockChange(record)
+    closeLockForm()
+  }
+
+  const disableLock = async () => {
+    if (!lock || !(await verifyLock(lock, pass1))) {
+      setLockError(copy.lock.wrong)
+      return
+    }
+    await saveLock(null)
+    onChange({ passcode_lock: false })
+    onLockChange(null)
+    closeLockForm()
+  }
   const [importing, setImporting] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
 
@@ -149,6 +201,83 @@ export function SettingsScreen({
         ) : null}
       </div>
 
+      {/* J4's optional lock. Scope stated plainly rather than implied. */}
+      <div className="panel">
+        <div className="row">
+          <span className="row-text">
+            {copy.settings.lock}
+            <small>{copy.settings.lockHint}</small>
+          </span>
+          <Switch
+            checked={lock !== null}
+            label={copy.settings.lock}
+            onChange={(next) => {
+              setLockError(null)
+              setPass1('')
+              setPass2('')
+              setLockStep(next ? 'set' : 'remove')
+            }}
+          />
+        </div>
+
+        {lockStep === 'set' ? (
+          <>
+            <label className="field">
+              <span className="field-label">{copy.settings.lockSet}</span>
+              <input
+                type="password"
+                inputMode="numeric"
+                value={pass1}
+                onChange={(event) => setPass1(event.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">{copy.settings.lockSetAgain}</span>
+              <input
+                type="password"
+                inputMode="numeric"
+                value={pass2}
+                onChange={(event) => setPass2(event.target.value)}
+              />
+            </label>
+            {lockError ? <p className="note">{lockError}</p> : null}
+            <div className="btn-row">
+              <button type="button" className="btn btn--primary btn--flex" onClick={() => void enableLock()}>
+                {copy.settings.lockSave}
+              </button>
+              <button type="button" className="btn btn--quiet" onClick={closeLockForm}>
+                {copy.common.cancel}
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        {lockStep === 'remove' ? (
+          <>
+            <label className="field">
+              <span className="field-label">{copy.settings.lockRemovePrompt}</span>
+              <input
+                type="password"
+                inputMode="numeric"
+                value={pass1}
+                onChange={(event) => setPass1(event.target.value)}
+              />
+            </label>
+            {lockError ? <p className="note">{lockError}</p> : null}
+            <div className="btn-row">
+              <button type="button" className="btn btn--danger btn--flex" onClick={() => void disableLock()}>
+                {copy.settings.lockRemove}
+              </button>
+              <button type="button" className="btn btn--quiet" onClick={closeLockForm}>
+                {copy.common.cancel}
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        <p className="note">{copy.settings.lockScope}</p>
+      </div>
+
       {/* C2: storage durability, stated plainly enough to act on. */}
       <div className="panel">
         <div className="row">
@@ -160,6 +289,7 @@ export function SettingsScreen({
           </span>
         </div>
         {used ? <p className="note">{copy.settings.storageUsed(used)}</p> : null}
+        <p className="note">{copy.settings.groupsFormed(outfitCount, entryCount)}</p>
       </div>
 
       <div className="panel">

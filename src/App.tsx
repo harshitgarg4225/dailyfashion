@@ -9,6 +9,7 @@ import { ShortlistScreen } from './screens/ShortlistScreen'
 import { InsightsScreen } from './screens/InsightsScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { OnboardingScreen, type SeedPhoto } from './screens/OnboardingScreen'
+import { LockScreen } from './screens/LockScreen'
 import { CaptureFollowUp, type FollowUpResult } from './screens/CaptureFollowUp'
 import { copy } from './lib/copy'
 import { captureContext, launchIntent } from './lib/context'
@@ -38,6 +39,8 @@ import {
   scheduleReminder,
 } from './lib/reminders'
 import { requestPersistence } from './lib/storage'
+import { getLock } from './db/db'
+import type { LockRecord } from './lib/lock'
 
 type Screen = 'camera' | 'tonight' | 'log' | 'shortlist' | 'insights' | 'settings'
 
@@ -82,6 +85,8 @@ export default function App() {
   const [datePicker, setDatePicker] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState<Entry | null>(null)
   const [installNudgeDismissed, setInstallNudgeDismissed] = useState(false)
+  const [lock, setLock] = useState<LockRecord | null | undefined>(undefined)
+  const [unlocked, setUnlocked] = useState(false)
 
   const today = toDateKey(new Date())
 
@@ -109,6 +114,11 @@ export default function App() {
     },
     [],
   )
+
+  // The lock is read once per launch, before anything from the log is painted.
+  useEffect(() => {
+    void getLock().then((record) => setLock(record))
+  }, [])
 
   // --- launch routing (J1) ---------------------------------------------
 
@@ -343,9 +353,9 @@ export default function App() {
   )
 
   const saveReflection = useCallback(
-    async (entry: Entry, felt: FeltScore, chips: ChipId[]) => {
+    async (entry: Entry, felt: FeltScore, chips: ChipId[], note: string | null = null) => {
       const previous: Entry = { ...entry }
-      const updated: Entry = { ...entry, felt_score: felt, chips, rated_at: Date.now() }
+      const updated: Entry = { ...entry, felt_score: felt, chips, note, rated_at: Date.now() }
       await putEntry(updated)
       log.patchEntry(updated)
       // Answering resets the ignore run — the nudge worked, so stop counting.
@@ -412,6 +422,18 @@ export default function App() {
 
   // --- render -----------------------------------------------------------
 
+  /*
+   * The gate comes before everything, including the loading state — a lock that
+   * flashes the log for a frame while it decides is not a lock.
+   */
+  if (lock === undefined) {
+    return <div className="app" />
+  }
+
+  if (lock !== null && !unlocked) {
+    return <LockScreen record={lock} onUnlocked={() => setUnlocked(true)} />
+  }
+
   // U4: a cold start with a full log used to paint an empty page.
   if (log.loading || screen === null) {
     return (
@@ -455,7 +477,9 @@ export default function App() {
           <TonightScreen
             entry={target}
             showWelcomeBack={gapDays >= 14}
-            onSave={(felt, chips) => target && void saveReflection(target, felt, chips)}
+            onSave={(felt, chips, note) =>
+              target && void saveReflection(target, felt, chips, note)
+            }
             onSkip={() => {
               setOpenEntry(null)
               setScreen('log')
@@ -499,6 +523,13 @@ export default function App() {
           <SettingsScreen
             settings={log.settings}
             onChange={(patch) => void updateSettings(patch)}
+            outfitCount={log.outfits.length}
+            entryCount={log.entries.length}
+            lock={lock}
+            onLockChange={(record) => {
+              setLock(record)
+              setUnlocked(true)
+            }}
             onImported={() => void log.refresh()}
             onWiped={() => {
               __resetDbForTests()

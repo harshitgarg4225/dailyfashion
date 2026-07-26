@@ -101,14 +101,14 @@ export function OnboardingScreen({ onDone }: { onDone: (seeds: SeedPhoto[]) => v
       title: copy.onboarding.privacyTitle,
       body: copy.onboarding.privacyBody,
       proof: copy.onboarding.privacyProof,
-      cta: 'Next',
+      cta: copy.onboarding.nextPrivacy,
       action: () => setStep(1),
     },
     {
       title: copy.onboarding.whatTitle,
       body: copy.onboarding.whatBody,
       proof: null,
-      cta: 'Next',
+      cta: copy.onboarding.nextWhat,
       action: () => setStep(2),
     },
     {
@@ -134,6 +134,9 @@ export function OnboardingScreen({ onDone }: { onDone: (seeds: SeedPhoto[]) => v
             <span key={s.title} className={i <= step ? 'on' : ''} />
           ))}
         </div>
+        <span className="eyebrow onboard-step">
+          {copy.onboarding.step(Math.min(step, steps.length - 1) + 1, steps.length)}
+        </span>
         <h1>{current.title}</h1>
         <p>{current.body}</p>
         {current.proof ? <p className="proof">{current.proof}</p> : null}

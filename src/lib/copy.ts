@@ -75,6 +75,9 @@ export const copy = {
     seedAsk: 'How did this day feel?',
 
     begin: 'Start logging',
+    step: (index: number, total: number) => `Step ${index} of ${total}`,
+    nextPrivacy: 'How it works',
+    nextWhat: 'One last thing',
   },
 
   camera: {
@@ -119,6 +122,8 @@ export const copy = {
     nothingToRate: 'Nothing waiting for a reflection.',
     savedThanks: 'Logged.',
     undo: 'Undo',
+    notePrompt: 'Anything else?',
+    noteHint: 'Optional. A few words, only for you.',
     // U9: connects the daily chore to the payoff it is building toward.
     why: 'Answering these is what lets the log tell you something later.',
     // J9: returning after a gap is neutral, never a reprimand.
@@ -210,8 +215,19 @@ export const copy = {
     reminderMuted: 'Reminders are off. Turn them back on any time.',
     blur: 'Blur photos in the grid',
     blurHint: 'Photos stay blurred until you tap one.',
-    lock: 'Require unlock to open',
-    lockHint: 'Uses your device unlock.',
+    lock: 'Require a passcode to open',
+    lockHint: 'Four digits or more. Asked once each time you open the app.',
+    lockSet: 'Choose a passcode',
+    lockSetAgain: 'Type it again',
+    lockSave: 'Turn on',
+    lockMismatch: 'Those did not match.',
+    lockTooShort: 'A little longer, please.',
+    lockRemove: 'Turn off the passcode',
+    lockRemovePrompt: 'Enter your passcode to turn it off.',
+    // Stated plainly, because the alternative would be to imply protection the
+    // app does not provide.
+    lockScope:
+      'This keeps the app closed to someone holding your phone. It does not encrypt the photos on the device.',
     import: 'Restore from an export',
     importHint: 'Bring a log back from a zip made by this app — a new phone, or after a reset.',
     importing: 'Restoring…',
@@ -242,6 +258,12 @@ export const copy = {
     storageAtRisk:
       'Your browser may clear this app’s data if the device runs low on space. Adding it to your home screen makes that far less likely.',
     storageUsed: (used: string) => `Using ${used} on this device.`,
+    // P1a: with no analytics to send anywhere, the only way to know whether the
+    // "worn before?" matcher is doing its job is to show the user the count.
+    groupsFormed: (outfits: number, days: number) =>
+      outfits === 0
+        ? `${days} days logged, no repeat outfits recognised yet.`
+        : `${days} days logged, grouped into ${outfits} repeated outfit${outfits === 1 ? '' : 's'}.`,
 
     // S2: the one moment the privacy promise legitimately ends.
     exportWarnTitle: 'This file leaves the app',
@@ -266,6 +288,13 @@ export const copy = {
     pauseReminders: 'Pause reminders',
     pauseInsights: 'Pause observations',
     keepGoing: 'Leave things as they are',
+  },
+
+  lock: {
+    title: 'Daily Fashion',
+    prompt: 'Enter your passcode',
+    wrong: 'That is not it. Try again.',
+    unlock: 'Unlock',
   },
 
   common: {

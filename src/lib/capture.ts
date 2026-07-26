@@ -1,5 +1,6 @@
 import { computeSignature, type RawImage } from './signature'
 import type { ImageSignature } from '../types'
+import type { PhotoWorkerRequest, PhotoWorkerResponse } from './photoWorker'
 
 /**
  * Turning a camera frame or a picked file into something the log can store.
@@ -25,8 +26,22 @@ function scaledSize(width: number, height: number, max: number) {
   return { width: Math.round(width * scale), height: Math.round(height * scale) }
 }
 
+/**
+ * Decode, honouring the EXIF orientation flag.
+ *
+ * Phone cameras habitually store the sensor's raw landscape frame plus a "rotate
+ * this" tag. Without `from-image` a portrait photograph imported from the camera
+ * roll arrives on its side — and the crop the fingerprint depends on then samples
+ * the wall instead of the outfit, so this is a correctness issue for J3 and not
+ * only a display one.
+ */
 async function toBitmap(source: Blob): Promise<ImageBitmap> {
-  return createImageBitmap(source)
+  try {
+    return await createImageBitmap(source, { imageOrientation: 'from-image' })
+  } catch {
+    // Older engines reject the option outright rather than ignoring it.
+    return createImageBitmap(source)
+  }
 }
 
 function drawTo(bitmap: ImageBitmap, width: number, height: number): HTMLCanvasElement {
@@ -56,8 +71,89 @@ export interface PreparedPhoto {
   height: number
 }
 
-/** Downscale, re-encode, and fingerprint in one pass. */
+/**
+ * The worker, created lazily and reused.
+ *
+ * Held as a module singleton because spinning one up per capture would cost
+ * more than the work it is meant to offload.
+ */
+let worker: Worker | null = null
+let workerBroken = false
+let nextRequestId = 1
+
+function getWorker(): Worker | null {
+  if (workerBroken) return null
+  if (worker) return worker
+  if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined') {
+    workerBroken = true
+    return null
+  }
+  try {
+    worker = new Worker(new URL('./photoWorker.ts', import.meta.url), { type: 'module' })
+    worker.addEventListener('error', () => {
+      // One failure and we stop trying; the main-thread path always works.
+      workerBroken = true
+      worker = null
+    })
+    return worker
+  } catch {
+    workerBroken = true
+    return null
+  }
+}
+
+/** Attempts the worker. Resolves null when it is unavailable or misbehaves. */
+async function prepareInWorker(source: Blob): Promise<PreparedPhoto | null> {
+  const instance: Worker | null = getWorker()
+  if (instance === null) return null
+  const active: Worker = instance
+
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await toBitmap(source)
+  } catch {
+    return null
+  }
+
+  const id = nextRequestId++
+
+  return new Promise<PreparedPhoto | null>((resolve) => {
+    // A worker that never answers must not strand the shutter.
+    const timeout = setTimeout(() => {
+      active.removeEventListener('message', onMessage)
+      resolve(null)
+    }, 8000)
+
+    function onMessage(event: MessageEvent<PhotoWorkerResponse>) {
+      if (event.data.id !== id) return
+      clearTimeout(timeout)
+      active.removeEventListener('message', onMessage)
+
+      const { ok, blob, signature, width, height } = event.data
+      if (!ok || !blob || !signature || width === undefined || height === undefined) {
+        resolve(null)
+        return
+      }
+      resolve({ blob, signature, width, height })
+    }
+
+    active.addEventListener('message', onMessage)
+    active.postMessage({ id, bitmap } satisfies PhotoWorkerRequest, [bitmap])
+  })
+}
+
+/**
+ * Downscale, re-encode, and fingerprint.
+ *
+ * Prefers the worker so the shutter does not drop frames, and falls back to the
+ * main thread wherever OffscreenCanvas is missing or the worker misbehaves. The
+ * fallback is not a degraded mode — it is the same code producing the same
+ * signature, just on the wrong thread.
+ */
 export async function preparePhoto(source: Blob): Promise<PreparedPhoto> {
+  const offloaded = await prepareInWorker(source)
+  if (offloaded) return offloaded
+
   const bitmap = await toBitmap(source)
   try {
     const stored = scaledSize(bitmap.width, bitmap.height, MAX_DIMENSION)

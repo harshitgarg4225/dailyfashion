@@ -24,7 +24,7 @@ export function TonightScreen({
   showWelcomeBack,
 }: {
   entry: Entry | null
-  onSave: (felt: FeltScore, chips: ChipId[]) => void
+  onSave: (felt: FeltScore, chips: ChipId[], note: string | null) => void
   onSkip: () => void
   /** Only offered when opening an existing day, not on the evening prompt. */
   onRemove?: (() => void) | undefined
@@ -32,6 +32,7 @@ export function TonightScreen({
 }) {
   const [felt, setFelt] = useState<FeltScore | null>(entry?.felt_score ?? null)
   const [chips, setChips] = useState<ChipId[]>(entry?.chips ?? [])
+  const [note, setNote] = useState(entry?.note ?? '')
 
   if (!entry) {
     return (
@@ -79,6 +80,22 @@ export function TonightScreen({
         <ChipRow selected={chips} onToggle={toggle} />
       </div>
 
+      {/*
+        * F9: the schema always had a note field with no way to fill it. Kept
+        * below the taps and never required — the two questions are the product,
+        * and a text box presented as a peer would slow the nightly loop down.
+        */}
+      <label className="field">
+        <span className="field-label">{copy.tonight.notePrompt}</span>
+        <span className="field-hint">{copy.tonight.noteHint}</span>
+        <input
+          type="text"
+          value={note}
+          maxLength={140}
+          onChange={(event) => setNote(event.target.value)}
+        />
+      </label>
+
       <p className="note">{copy.tonight.why}</p>
 
       <div className="stack">
@@ -86,7 +103,7 @@ export function TonightScreen({
           type="button"
           className="btn btn--primary btn--block"
           disabled={felt === null}
-          onClick={() => felt !== null && onSave(felt, chips)}
+          onClick={() => felt !== null && onSave(felt, chips, note.trim() || null)}
         >
           {copy.tonight.save}
         </button>

@@ -219,7 +219,10 @@ p {
   align-items: stretch;
   background: var(--paper);
   border-top: 1px solid var(--line);
-  padding-bottom: var(--safe-bottom);
+  /* Landscape leaves an inset on the notch side; without this the first tab
+     sits under it and cannot be tapped. */
+  padding: 0 env(safe-area-inset-left, 0px) var(--safe-bottom)
+    env(safe-area-inset-right, 0px);
   z-index: 20;
 }
 
@@ -250,7 +253,8 @@ p {
   bottom: 0;
   display: block;
   width: 100%;
-  padding: var(--s4);
+  padding: var(--s4) calc(var(--s4) + env(safe-area-inset-right, 0px)) var(--s4)
+    calc(var(--s4) + env(safe-area-inset-left, 0px));
   background: var(--ink);
   color: var(--paper);
   font-size: 0.68rem;
@@ -1069,4 +1073,8 @@ input[type='time'] {
   text-transform: uppercase;
   border-bottom: 1px solid var(--paper);
   padding-bottom: 1px;
+}
+
+.onboard-step {
+  margin-bottom: var(--s4);
 }
