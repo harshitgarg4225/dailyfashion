@@ -118,6 +118,9 @@ export const copy = {
     removed: 'Removed.',
     nothingToRate: 'Nothing waiting for a reflection.',
     savedThanks: 'Logged.',
+    undo: 'Undo',
+    // U9: connects the daily chore to the payoff it is building toward.
+    why: 'Answering these is what lets the log tell you something later.',
     // J9: returning after a gap is neutral, never a reprimand.
     welcomeBack: 'Welcome back — here is what your log already knows.',
   },
@@ -189,6 +192,11 @@ export const copy = {
     position: (index: number, total: number) => `${index} of ${total}`,
     dismiss: 'Got it',
     next: 'Show me another',
+    // P4a: scepticism is the right response to a claim about yourself. The only
+    // useful answer is to show the arithmetic.
+    howTitle: 'How was this worked out?',
+    howShow: 'How was this worked out?',
+    howHide: 'Close',
     softened:
       'Observations are paused. You can turn them back on whenever you want.',
   },
@@ -215,6 +223,7 @@ export const copy = {
     export: 'Export everything',
     exportHint: 'A zip with your photos and a spreadsheet of your log.',
     exporting: 'Preparing your export…',
+    exportProgress: (done: number, total: number) => `Packing ${done} of ${total}…`,
     wipe: 'Delete everything',
     wipeHint: 'Removes every photo and entry from this device.',
     wipeConfirmPrompt: 'Type DELETE to confirm.',
@@ -243,6 +252,10 @@ export const copy = {
       'Your browser is blocking notifications for this site, so the reminder cannot be shown.',
     reminderCaveat:
       'The reminder needs the app to have been opened that day. It is scheduled on your device, never by a server.',
+    // M1: iOS ignores notification actions, so be straight about the difference
+    // rather than letting the experience quietly be worse than described.
+    reminderIosCaveat:
+      'On iPhone, tapping the reminder opens the app on tonight\u2019s question. On Android you can answer straight from the notification.',
   },
 
   // J8: shown when felt-scores trend low for 7+ days. Offers less, not more.
@@ -256,6 +269,7 @@ export const copy = {
   },
 
   common: {
+    loading: 'Opening your log…',
     back: 'Back',
     close: 'Close',
     cancel: 'Cancel',

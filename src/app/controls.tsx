@@ -126,10 +126,22 @@ export function Sheet({
   )
 }
 
-export function Toast({ message }: { message: string }) {
+export function Toast({
+  message,
+  action,
+}: {
+  message: string
+  /** U2: an escape hatch for a mis-tap, offered where the mistake happened. */
+  action?: { label: string; onAction: () => void } | undefined
+}) {
   return (
     <div className="toast" role="status">
-      {message}
+      <span>{message}</span>
+      {action ? (
+        <button type="button" className="toast-action" onClick={action.onAction}>
+          {action.label}
+        </button>
+      ) : null}
     </div>
   )
 }

@@ -11,7 +11,7 @@ import { makeEntries, makeEntry, resetFactory } from '../test/factory'
 
 const TODAY = '2025-06-01'
 
-function run(entries: Entry[], extra: { items?: Item[]; entryItems?: EntryItem[]; softened?: boolean; dismissed?: string[] } = {}) {
+function run(entries: Entry[], extra: { items?: Item[]; entryItems?: EntryItem[]; softened?: boolean; dismissed?: { id: string; n: number }[] } = {}) {
   return generateInsights({
     entries,
     outfits: [],
@@ -280,9 +280,63 @@ describe('dismissal', () => {
     ]
 
     const first = run(entries).insights[0]!
-    const after = run(entries, { dismissed: [first.id] })
+    const after = run(entries, { dismissed: [{ id: first.id, n: first.n }] })
 
     expect(after.insights.map((i) => i.id)).not.toContain(first.id)
+  })
+})
+
+describe('resurfacing a dismissed card', () => {
+  const base = () => [
+    ...makeEntries(20, { felt: 3 }),
+    ...makeEntries(6, { felt: 5, outfitId: 'outfit_a' }),
+  ]
+
+  it('stays dismissed while the evidence has not moved', () => {
+    const entries = base()
+    const card = run(entries).insights.find((i) => i.subject.id === 'outfit_a')!
+
+    const after = run(entries, { dismissed: [{ id: card.id, n: card.n }] })
+    expect(after.insights.map((i) => i.id)).not.toContain(card.id)
+  })
+
+  it('returns once there are meaningfully more wears', () => {
+    // "Got it" should not mean "never mention this again" — the same claim on
+    // twenty more wears is a different claim.
+    const first = base()
+    const card = run(first).insights.find((i) => i.subject.id === 'outfit_a')!
+
+    const later = [...first, ...makeEntries(4, { felt: 5, outfitId: 'outfit_a' })]
+    const after = run(later, { dismissed: [{ id: card.id, n: card.n }] })
+
+    expect(after.insights.map((i) => i.id)).toContain(card.id)
+  })
+
+  it('does not return on a single extra wear', () => {
+    const first = base()
+    const card = run(first).insights.find((i) => i.subject.id === 'outfit_a')!
+
+    const later = [...first, ...makeEntries(1, { felt: 5, outfitId: 'outfit_a' })]
+    const after = run(later, { dismissed: [{ id: card.id, n: card.n }] })
+
+    expect(after.insights.map((i) => i.id)).not.toContain(card.id)
+  })
+})
+
+describe('every card can show its own arithmetic', () => {
+  it('carries a method the user could check with a pen', () => {
+    const entries = [
+      ...makeEntries(20, { felt: 3 }),
+      ...makeEntries(6, { felt: 5, outfitId: 'outfit_a' }),
+    ]
+
+    const cards = run(entries).insights
+    expect(cards.length).toBeGreaterThan(0)
+    for (const card of cards) {
+      expect(card.method.length).toBeGreaterThan(20)
+      // It has to describe the comparison, not restate the finding.
+      expect(card.method.toLowerCase()).toMatch(/compar|count/)
+    }
   })
 })
 

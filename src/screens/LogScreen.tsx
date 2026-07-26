@@ -15,7 +15,12 @@ import { isInstalled, isIos } from '../lib/storage'
  * row, because those two numbers produce very different feelings about the
  * same week.
  */
-const MAX_GAP_CELLS = 21
+/*
+ * A gap is whitespace, but it should not be a chore to scroll past. Six blanks
+ * reads clearly as "there is a break here" without making a fortnight away feel
+ * like a wall — which would turn neutral whitespace into a statement after all.
+ */
+const MAX_GAP_CELLS = 6
 
 export function LogScreen({
   entries,

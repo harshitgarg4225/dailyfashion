@@ -1,4 +1,5 @@
 import type { Entry, EntryItem, Item, Outfit, Settings } from '../types'
+import type { Dismissal } from '../lib/insights'
 import { toDateKey } from '../lib/dates'
 
 /**
@@ -366,27 +367,34 @@ export async function saveSettings(patch: Partial<Settings>): Promise<Settings> 
 
 // --- dismissed insights ---------------------------------------------------
 
-export async function dismissedInsights(): Promise<string[]> {
+/**
+ * Dismissals, each remembering the sample size at the time.
+ *
+ * Stored under a new key rather than migrated in place: the old shape was a
+ * bare array of ids, and reading it as objects would silently treat every past
+ * dismissal as `n: undefined`. Anything written by the previous version is
+ * simply forgotten, which costs a user one repeated card and nothing else.
+ */
+export async function dismissedInsights(): Promise<Dismissal[]> {
   const db = await openDb()
-  const stored = await promisify<string[] | undefined>(
-    tx(db, [STORES.dismissed], 'readonly').objectStore(STORES.dismissed).get('ids'),
+  const stored = await promisify<Dismissal[] | undefined>(
+    tx(db, [STORES.dismissed], 'readonly').objectStore(STORES.dismissed).get('records'),
   )
   return stored ?? []
 }
 
-export async function dismissInsight(id: string): Promise<void> {
-  const ids = new Set(await dismissedInsights())
-  ids.add(id)
+export async function dismissInsight(id: string, n: number): Promise<void> {
+  const existing = (await dismissedInsights()).filter((record) => record.id !== id)
   const db = await openDb()
   const transaction = tx(db, [STORES.dismissed], 'readwrite')
-  transaction.objectStore(STORES.dismissed).put([...ids], 'ids')
+  transaction.objectStore(STORES.dismissed).put([...existing, { id, n }], 'records')
   await done(transaction)
 }
 
 export async function clearDismissedInsights(): Promise<void> {
   const db = await openDb()
   const transaction = tx(db, [STORES.dismissed], 'readwrite')
-  transaction.objectStore(STORES.dismissed).delete('ids')
+  transaction.objectStore(STORES.dismissed).delete('records')
   await done(transaction)
 }
 

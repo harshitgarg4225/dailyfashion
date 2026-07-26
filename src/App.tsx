@@ -61,7 +61,9 @@ const TAB_LABELS: Record<Screen, string> = {
 export default function App() {
   const log = useLog()
   const [screen, setScreen] = useState<Screen | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<
+    { message: string; action?: { label: string; onAction: () => void } } | null
+  >(null)
 
   // Post-capture flow state.
   const [followUp, setFollowUp] = useState<{ entryId: string; matchId: string | null } | null>(null)
@@ -98,10 +100,15 @@ export default function App() {
 
   const todayTempBand = entriesToday.find((e) => e.context.temp_band)?.context.temp_band ?? tappedTemp
 
-  const flash = useCallback((message: string) => {
-    setToast(message)
-    setTimeout(() => setToast(null), 1800)
-  }, [])
+  const flash = useCallback(
+    (message: string, action?: { label: string; onAction: () => void }) => {
+      setToast(action ? { message, action } : { message })
+      // Longer when there is something to undo — a two-second window to notice
+      // a mis-tap and react to it is not a window at all.
+      setTimeout(() => setToast(null), action ? 6000 : 1800)
+    },
+    [],
+  )
 
   // --- launch routing (J1) ---------------------------------------------
 
@@ -337,6 +344,7 @@ export default function App() {
 
   const saveReflection = useCallback(
     async (entry: Entry, felt: FeltScore, chips: ChipId[]) => {
+      const previous: Entry = { ...entry }
       const updated: Entry = { ...entry, felt_score: felt, chips, rated_at: Date.now() }
       await putEntry(updated)
       log.patchEntry(updated)
@@ -346,7 +354,21 @@ export default function App() {
       // rather than left to drift away from its entries.
       if (updated.outfit_id) await recomputeOutfit(updated.outfit_id)
       await log.refresh()
-      flash(copy.tonight.savedThanks)
+
+      flash(copy.tonight.savedThanks, {
+        label: copy.tonight.undo,
+        onAction: () => {
+          void (async () => {
+            await putEntry(previous)
+            log.patchEntry(previous)
+            if (previous.outfit_id) await recomputeOutfit(previous.outfit_id)
+            await log.refresh()
+            setToast(null)
+            setOpenEntry(previous)
+            setScreen('tonight')
+          })()
+        },
+      })
       setScreen('log')
     },
     [flash, log],
@@ -390,8 +412,13 @@ export default function App() {
 
   // --- render -----------------------------------------------------------
 
+  // U4: a cold start with a full log used to paint an empty page.
   if (log.loading || screen === null) {
-    return <div className="app" />
+    return (
+      <div className="app">
+        <p className="loading">{copy.common.loading}</p>
+      </div>
+    )
   }
 
   if (!log.settings.onboarded) {
@@ -462,7 +489,7 @@ export default function App() {
               dismissed: log.dismissed,
             }}
             entriesById={entriesById}
-            onDismiss={(id) => void dismissInsight(id).then(() => log.refresh())}
+            onDismiss={(id, n) => void dismissInsight(id, n).then(() => log.refresh())}
             onResume={() => void updateSettings({ softened_at: null })}
           />
         )
@@ -634,7 +661,7 @@ export default function App() {
         </Sheet>
       ) : null}
 
-      {toast ? <Toast message={toast} /> : null}
+      {toast ? <Toast message={toast.message} action={toast.action} /> : null}
     </div>
   )
 }

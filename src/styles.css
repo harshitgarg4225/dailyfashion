@@ -1014,3 +1014,59 @@ input[type='time'] {
 .notice .note {
   margin: var(--s2) 0 var(--s3);
 }
+
+/* --- method disclosure ------------------------------------------------- */
+
+.disclosure {
+  display: block;
+  margin-top: var(--s4);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 2px;
+}
+
+.method {
+  margin-top: var(--s3);
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* --- loading ----------------------------------------------------------- */
+
+/*
+ * U4: a cold start with a full log used to render an empty page. A single
+ * centred line is enough — a shimmering skeleton of a grid would be a small
+ * performance about work that takes a few hundred milliseconds.
+ */
+.loading {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: var(--s8) var(--s5);
+  color: var(--ink-faint);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+/* --- toast with an action ---------------------------------------------- */
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+}
+
+.toast-action {
+  color: var(--paper);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--paper);
+  padding-bottom: 1px;
+}

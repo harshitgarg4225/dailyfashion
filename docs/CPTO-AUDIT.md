@@ -57,9 +57,9 @@ Three findings dominate everything below.
 | F8 | Biometric/passcode lock exists in `Settings` and in copy, with no UI row and no enforcement. J4 lists it as a feature. | P1 | TODO |
 | F9 | `note` exists on `Entry` with no way to write one. Either build it or drop it from the schema. | P2 | TODO |
 | F10 | `deleteEntry` is implemented and unreachable. A single bad photo cannot be removed without wiping everything. | P1 | DONE |
-| F11 | Dismissed insights are dismissed forever. A card about a jacket you have since worn twenty more times should be allowed to return with new evidence. | P2 | TODO |
+| F11 | Dismissed insights are dismissed forever. A card about a jacket you have since worn twenty more times should be allowed to return with new evidence. | P2 | DONE |
 | F12 | The "welcome back" gap check reads `entries[1]`, which is the second-newest entry, not the gap before the current one. It will fire at the wrong times. | P1 | DONE |
-| F13 | Export has no progress indication. 200 photos is several seconds of frozen button. | P2 | TODO |
+| F13 | Export has no progress indication. 200 photos is several seconds of frozen button. | P2 | DONE |
 | F14 | No import. Export exists, so a user can leave; they cannot return, or move to a new phone. For a local-only app with no sync, import **is** the migration story. | P1 | DONE |
 
 ## 2. UX & ease of use
@@ -67,14 +67,14 @@ Three findings dominate everything below.
 | # | Finding | Sev | Status |
 |---|---|---|---|
 | U1 | Post-capture sheets chain: link → tag, or temp. Up to three modal decisions after a shutter tap that promised "no confirm screen". The prompts are individually cheap and collectively a gauntlet. | P0 | DONE |
-| U2 | No undo. A mis-tapped felt score is permanent unless the user finds the entry in the grid and re-opens it. | P1 | TODO |
+| U2 | No undo. A mis-tapped felt score is permanent unless the user finds the entry in the grid and re-opens it. | P1 | DONE |
 | U3 | The tab bar carries `Capture` alongside four sections, so the primary action is a peer of Settings. It should be a distinct, always-present affordance. | P1 | DONE |
-| U4 | No skeleton or empty-state treatment while the log loads; the app renders a blank `.app` div. On a cold start with 200 entries this is a visible flash of nothing. | P1 | TODO |
+| U4 | No skeleton or empty-state treatment while the log loads; the app renders a blank `.app` div. On a cold start with 200 entries this is a visible flash of nothing. | P1 | DONE |
 | U5 | Onboarding's buttons are both labelled "Next" with no sense of length or position beyond three dots. | P2 | TODO |
-| U6 | The grid caps consecutive gap cells at 21, which is right, but a returning user still scrolls three weeks of blank squares before reaching their history. | P2 | TODO |
+| U6 | The grid caps consecutive gap cells at 21, which is right, but a returning user still scrolls three weeks of blank squares before reaching their history. | P2 | DONE |
 | U7 | No haptic feedback on shutter or felt selection. On a phone this is most of what "responsive" means. | P2 | DONE |
 | U8 | Insight cards render all at once in a scroll. The spec says one at a time, which is a materially different experience — a stack of five observations is a dashboard. | P1 | DONE |
-| U9 | Nothing explains what happens after the felt tap. A one-line "this is what builds your patterns" would connect the daily chore to the payoff. | P2 | TODO |
+| U9 | Nothing explains what happens after the felt tap. A one-line "this is what builds your patterns" would connect the daily chore to the payoff. | P2 | DONE |
 
 ## 3. Design — the Louis Vuitton direction
 
@@ -100,7 +100,7 @@ confidence in white space**. Concretely, what changes:
 | P1a | The killer insight ("you rate it highly and never wear it") needs 5 wears of one outfit, which needs the similarity matcher to cluster reliably. If clustering under-fires, the best card never appears. There is no instrumentation to know whether it fires. | P0 | TODO |
 | P2a | Item-level findings ("your worst days correlate with those shoes") require lazy tags, which are optional and easy to skip. Realistically a minority of users ever reach n≥5 on an item. The colour card is the honest early substitute and should be foregrounded. | P1 | TODO |
 | P3a | Nothing shows the user their own trajectory toward the first insight beyond a bare count. "You are 6 days from your first observation" is the retention hook of the first fortnight. | P1 | DONE |
-| P4a | No insight explains *itself*. A "how was this worked out?" disclosure would convert scepticism into trust, which is the whole product. | P2 | TODO |
+| P4a | No insight explains *itself*. A "how was this worked out?" disclosure would convert scepticism into trust, which is the whole product. | P2 | DONE |
 
 ## 5. Security & privacy
 
@@ -111,7 +111,7 @@ confidence in white space**. Concretely, what changes:
 | S3 | `newId` falls back to `Math.random()` when `crypto.randomUUID` is absent. Predictable ids are harmless here, but the fallback is dead weight on every target browser and should just use `crypto.getRandomValues`. | P2 | DONE |
 | S4 | `style-src 'unsafe-inline'` — see D9. | P1 | DONE |
 | S5 | No `Clear-Site-Data` on wipe. `deleteDatabase` handles our data; the service worker cache still holds the shell (harmless, but worth being exact about). | P2 | TODO |
-| S6 | The service worker has no version/skipWaiting story beyond a constant, so a deploy can leave a stale shell against a new asset manifest. | P1 | TODO |
+| S6 | The service worker has no version/skipWaiting story beyond a constant, so a deploy can leave a stale shell against a new asset manifest. | P1 | DONE |
 
 ## 6. Scalability
 
@@ -128,7 +128,7 @@ confidence in white space**. Concretely, what changes:
 
 | # | Finding | Sev | Status |
 |---|---|---|---|
-| M1 | iOS PWAs cannot use notification actions, so J2's two-tap lock-screen rating degrades to tap-through. Documented in `sw.js`, but the user is never told, and iOS is the platform this audience is on. | P1 | TODO |
+| M1 | iOS PWAs cannot use notification actions, so J2's two-tap lock-screen rating degrades to tap-through. Documented in `sw.js`, but the user is never told, and iOS is the platform this audience is on. | P1 | DONE |
 | M2 | No "Add to Home Screen" guidance. On iOS there is no install prompt, so without instructions most users stay in a Safari tab — where storage eviction is far more aggressive. This compounds C2 directly. | P0 | DONE |
 | M3 | No orientation handling on the camera; a landscape capture is stored rotated. | P1 | TODO |
 | M4 | No `apple-touch-startup-image`, so the installed app shows a white flash on cold launch. | P2 | TODO |

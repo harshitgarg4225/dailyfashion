@@ -36,7 +36,10 @@ export interface ExportResult {
   entryCount: number
 }
 
-export async function buildExport(): Promise<ExportResult> {
+export async function buildExport(
+  /** Called as each photograph is packed, so the UI can say where it is. */
+  onProgress?: (done: number, total: number) => void,
+): Promise<ExportResult> {
   const [entries, outfits, items, entryItems] = await Promise.all([
     allEntries(),
     allOutfits(),
@@ -113,6 +116,11 @@ export async function buildExport(): Promise<ExportResult> {
         date: parseDateKey(entry.date),
       })
     }
+
+    onProgress?.(index + 1, chronological.length)
+    // Yield between photographs so the progress text actually repaints; a
+    // tight loop over 200 images would otherwise freeze the button it replaced.
+    if (index % 10 === 9) await new Promise((resolve) => setTimeout(resolve, 0))
   }
 
   const encoder = new TextEncoder()

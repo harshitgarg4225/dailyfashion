@@ -80,6 +80,14 @@ export interface Insight {
   evidence: string
   /** Handed back to the user. The app does not get the last word. */
   question: string
+  /**
+   * How this was worked out, in a sentence the user can check.
+   *
+   * P4a: the product's claim is "proof you already know what works", and proof
+   * that cannot be inspected is just assertion with numbers attached. Every
+   * card can show its own arithmetic.
+   */
+  method: string
   /** Sample size. Every card shows this — non-negotiable. */
   n: number
   subject: InsightSubject
@@ -387,6 +395,7 @@ function underwornFavourite(group: Group, agg: Aggregate, baselineMean: number, 
       `${round1(agg.meanFelt)} average across ${agg.n} days, against ${round1(baselineMean)} for everything else. ` +
       `Last worn ${agoLabel(idle)}${agg.wearsLast30 > 0 ? `, and ${agg.wearsLast30} time${agg.wearsLast30 === 1 ? '' : 's'} in the past month` : ''}.`,
     question: 'Worth putting on this week?',
+    method: `Compared the average of your ${agg.n} days in it against the average of every other day you have rated. Shown because the gap is at least ${MIN_FELT_DELTA} and it has been a while.`,
     n: agg.n,
     subject: group.subject,
     priority: 100 + delta * 10 + Math.min(idle, 90) / 10,
@@ -444,6 +453,7 @@ function colourGap(
       `against ${pct(worn.complimentRate)} of ${worn.n} in ${mostWorn.subject.label}. ` +
       `${mostWorn.subject.label} is ${worn.n} of your ${totalRated} logged days.`,
     question: `What is keeping the ${bestByCompliment.subject.label} at the back?`,
+    method: `Counted how often "someone said something nice" appears on days in each colour, across at least ${MIN_WEARS_PER_SUBJECT} days per colour. The colour you wear most is whichever has the most days.`,
     n: liked.n + worn.n,
     subject: bestByCompliment.subject,
     priority: 90 + (liked.complimentRate - worn.complimentRate) * 20,
@@ -462,6 +472,7 @@ function quietFavourite(group: Group, agg: Aggregate, baselineMean: number): Ins
     observation: `${name} is the steadiest thing in your log.`,
     evidence: `${round1(agg.meanFelt)} average across ${agg.n} days, against ${round1(baselineMean)} across everything else.`,
     question: 'Does that match how you remember it?',
+    method: `Compared the average of your ${agg.n} days in it against the average of every other day you have rated.`,
     n: agg.n,
     subject: group.subject,
     priority: 60 + delta * 10,
@@ -490,6 +501,7 @@ function reliableLetdown(group: Group, agg: Aggregate, baselineMean: number): In
     observation: `Days in ${name} come out lower than your usual.`,
     evidence: `${round1(agg.meanFelt)} average across ${agg.n} days, against ${round1(baselineMean)} otherwise.${changed}`,
     question: 'Is it the clothes, or is it what those days tend to be?',
+    method: `Compared the average of your ${agg.n} days in it against the average of every other day you have rated. Suppressed entirely if those days were mostly one kind of day.`,
     n: agg.n,
     subject: group.subject,
     priority: 70 + delta * 10,
@@ -508,6 +520,7 @@ function comfortSignal(group: Group, agg: Aggregate, baselineForgot: number): In
     observation: `You stop noticing ${name} once it is on.`,
     evidence: `You marked "forgot I was wearing it" on ${pct(agg.forgotRate)} of ${agg.n} days in it, against ${pct(baselineForgot)} across the log.`,
     question: 'Is that the day you want more of?',
+    method: `Counted how often you marked "forgot I was wearing it" on days in it, against how often you mark it at all.`,
     n: agg.n,
     subject: group.subject,
     priority: 50,
@@ -515,6 +528,23 @@ function comfortSignal(group: Group, agg: Aggregate, baselineForgot: number): In
 }
 
 // --- Entry point ----------------------------------------------------------
+
+/**
+ * A dismissal, with the sample size it was dismissed at.
+ *
+ * F11: "got it" should not mean "never mention this again". A card about a
+ * jacket you have since worn twenty more times is a different claim resting on
+ * different evidence, and suppressing it forever means the log gets quieter the
+ * longer you use it — the exact opposite of the promise.
+ */
+export interface Dismissal {
+  id: string
+  /** Sample size when the user dismissed it. */
+  n: number
+}
+
+/** Extra wears before a dismissed card is allowed to return. */
+export const RESURFACE_AFTER_WEARS = 3
 
 export interface GenerateInput {
   entries: readonly Entry[]
@@ -524,8 +554,8 @@ export interface GenerateInput {
   today: DateKey
   /** Set when the user has paused observations (J8). */
   softened?: boolean
-  /** Cards the user has already dismissed. */
-  dismissed?: readonly string[]
+  /** Cards the user has already dismissed, and the evidence at the time. */
+  dismissed?: readonly Dismissal[]
 }
 
 export function generateInsights(input: GenerateInput): InsightResult {
@@ -542,7 +572,7 @@ export function generateInsights(input: GenerateInput): InsightResult {
   if (!gate.unlocked || gate.softened) return { gate, insights: [] }
 
   const baseline = baselineOf(entries)
-  const dismissed = new Set(input.dismissed ?? [])
+  const dismissedAt = new Map((input.dismissed ?? []).map((d) => [d.id, d.n]))
   const insights: Insight[] = []
 
   const groups = [
@@ -594,7 +624,12 @@ export function generateInsights(input: GenerateInput): InsightResult {
   return {
     gate,
     insights: insights
-      .filter((card) => !dismissed.has(card.id))
+      .filter((card) => {
+        const at = dismissedAt.get(card.id)
+        if (at === undefined) return true
+        // Only return once there is meaningfully more evidence than last time.
+        return card.n >= at + RESURFACE_AFTER_WEARS
+      })
       .sort((a, b) => b.priority - a.priority),
   }
 }

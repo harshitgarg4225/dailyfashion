@@ -22,6 +22,30 @@ createRoot(container).render(
  */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js').catch(() => undefined)
+    void navigator.serviceWorker
+      .register('/sw.js')
+      .then(() => {
+        /*
+         * Reload once a *replacement* worker takes control.
+         *
+         * Without this an installed app can keep serving a cached shell against
+         * an asset manifest that has moved on, which presents as a blank screen
+         * after a deploy — and on a local-only app a blank screen reads as
+         * "my data is gone".
+         *
+         * The `hadController` check is what distinguishes an update from a first
+         * install: on first install `controllerchange` also fires, and reloading
+         * then would yank the page out from under someone mid-onboarding.
+         */
+        const hadController = Boolean(navigator.serviceWorker.controller)
+        let reloading = false
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!hadController || reloading) return
+          reloading = true
+          window.location.reload()
+        })
+      })
+      .catch(() => undefined)
   })
 }

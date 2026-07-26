@@ -31,11 +31,12 @@ export function InsightsScreen({
 }: {
   input: GenerateInput
   entriesById: Map<string, Entry>
-  onDismiss: (id: string) => void
+  onDismiss: (id: string, n: number) => void
   onResume: () => void
 }) {
   const { gate, insights } = useMemo(() => generateInsights(input), [input])
   const [index, setIndex] = useState(0)
+  const [showMethod, setShowMethod] = useState(false)
   const progressRef = useRef<HTMLSpanElement>(null)
 
   /*
@@ -118,13 +119,29 @@ export function InsightsScreen({
 
               <span className="sample">{copy.insights.sample(card.n)}</span>
 
+              {/*
+                * Scepticism is the correct response to a claim about yourself,
+                * and the only useful answer is the arithmetic. Collapsed by
+                * default so it never competes with the observation.
+                */}
+              <button
+                type="button"
+                className="disclosure"
+                aria-expanded={showMethod}
+                onClick={() => setShowMethod((open) => !open)}
+              >
+                {showMethod ? copy.insights.howHide : copy.insights.howShow}
+              </button>
+              {showMethod ? <p className="method">{card.method}</p> : null}
+
               <div className="spacer" />
               <div className="stack">
                 <button
                   type="button"
                   className="btn btn--ghost btn--block"
                   onClick={() => {
-                    onDismiss(card.id)
+                    onDismiss(card.id, card.n)
+                    setShowMethod(false)
                     setIndex(0)
                   }}
                 >
@@ -135,7 +152,10 @@ export function InsightsScreen({
                   <button
                     type="button"
                     className="btn btn--quiet btn--block"
-                    onClick={() => setIndex((i) => (i + 1) % insights.length)}
+                    onClick={() => {
+                      setShowMethod(false)
+                      setIndex((i) => (i + 1) % insights.length)
+                    }}
                   >
                     {copy.insights.next}
                   </button>

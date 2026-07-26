@@ -5,6 +5,7 @@ import { Sheet, Switch } from '../app/controls'
 import { buildExport, importArchive, triggerDownload } from '../lib/exportData'
 import { wipeEverything } from '../db/db'
 import { permissionState, requestReminderPermission } from '../lib/reminders'
+import { isIos } from '../lib/storage'
 import {
   currentPersistence,
   formatBytes,
@@ -33,6 +34,7 @@ export function SettingsScreen({
 }) {
   const [exporting, setExporting] = useState(false)
   const [confirmExport, setConfirmExport] = useState(false)
+  const [exportProgress, setExportProgress] = useState<{ done: number; total: number } | null>(null)
   const [confirmWipe, setConfirmWipe] = useState(false)
   const [typed, setTyped] = useState('')
   const [status, setStatus] = useState<string | null>(null)
@@ -71,11 +73,13 @@ export function SettingsScreen({
   const runExport = async () => {
     setConfirmExport(false)
     setExporting(true)
+    setExportProgress(null)
     try {
-      const result = await buildExport()
+      const result = await buildExport((done, total) => setExportProgress({ done, total }))
       triggerDownload(result.blob, result.filename)
     } finally {
       setExporting(false)
+      setExportProgress(null)
     }
   }
 
@@ -136,6 +140,7 @@ export function SettingsScreen({
               />
             </div>
             <p className="note">{copy.settings.reminderCaveat}</p>
+            {isIos() ? <p className="note">{copy.settings.reminderIosCaveat}</p> : null}
           </>
         ) : null}
 
@@ -196,7 +201,11 @@ export function SettingsScreen({
             disabled={exporting}
             onClick={() => setConfirmExport(true)}
           >
-            {exporting ? copy.settings.exporting : copy.settings.export}
+            {exporting
+              ? exportProgress
+                ? copy.settings.exportProgress(exportProgress.done, exportProgress.total)
+                : copy.settings.exporting
+              : copy.settings.export}
           </button>
         </div>
 

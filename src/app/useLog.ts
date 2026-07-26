@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Entry, EntryItem, Item, Outfit, Settings } from '../types'
+import type { Dismissal } from '../lib/insights'
 import {
   allEntries,
   allEntryItems,
@@ -25,7 +26,7 @@ export interface LogState {
   items: Item[]
   entryItems: EntryItem[]
   settings: Settings
-  dismissed: string[]
+  dismissed: Dismissal[]
 }
 
 export interface Log extends LogState {

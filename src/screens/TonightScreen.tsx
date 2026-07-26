@@ -79,6 +79,8 @@ export function TonightScreen({
         <ChipRow selected={chips} onToggle={toggle} />
       </div>
 
+      <p className="note">{copy.tonight.why}</p>
+
       <div className="stack">
         <button
           type="button"
