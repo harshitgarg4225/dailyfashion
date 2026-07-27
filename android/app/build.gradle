@@ -21,10 +21,22 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
-def resolvedStoreFile = keystoreProperties['storeFile'] ?: System.getenv('ANDROID_KEYSTORE_PATH')
-def resolvedStorePassword = keystoreProperties['storePassword'] ?: System.getenv('ANDROID_KEYSTORE_PASSWORD')
-def resolvedKeyAlias = keystoreProperties['keyAlias'] ?: System.getenv('ANDROID_KEY_ALIAS')
-def resolvedKeyPassword = keystoreProperties['keyPassword'] ?: System.getenv('ANDROID_KEY_PASSWORD')
+/*
+ * `?:` alone is not enough here, and the difference is not academic: an unset
+ * GitHub Actions secret arrives as an empty string rather than as absent, so a
+ * null check passes and `file('')` throws — which aborts the whole `android {}`
+ * block and surfaces as "project ':app' does not specify compileSdk", a message
+ * with no relationship at all to the actual fault.
+ */
+def setting = { value, envName ->
+    def resolved = value ?: System.getenv(envName)
+    return resolved?.trim() ? resolved.trim() : null
+}
+
+def resolvedStoreFile = setting(keystoreProperties['storeFile'], 'ANDROID_KEYSTORE_PATH')
+def resolvedStorePassword = setting(keystoreProperties['storePassword'], 'ANDROID_KEYSTORE_PASSWORD')
+def resolvedKeyAlias = setting(keystoreProperties['keyAlias'], 'ANDROID_KEY_ALIAS')
+def resolvedKeyPassword = setting(keystoreProperties['keyPassword'], 'ANDROID_KEY_PASSWORD')
 def hasSigningConfig = resolvedStoreFile != null && file(resolvedStoreFile).exists()
 
 android {

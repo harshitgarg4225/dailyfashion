@@ -98,6 +98,31 @@ jobs:
           name: daily-fashion-apk
           path: out/daily-fashion.apk
 
+      # A green run that published nothing is indistinguishable from a green
+      # run that published, unless the run says which it was.
+      - name: Say what happened
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+          SHA256: ${{ steps.apk.outputs.sha256 }}
+        run: |
+          {
+            if [ "$SIGNED" = "true" ]; then
+              echo "### APK published"
+              echo ""
+              echo "Attached to the \`beta\` release, which is what /download links to."
+            else
+              echo "### APK built, but not published"
+              echo ""
+              echo "It is **unsigned**, so a phone will refuse to install it. It is"
+              echo "attached to this run as an artifact for inspection only."
+              echo ""
+              echo "Add the four \`ANDROID_*\` repository secrets and re-run."
+              echo "See \`docs/RELEASE.md\` — it takes about two minutes."
+            fi
+            echo ""
+            echo "SHA-256: \`${SHA256}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # Only a signed build becomes a public download. An unsigned APK cannot
       # be installed on a phone, and a signed-with-a-throwaway-key one could
       # never be updated in place — either would be worse than no link at all.

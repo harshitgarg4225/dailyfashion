@@ -123,6 +123,16 @@ p {
   border-top: 1px solid var(--line);
 }
 
+/*
+ * The masthead already closes with a rule. Drawing another one immediately
+ * under it puts two hairlines a gap apart, which reads as a mistake rather
+ * than as structure.
+ */
+.loop li:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
 .loop li:last-child {
   border-bottom: 1px solid var(--line);
 }
