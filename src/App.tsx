@@ -12,6 +12,7 @@ import { OnboardingScreen, type SeedPhoto } from './screens/OnboardingScreen'
 import { LockScreen } from './screens/LockScreen'
 import { WriteScreen } from './screens/WriteScreen'
 import { SummaryScreen } from './screens/SummaryScreen'
+import { WeekScreen } from './screens/WeekScreen'
 import { CaptureFollowUp, type FollowUpResult } from './screens/CaptureFollowUp'
 import { copy } from './lib/copy'
 import { captureContext, launchIntent } from './lib/context'
@@ -19,6 +20,7 @@ import { addDays, BACKDATE_LIMIT_DAYS, daysBetween, mediumLabel, toDateKey, type
 import { bestMatch, SIMILARITY_WINDOW } from './lib/signature'
 import { shouldOfferSoftening } from './lib/insights'
 import { SHORTLIST_MIN_ENTRIES } from './lib/shortlist'
+import { MIN_DAYS_FOR_WRAP } from './lib/weekWrapped'
 import {
   clonePhoto,
   deleteEntry,
@@ -52,6 +54,7 @@ type Screen =
   | 'write'
   | 'tonight'
   | 'log'
+  | 'week'
   | 'summary'
   | 'shortlist'
   | 'insights'
@@ -67,6 +70,10 @@ type Screen =
 function visibleTabs(entryCount: number): Screen[] {
   const tabs: Screen[] = ['log']
   if (entryCount >= SHORTLIST_MIN_ENTRIES) tabs.splice(0, 0, 'shortlist')
+  // The week sits next to the journal because it is about the same thing at a
+  // different zoom, and it appears as soon as there is a week worth recapping —
+  // it is the only payoff that arrives before the fortnight is up.
+  if (entryCount >= MIN_DAYS_FOR_WRAP) tabs.push('week')
   tabs.push('summary', 'insights', 'settings')
   return tabs
 }
@@ -76,6 +83,7 @@ const TAB_LABELS: Record<Screen, string> = {
   write: 'Write',
   tonight: 'Tonight',
   log: 'Journal',
+  week: 'Week',
   summary: 'Progress',
   shortlist: 'Today',
   insights: 'Patterns',
@@ -665,6 +673,9 @@ export default function App() {
             }}
           />
         )
+
+      case 'week':
+        return <WeekScreen entries={log.entries} today={today} />
 
       case 'summary':
         return (

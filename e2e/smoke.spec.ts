@@ -269,3 +269,50 @@ test.describe('the download page', () => {
     await expect(page.getByRole('heading', { name: /nothing leaves this phone/i })).toBeVisible()
   })
 })
+
+test.describe('the week', () => {
+  test('renders a share card and hands it over without a network request', async ({ page }) => {
+    const external = await watchRequests(page)
+
+    await page.goto(BASE)
+    await completeOnboarding(page)
+
+    // Three days, so the recap clears its own threshold.
+    for (let day = 0; day < 3; day++) {
+      if (day > 0) {
+        await page.getByRole('button', { name: 'Journal', exact: true }).click()
+        await page.getByRole('button', { name: /add a past day/i }).click()
+        const picker = page.getByRole('dialog', { name: /which day/i })
+        await picker.waitFor({ state: 'visible' })
+        await picker.getByRole('button').nth(day - 1).click()
+      }
+
+      const shutter = page.getByRole('button', { name: 'Capture' })
+      await expect(shutter).toBeEnabled({ timeout: 20_000 })
+      await shutter.click()
+
+      const followUp = page.getByRole('dialog', { name: /anything to add/i })
+      await followUp.waitFor({ state: 'visible', timeout: 20_000 })
+      await followUp.getByRole('button', { name: 'Done', exact: true }).click()
+      await followUp.waitFor({ state: 'detached', timeout: 10_000 })
+    }
+
+    await page.getByRole('button', { name: 'Week', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Your week', level: 1 })).toBeVisible()
+
+    /*
+     * The card is drawn to a canvas and encoded on-device. Headless Chromium
+     * has no share sheet, so `shareImage` falls back to saving — which is the
+     * path this asserts, since a download proves the bytes were produced.
+     */
+    const download = page.waitForEvent('download', { timeout: 30_000 })
+    await page.getByRole('button', { name: /make the image/i }).click()
+    const file = await download
+
+    expect(file.suggestedFilename()).toMatch(/^daily-fashion-\d{4}-\d{2}-\d{2}\.jpg$/)
+
+    // The whole point of sharing this way: the image is made here, and nothing
+    // about it leaves except by the user's own hand.
+    expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
+  })
+})

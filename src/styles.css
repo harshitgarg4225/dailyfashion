@@ -1367,3 +1367,41 @@ input[type='time'] {
 .example-cards + .note {
   margin-top: var(--s5);
 }
+
+/* --- the week ----------------------------------------------------------- */
+
+/*
+ * A contact sheet of the week, matching what the share card renders.
+ *
+ * Three across on a phone, because the point is to see the week as one object
+ * rather than to study any single day — and because it is the same grid the
+ * exported image uses, so what someone shares is what they were looking at.
+ */
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s2);
+  margin-bottom: var(--s5);
+}
+
+.week-frame {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  background: var(--paper-warm);
+  overflow: hidden;
+}
+
+/*
+ * `cover` here, unlike the journal grid.
+ *
+ * The journal shows one photograph at a time and must not crop the clothes out
+ * of a clothing app. This is a composed sheet of six, where letterboxed frames
+ * of differing shapes read as a broken layout rather than as care.
+ */
+.week-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

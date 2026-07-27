@@ -174,6 +174,46 @@ export const copy = {
     allUnlocked: 'Everything is open. From here it only gets more certain.',
   },
 
+  /*
+   * The weekly recap.
+   *
+   * The only screen allowed to speak before the fourteen-evening gate, and it
+   * earns that by never making a claim — every line counts something that
+   * happened. No superlatives, no "your colour is", nothing resting on an
+   * average. See `weekWrapped.ts` for why that distinction is load-bearing.
+   */
+  week: {
+    title: 'Your week',
+    tab: 'This week',
+    range: (from: string, to: string) => `${from} — ${to}`,
+    thin: (have: number, need: number) =>
+      `${have} of ${need} days logged this week. A few more and there is something to look back at.`,
+    daysLabel: 'Days',
+    answeredLabel: 'Evenings answered',
+    repeatsLabel: 'Worn again',
+    wornTitle: 'What you reached for',
+    worn: (colours: string) => `Mostly ${colours}.`,
+    repeats: (outfits: number, days: number) =>
+      outfits === 1
+        ? `One outfit came back — ${days} days of it.`
+        : `${outfits} outfits came back this week.`,
+    noRepeats: 'Everything this week was worn once.',
+    eventsTitle: 'What happened',
+    event: (label: string, days: number) =>
+      days === 1 ? `${label} — 1 day` : `${label} — ${days} days`,
+    // Says plainly what is on the card and what is not, before anything leaves.
+    shareTitle: 'Share your week',
+    shareBody:
+      'Makes one image of this week’s photos to send wherever you like. It carries what you wore — never how the days felt, and never your notes.',
+    shareGo: 'Make the image',
+    sharePreparing: 'Putting it together…',
+    shareShared: 'Sent to your share sheet.',
+    shareSaved: 'Saved to your device.',
+    shareFailed: 'That did not come together. Try again.',
+    shareCaption: 'My week in Daily Fashion',
+    shareNothing: 'Photograph a day or two first — the image is made of them.',
+  },
+
   log: {
     title: 'Journal',
     empty: 'Your log starts with your first photo.',
