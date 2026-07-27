@@ -321,6 +321,9 @@ export const copy = {
       'The reminder needs the app to have been opened that day. It is scheduled on your device, never by a server.',
     // M1: iOS ignores notification actions, so be straight about the difference
     // rather than letting the experience quietly be worse than described.
+    // The packaged builds schedule with the OS, so the web caveat does not apply.
+    reminderNative:
+      'Scheduled on your device, by your phone rather than by this app. It arrives whether or not you have opened Daily Fashion that day, and you can answer straight from it.',
     reminderIosCaveat:
       'On iPhone, tapping the reminder opens the app on tonight\u2019s question. On Android you can answer straight from the notification.',
   },

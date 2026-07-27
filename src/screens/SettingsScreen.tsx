@@ -12,6 +12,7 @@ import {
 } from '../lib/lock'
 import { permissionState, requestReminderPermission } from '../lib/reminders'
 import { isIos } from '../lib/storage'
+import { hasSystemScheduledReminders } from '../lib/platform'
 import {
   currentPersistence,
   formatBytes,
@@ -191,8 +192,14 @@ export function SettingsScreen({
                 onChange={(event) => onChange({ reminder_time: event.target.value })}
               />
             </div>
-            <p className="note">{copy.settings.reminderCaveat}</p>
-            {isIos() ? <p className="note">{copy.settings.reminderIosCaveat}</p> : null}
+            {hasSystemScheduledReminders() ? (
+              <p className="note">{copy.settings.reminderNative}</p>
+            ) : (
+              <>
+                <p className="note">{copy.settings.reminderCaveat}</p>
+                {isIos() ? <p className="note">{copy.settings.reminderIosCaveat}</p> : null}
+              </>
+            )}
           </>
         ) : null}
 

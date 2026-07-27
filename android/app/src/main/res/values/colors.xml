@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The app's own paper and ink. The launch theme, status bar and splash all
+    read from here, so the native shell never flashes a colour the interface
+    does not use — which is the single most common way a wrapped web app
+    announces that it is a wrapped web app.
+-->
+<resources>
+    <color name="colorPrimary">#F7F4EF</color>
+    <color name="colorPrimaryDark">#F7F4EF</color>
+    <color name="colorAccent">#1A1714</color>
+    <color name="ic_launcher_background">#F7F4EF</color>
+    <color name="splashBackground">#F7F4EF</color>
+</resources>

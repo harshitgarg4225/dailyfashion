@@ -41,6 +41,8 @@ import {
   scheduleReminder,
 } from './lib/reminders'
 import { requestPersistence } from './lib/storage'
+import { hasSystemScheduledReminders } from './lib/platform'
+import { cancelNativeReminder, onReminderAction, scheduleNativeReminder } from './lib/nativeReminders'
 import { getLock } from './db/db'
 import type { LockRecord } from './lib/lock'
 
@@ -197,6 +199,20 @@ export default function App() {
         reminder_enabled: ignores >= MAX_CONSECUTIVE_IGNORES ? false : log.settings.reminder_enabled,
       }).then(() => log.refresh())
       return
+    }
+
+    /*
+     * Packaged builds hand the reminder to the operating system, which is the
+     * whole point of packaging: it then arrives whether or not the app was
+     * opened that day. The web path stays a page timer, with the limitation
+     * stated in Settings rather than hidden.
+     */
+    if (hasSystemScheduledReminders()) {
+      void scheduleNativeReminder(log.settings, {
+        title: copy.reminder.notificationTitle,
+        body: copy.reminder.notificationBody,
+      })
+      return cancelNativeReminder
     }
 
     const armed = scheduleReminder({
@@ -455,6 +471,28 @@ export default function App() {
     },
     [log],
   )
+
+  /*
+   * A rating given from the lock screen, natively.
+   *
+   * Registered once and kept for the app's lifetime, because the tap can arrive
+   * while the app is backgrounded and the handler has to be listening when it
+   * resumes.
+   */
+  useEffect(() => {
+    if (log.loading) return
+
+    return onReminderAction((rating) => {
+      const target = unrated[0]
+      if (!target) return
+      if (rating !== null && rating >= 1 && rating <= 5) {
+        void saveReflection(target, rating as FeltScore, [])
+      } else {
+        setOpenEntry(target)
+        setScreen('tonight')
+      }
+    })
+  }, [log.loading, saveReflection, unrated])
 
   // --- notification tap carrying an inline rating (J2) -------------------
 

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12+ backup and device-transfer rules.
+
+    Everything is excluded. `allowBackup="false"` covers older releases; from
+    Android 12 these rules are what actually govern cloud backup and
+    device-to-device transfer, and a permissive default here would put the whole
+    log on Google Drive regardless of the flag above.
+
+    A new phone gets the log through the export and import in Settings, which is
+    a restore the user chose rather than one that happened to them.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </device-transfer>
+</data-extraction-rules>

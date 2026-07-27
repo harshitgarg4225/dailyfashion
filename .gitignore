@@ -6,3 +6,20 @@ dist/
 .env
 .env.*
 coverage/
+
+# Native build output. The platform projects themselves are committed —
+# they carry real configuration (permissions, backup rules, theming) that
+# would be lost if they were regenerated.
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/res/xml/config.xml
+ios/App/build/
+ios/App/Pods/
+ios/App/App/public/
+ios/App/output/
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/

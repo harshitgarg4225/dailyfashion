@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <!--
+            `allowBackup` is false on purpose, and it is not a small detail.
+
+            The Capacitor default is true, which enrols the app in Android's
+            automatic cloud backup: the WebView's storage — every photograph and
+            every entry — gets copied to the user's Google Drive without them
+            ever being asked. That is precisely the thing onboarding promises
+            does not happen. Leaving the default would have made the app's
+            central claim false at the operating-system level, silently, on
+            every device.
+
+            The cost is real and accepted: a new phone does not inherit the log
+            automatically. That is what the export and import in Settings are
+            for, and a deliberate restore the user performs is the honest
+            version of this anyway.
+        -->
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <!--
+        Deliberately absent: android.permission.INTERNET.
+
+        Without it the operating system makes network access impossible for this
+        app. The privacy promise stops being a policy and becomes a property the
+        kernel enforces, and the Play Store listing shows the app cannot reach
+        the network at all. For a product whose entire argument is "nothing
+        leaves this phone", that is the strongest available version of the claim
+        — stronger than the CSP, because a user can verify it without trusting
+        us.
+
+        VERIFY ON A DEVICE BEFORE RELEASE. Capacitor serves the bundle through
+        WebViewAssetLoader on a virtual https://localhost origin, which should
+        need no INTERNET permission — but this has not been run on hardware. If
+        the app fails to load its own assets at launch, restore the line below
+        and behaviour matches any other Capacitor app.
+
+        <uses-permission android:name="android.permission.INTERNET" />
+    -->
+
+    <!-- The morning photograph. Not required, because a day can be written. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- The evening reminder. Required from Android 13. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- So a scheduled reminder survives a restart rather than silently stopping. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Feedback on the shutter and the evening answers. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+</manifest>
