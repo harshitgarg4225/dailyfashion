@@ -1078,3 +1078,118 @@ input[type='time'] {
 .onboard-step {
   margin-bottom: var(--s4);
 }
+
+/* --- writing ----------------------------------------------------------- */
+
+.write-area {
+  width: 100%;
+  min-height: 132px;
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  /* The display face, because this is the user's own voice on the page. */
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.write-area::placeholder {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/*
+ * A written day in the grid.
+ *
+ * Given the same footprint as a photograph rather than a smaller or greyer
+ * one — the moment written days look like second-class entries, people stop
+ * making them, and those are the days the log most needs.
+ */
+.grid-cell--written {
+  display: flex;
+  align-items: flex-start;
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.grid-cell--written span {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  text-align: left;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --- summary ----------------------------------------------------------- */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s4);
+  margin: 0 0 var(--s5);
+  padding: 0;
+}
+
+/*
+ * Reserve two lines for the label so the numbers share a baseline. Without it
+ * a wrapping label pushes its own figure down and the row reads as ragged.
+ */
+.figure dt {
+  margin-bottom: var(--s2);
+  min-height: 2.2em;
+}
+
+.figure dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  line-height: 1;
+}
+
+.summary-heading {
+  font-size: 1.15rem;
+  margin-bottom: var(--s3);
+}
+
+/* --- sponsor ----------------------------------------------------------- */
+
+/*
+ * Framed and labelled, and quieter than anything the user made.
+ *
+ * The rule that photographs are the only colour on a screen holds here too:
+ * a placement that out-shouts someone's own record of their day would be
+ * taking more than it was sold.
+ */
+.sponsor {
+  display: block;
+  border: 1px solid var(--line);
+  padding: var(--s4);
+  margin-bottom: var(--s5);
+}
+
+.sponsor-label {
+  color: var(--ink-faint);
+  margin-bottom: var(--s3);
+}
+
+.sponsor-image {
+  display: block;
+  width: 100%;
+  max-height: 26vh;
+  object-fit: cover;
+  margin-bottom: var(--s4);
+}
+
+.sponsor-headline {
+  font-size: 1.2rem;
+  margin: var(--s2) 0 var(--s3);
+}

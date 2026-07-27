@@ -29,7 +29,8 @@ export function Photo({
   className,
   eager = false,
 }: {
-  photoId: string
+  /** Null for a written day, which simply renders nothing. */
+  photoId: string | null
   alt: string
   className?: string
   /** Set for the one large photo on a screen, where there is nothing to defer. */
@@ -40,7 +41,7 @@ export function Photo({
   const [url, setUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    if (visible) return
+    if (visible || !photoId) return
     const node = holder.current
     if (!node) return
 
@@ -65,7 +66,7 @@ export function Photo({
   }, [visible])
 
   useEffect(() => {
-    if (!visible) return
+    if (!visible || !photoId) return
 
     let cancelled = false
     let objectUrl: string | null = null
@@ -82,6 +83,6 @@ export function Photo({
     }
   }, [photoId, visible])
 
-  if (!url) return <div ref={holder} className={className} aria-hidden="true" />
+  if (!photoId || !url) return <div ref={holder} className={className} aria-hidden="true" />
   return <img className={className} src={url} alt={alt} decoding="async" />
 }

@@ -91,13 +91,24 @@ export interface Entry {
   id: string
   /** Local calendar date, YYYY-MM-DD. One entry per day is the norm, not a rule. */
   date: string
-  /** Key into the photos object store. Blobs never leave the device. */
-  photo_id: string
+  /**
+   * Key into the photos object store, or null for a written day.
+   *
+   * Not every day gets photographed. Someone in a hurry, in a changing room, or
+   * simply not in the mood to look at themselves still has something to record,
+   * and a log that only accepts photographs quietly excludes exactly the days
+   * that are hardest — which are the days most worth having.
+   *
+   * A written day carries no image signature, so it cannot join an outfit
+   * cluster or vote on colour. It still counts fully toward how days felt.
+   */
+  photo_id: string | null
   /** Null until the evening reflection. Skipping is always allowed (J2). */
   felt_score: FeltScore | null
   chips: ChipId[]
   outfit_id: string | null
   context: EntryContext
+  /** Free text. The whole entry for a written day, optional on a photographed one. */
   note: string | null
   signature: ImageSignature | null
   created_at: number

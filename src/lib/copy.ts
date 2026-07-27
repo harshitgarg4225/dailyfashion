@@ -130,6 +130,50 @@ export const copy = {
     welcomeBack: 'Welcome back — here is what your log already knows.',
   },
 
+  // Typing is a first-class way to record a day, not a lesser one.
+  write: {
+    title: 'Write it down',
+    prompt: 'What did you wear, and how did it go?',
+    hint: 'No photo needed. A line is plenty.',
+    placeholder: 'Grey coat again. Warmer than it looked.',
+    save: 'Save this day',
+    action: 'Write instead',
+    savedThanks: 'Written down.',
+  },
+
+  // The answer to "what am I getting out of this?", told with the log itself.
+  sponsor: {
+    label: 'Sponsored',
+  },
+
+  summary: {
+    title: 'What you have built',
+    empty: 'Nothing here yet. Your first day starts it.',
+    since: (date: string) => `Since ${date}`,
+    daysLabel: 'Days',
+    eveningsLabel: 'Evenings answered',
+    outfitsLabel: 'Outfits recognised',
+    mix: (photographed: number, written: number) =>
+      written === 0
+        ? `${photographed} photographed.`
+        : photographed === 0
+          ? `${written} written down.`
+          : `${photographed} photographed, ${written} written down.`,
+    alreadyKnows: 'What it can already tell',
+    mostWorn: (colour: string, days: number) =>
+      `You reach for ${colour} most — ${days} day${days === 1 ? '' : 's'} of it.`,
+    mostComplimented: (colour: string, complimented: number, days: number) =>
+      `Someone said something nice on ${complimented} of your ${days} ${colour} day${days === 1 ? '' : 's'}.`,
+    nextTitle: 'Next',
+    nextBody: (remaining: number, unlocks: string) =>
+      remaining === 0
+        ? `Ready now: ${unlocks}.`
+        : remaining === 1
+          ? `One more day brings ${unlocks}.`
+          : `${remaining} more days bring ${unlocks}.`,
+    allUnlocked: 'Everything is open. From here it only gets more certain.',
+  },
+
   log: {
     title: 'Journal',
     empty: 'Your log starts with your first photo.',
@@ -143,6 +187,7 @@ export const copy = {
     installBodyIos:
       'Tap the share button, then “Add to Home Screen”. Browsers clear data for sites that are only open in a tab — on the home screen your log is far safer.',
     installDismiss: 'Not now',
+    writtenDay: 'Written',
     backdateLimit: 'You can add days from the past week.',
     entryCount: (n: number) => (n === 1 ? '1 day logged' : `${n} days logged`),
   },

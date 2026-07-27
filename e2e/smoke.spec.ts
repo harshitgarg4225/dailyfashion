@@ -151,6 +151,51 @@ test.describe('editing the log', () => {
   })
 })
 
+test.describe('writing a day', () => {
+  test('records a day in words, with no photograph', async ({ page }) => {
+    await page.goto(BASE)
+    await completeOnboarding(page)
+    await dismissOverlays(page)
+
+    await page.getByRole('button', { name: 'Journal', exact: true }).click()
+    await page.getByRole('button', { name: /write instead/i }).click()
+
+    await page.locator('textarea').fill('Grey coat again. Warmer than it looked.')
+    await page.getByRole('button', { name: 'Good', exact: true }).click()
+    await page.getByRole('button', { name: /save this day/i }).click()
+
+    await expect(page.getByText(/1 day logged/)).toBeVisible()
+    // A written day gets the same footprint as a photographed one.
+    await expect(page.locator('.grid-cell--written')).toHaveCount(1)
+    await expect(page.getByText(/warmer than it looked/i)).toBeVisible()
+  })
+
+  test('shows what the log is building toward', async ({ page }) => {
+    await page.goto(BASE)
+    await completeOnboarding(page)
+    await dismissOverlays(page)
+
+    await page.getByRole('button', { name: 'Progress', exact: true }).click()
+    // Available from day one — it answers "what is this for?", which is the
+    // question only a new user still has.
+    await expect(page.getByRole('heading', { name: /what you have built/i })).toBeVisible()
+  })
+})
+
+test.describe('the sponsor slot', () => {
+  test('renders nothing at all while the slot is unsold', async ({ page }) => {
+    await page.goto(BASE)
+    await completeOnboarding(page)
+    await dismissOverlays(page)
+
+    await page.getByRole('button', { name: 'Journal', exact: true }).click()
+    await expect(page.locator('.sponsor')).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Progress', exact: true }).click()
+    await expect(page.locator('.sponsor')).toHaveCount(0)
+  })
+})
+
 test.describe('privacy is a property, not a promise', () => {
   test('makes no cross-origin request during a full session', async ({ page }) => {
     const external = await watchRequests(page)

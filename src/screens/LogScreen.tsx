@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { Entry, Settings } from '../types'
 import { copy } from '../lib/copy'
 import { addDays, daysBetween, mediumLabel, type DateKey } from '../lib/dates'
 import { Photo } from '../app/Photo'
 import { isInstalled, isIos } from '../lib/storage'
+import { SponsorSlot } from '../app/SponsorSlot'
+import { shouldShowSponsor } from '../lib/sponsor'
 
 /**
  * The log grid.
@@ -28,16 +30,22 @@ export function LogScreen({
   today,
   onOpen,
   onAddPast,
+  onWrite,
   installNudgeDismissed,
   onDismissInstallNudge,
+  sponsorShown,
+  onSponsorShown,
 }: {
   entries: readonly Entry[]
   settings: Settings
   today: DateKey
   onOpen: (entry: Entry) => void
   onAddPast: () => void
+  onWrite: () => void
   installNudgeDismissed: boolean
   onDismissInstallNudge: () => void
+  sponsorShown: boolean
+  onSponsorShown: () => void
 }) {
   /*
    * M2: on iOS this is a data-safety notice, not a growth prompt.
@@ -75,6 +83,16 @@ export function LogScreen({
 
   const ratedCount = entries.filter((e) => e.felt_score !== null).length
 
+  const sponsorVisible = shouldShowSponsor({
+    entries,
+    today,
+    slot: 'journal',
+    alreadyShownThisSession: sponsorShown,
+  })
+  useEffect(() => {
+    if (sponsorVisible) onSponsorShown()
+  }, [sponsorVisible, onSponsorShown])
+
   return (
     <div className="screen">
       <div className="screen-head">
@@ -105,13 +123,23 @@ export function LogScreen({
                 <button
                   key={cell.entry.id}
                   type="button"
-                  className={`grid-cell${settings.blur_thumbnails ? ' blurred' : ''}`}
+                  className={[
+                    'grid-cell',
+                    cell.entry.photo_id === null ? 'grid-cell--written' : '',
+                    settings.blur_thumbnails && cell.entry.photo_id !== null ? 'blurred' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   onClick={() => onOpen(cell.entry)}
                   aria-label={`${mediumLabel(cell.entry.date)}${
-                    cell.entry.felt_score === null ? `, ${copy.log.unrated}` : ''
-                  }`}
+                    cell.entry.photo_id === null ? `, ${copy.log.writtenDay}` : ''
+                  }${cell.entry.felt_score === null ? `, ${copy.log.unrated}` : ''}`}
                 >
-                  <Photo photoId={cell.entry.photo_id} alt="" />
+                  {cell.entry.photo_id === null ? (
+                    <span>{cell.entry.note}</span>
+                  ) : (
+                    <Photo photoId={cell.entry.photo_id} alt="" />
+                  )}
                   {cell.entry.felt_score !== null ? (
                     <span className="felt-badge">{cell.entry.felt_score}</span>
                   ) : (
@@ -137,9 +165,22 @@ export function LogScreen({
         * few days they remember. J9 says backdating is always available.
         */}
       <div className="spacer" />
-      <button type="button" className="btn btn--ghost btn--block" onClick={onAddPast}>
-        {copy.log.addPast}
-      </button>
+      <SponsorSlot
+        entries={entries}
+        today={today}
+        slot="journal"
+        alreadyShownThisSession={sponsorShown}
+      />
+
+      <div className="stack">
+        {/* Typing is offered next to the camera, not buried behind it. */}
+        <button type="button" className="btn btn--ghost btn--block" onClick={onWrite}>
+          {copy.write.action}
+        </button>
+        <button type="button" className="btn btn--quiet btn--block" onClick={onAddPast}>
+          {copy.log.addPast}
+        </button>
+      </div>
     </div>
   )
 }

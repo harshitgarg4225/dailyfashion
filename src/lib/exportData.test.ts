@@ -29,7 +29,7 @@ async function seed(count: number) {
   for (let i = 0; i < count; i++) {
     const entry = makeEntry({ felt: 4 })
     // A tiny but real payload, so photo bytes are genuinely round-tripped.
-    await putPhoto(entry.photo_id, new Blob([new Uint8Array([0xff, 0xd8, i, 0xff, 0xd9])]))
+    await putPhoto(entry.photo_id!, new Blob([new Uint8Array([0xff, 0xd8, i, 0xff, 0xd9])]))
     await putEntry(entry)
     entries.push(entry)
   }
@@ -88,7 +88,7 @@ describe('import', () => {
     // Fingerprints and outfit clusters are the accumulated knowledge that makes
     // the log worth keeping; a CSV-only import would silently discard them.
     const entry = makeEntry({ felt: 5, outfitId: 'outfit_x', colour: 'blue' })
-    await putPhoto(entry.photo_id, new Blob([new Uint8Array([1, 2, 3])]))
+    await putPhoto(entry.photo_id!, new Blob([new Uint8Array([1, 2, 3])]))
     await putEntry(entry)
 
     const archive = await buildExport()

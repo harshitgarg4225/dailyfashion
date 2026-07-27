@@ -88,8 +88,9 @@ export async function buildExport(
   const chronological = [...entries].reverse()
 
   for (const [index, entry] of chronological.entries()) {
-    const photoName = photoFilename(entry.date, index, entry.id)
-    photoNames[entry.id] = photoName
+    // A written day has no image; it still gets a full row in the spreadsheet.
+    const photoName = entry.photo_id ? photoFilename(entry.date, index, entry.id) : ''
+    if (photoName) photoNames[entry.id] = photoName
     const created = new Date(entry.created_at)
 
     rows.push(
@@ -108,7 +109,7 @@ export async function buildExport(
       ]),
     )
 
-    const blob = await getPhoto(entry.photo_id)
+    const blob = entry.photo_id ? await getPhoto(entry.photo_id) : undefined
     if (blob) {
       files.push({
         name: photoName,
@@ -234,15 +235,21 @@ export async function importArchive(blob: Blob): Promise<ImportResult> {
     const name = manifest.photoNames?.[entry.id]
     const image = name ? photos.get(name) : undefined
 
-    // An entry whose photograph did not survive is not worth restoring — the
-    // photo *is* the record.
-    if (!image) {
+    /*
+     * A photographed day whose image did not survive is not worth restoring —
+     * the photo is the record. A written day never had one, and restoring it
+     * is the whole point.
+     */
+    if (name && !image) {
       skipped += 1
       continue
     }
 
-    const photoId = newId('photo')
-    await putPhoto(photoId, new Blob([image], { type: 'image/jpeg' }))
+    let photoId: string | null = null
+    if (image) {
+      photoId = newId('photo')
+      await putPhoto(photoId, new Blob([image], { type: 'image/jpeg' }))
+    }
     await putEntry({ ...entry, photo_id: photoId })
     if (entry.outfit_id) touchedOutfits.add(entry.outfit_id)
     added += 1

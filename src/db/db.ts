@@ -174,7 +174,7 @@ export async function deleteEntry(id: string): Promise<void> {
   const entry = await getEntry(id)
   const transaction = tx(db, [STORES.entries, STORES.photos, STORES.entryItems], 'readwrite')
   transaction.objectStore(STORES.entries).delete(id)
-  if (entry) transaction.objectStore(STORES.photos).delete(entry.photo_id)
+  if (entry?.photo_id) transaction.objectStore(STORES.photos).delete(entry.photo_id)
 
   // Drop the tag links too, so a deleted day cannot keep voting in insights.
   const linkStore = transaction.objectStore(STORES.entryItems)

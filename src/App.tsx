@@ -10,6 +10,8 @@ import { InsightsScreen } from './screens/InsightsScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { OnboardingScreen, type SeedPhoto } from './screens/OnboardingScreen'
 import { LockScreen } from './screens/LockScreen'
+import { WriteScreen } from './screens/WriteScreen'
+import { SummaryScreen } from './screens/SummaryScreen'
 import { CaptureFollowUp, type FollowUpResult } from './screens/CaptureFollowUp'
 import { copy } from './lib/copy'
 import { captureContext, launchIntent } from './lib/context'
@@ -42,20 +44,36 @@ import { requestPersistence } from './lib/storage'
 import { getLock } from './db/db'
 import type { LockRecord } from './lib/lock'
 
-type Screen = 'camera' | 'tonight' | 'log' | 'shortlist' | 'insights' | 'settings'
+type Screen =
+  | 'camera'
+  | 'write'
+  | 'tonight'
+  | 'log'
+  | 'summary'
+  | 'shortlist'
+  | 'insights'
+  | 'settings'
 
-/** Tabs appear as the log earns them, so an empty app is not a wall of dead UI. */
+/**
+ * Tabs appear as the log earns them, so an empty app is not a wall of dead UI.
+ *
+ * Summary is present from day one on purpose — it is the screen that answers
+ * "what is this for?", and hiding it until the log is established would keep it
+ * from the only people who still need the question answered.
+ */
 function visibleTabs(entryCount: number): Screen[] {
   const tabs: Screen[] = ['log']
   if (entryCount >= SHORTLIST_MIN_ENTRIES) tabs.splice(0, 0, 'shortlist')
-  tabs.push('insights', 'settings')
+  tabs.push('summary', 'insights', 'settings')
   return tabs
 }
 
 const TAB_LABELS: Record<Screen, string> = {
   camera: 'Capture',
+  write: 'Write',
   tonight: 'Tonight',
   log: 'Journal',
+  summary: 'Progress',
   shortlist: 'Today',
   insights: 'Patterns',
   settings: 'Settings',
@@ -85,6 +103,7 @@ export default function App() {
   const [datePicker, setDatePicker] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState<Entry | null>(null)
   const [installNudgeDismissed, setInstallNudgeDismissed] = useState(false)
+  const [sponsorShown, setSponsorShown] = useState(false)
   const [lock, setLock] = useState<LockRecord | null | undefined>(undefined)
   const [unlocked, setUnlocked] = useState(false)
 
@@ -295,6 +314,9 @@ export default function App() {
    */
   const wearAgain = useCallback(
     async (source: Entry) => {
+      // Only a photographed day can be worn again — there is nothing to repeat
+      // about a written one.
+      if (!source.photo_id) return
       const photoId = await clonePhoto(source.photo_id)
       if (!photoId) return
 
@@ -350,6 +372,36 @@ export default function App() {
       setScreen(seeds.length > 0 ? 'log' : 'camera')
     },
     [saveEntry, updateSettings],
+  )
+
+  /**
+   * A day recorded in words. Complete in one sitting — there is no morning
+   * photograph to come back to tonight — so it saves the felt score and chips
+   * alongside the text and never queues an evening prompt.
+   */
+  const saveWritten = useCallback(
+    async (note: string, felt: FeltScore | null, chips: ChipId[]) => {
+      const entry: Entry = {
+        id: newId('entry'),
+        date: pendingDate ?? today,
+        photo_id: null,
+        felt_score: felt,
+        chips,
+        outfit_id: null,
+        context: captureContext(pendingDate ?? today, todayTempBand),
+        note,
+        signature: null,
+        created_at: Date.now(),
+        rated_at: felt !== null ? Date.now() : null,
+        backdated: (pendingDate ?? today) !== today,
+      }
+      await putEntry(entry)
+      setPendingDate(null)
+      await log.refresh()
+      flash(copy.write.savedThanks)
+      setScreen('log')
+    },
+    [flash, log, pendingDate, today, todayTempBand],
   )
 
   const saveReflection = useCallback(
@@ -538,6 +590,34 @@ export default function App() {
           />
         )
 
+      case 'write':
+        return (
+          <WriteScreen
+            date={pendingDate ?? today}
+            onSave={(note, felt, chips) => void saveWritten(note, felt, chips)}
+            onCancel={() => {
+              setPendingDate(null)
+              setScreen('log')
+            }}
+          />
+        )
+
+      case 'summary':
+        return (
+          <SummaryScreen
+            input={{
+              entries: log.entries,
+              outfitCount: log.outfits.length,
+              itemCount: log.items.length,
+              today,
+            }}
+            entries={log.entries}
+            today={today}
+            sponsorShown={sponsorShown}
+            onSponsorShown={() => setSponsorShown(true)}
+          />
+        )
+
       case 'log':
       default:
         return (
@@ -550,6 +630,9 @@ export default function App() {
               setScreen('tonight')
             }}
             onAddPast={() => setDatePicker(true)}
+            onWrite={() => setScreen('write')}
+            sponsorShown={sponsorShown}
+            onSponsorShown={() => setSponsorShown(true)}
             installNudgeDismissed={installNudgeDismissed}
             onDismissInstallNudge={() => setInstallNudgeDismissed(true)}
           />
