@@ -326,6 +326,30 @@ function groupByItem(
     }))
 }
 
+/**
+ * Drops item groups that say nothing an outfit group is not already saying.
+ *
+ * Someone who tags every wear of a jacket "green jacket" creates two groups
+ * over the identical set of days — the outfit cluster and the item — and the
+ * engine happily writes the same card about each, so the screen reads "1 of 2"
+ * and shows one observation twice. That does not look like thoroughness; it
+ * looks like the app cannot count.
+ *
+ * The test is subset, not equality, because a tag on three of five wears is
+ * also strictly less evidence about the same thing. An item genuinely worth
+ * its own card is one worn across *different* outfits — black jeans under
+ * three different tops — and that group is not a subset of any one of them, so
+ * it survives.
+ */
+function withoutRedundantItems(outfitGroups: readonly Group[], itemGroups: readonly Group[]): Group[] {
+  const outfitSets = outfitGroups.map((group) => new Set(group.entries.map((entry) => entry.id)))
+
+  return itemGroups.filter((group) => {
+    const ids = group.entries.map((entry) => entry.id)
+    return !outfitSets.some((outfit) => ids.every((id) => outfit.has(id)))
+  })
+}
+
 const COLOUR_LABELS: Record<ColorFamily, string> = {
   black: 'black',
   grey: 'grey',
@@ -451,7 +475,9 @@ function colourGap(
     evidence:
       `Someone said something nice on ${pct(liked.complimentRate)} of your ${liked.n} ${bestByCompliment.subject.label} days, ` +
       `against ${pct(worn.complimentRate)} of ${worn.n} in ${mostWorn.subject.label}. ` +
-      `${mostWorn.subject.label} is ${worn.n} of your ${totalRated} logged days.`,
+      // "That is", not the colour name: a colour label is lower-case by
+      // definition, and starting the sentence with one reads as a typo.
+      `That is ${worn.n} of your ${totalRated} logged days.`,
     question: `What is keeping the ${bestByCompliment.subject.label} at the back?`,
     method: `Counted how often "someone said something nice" appears on days in each colour, across at least ${MIN_WEARS_PER_SUBJECT} days per colour. The colour you wear most is whichever has the most days.`,
     n: liked.n + worn.n,
@@ -575,9 +601,10 @@ export function generateInsights(input: GenerateInput): InsightResult {
   const dismissedAt = new Map((input.dismissed ?? []).map((d) => [d.id, d.n]))
   const insights: Insight[] = []
 
+  const outfitGroups = groupByOutfit(entries, items, entryItems)
   const groups = [
-    ...groupByOutfit(entries, items, entryItems),
-    ...groupByItem(entries, items, entryItems),
+    ...outfitGroups,
+    ...withoutRedundantItems(outfitGroups, groupByItem(entries, items, entryItems)),
   ]
 
   for (const group of groups) {

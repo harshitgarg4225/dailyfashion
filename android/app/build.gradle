@@ -1,5 +1,32 @@
 apply plugin: 'com.android.application'
 
+/**
+ * Release signing, supplied from outside the repository.
+ *
+ * The APK on the download page is sideloaded rather than installed from Play,
+ * so its signature is the only thing tying one build to the next: Android will
+ * refuse to update an installed app with a build signed by a different key.
+ * That makes the keystore a real asset, and a real asset does not live in a
+ * public repository — it comes from CI secrets (see .github/workflows/apk.yml)
+ * or, for a local build, from an untracked android/keystore.properties.
+ *
+ * With neither present the release build is left unsigned rather than silently
+ * falling back to the debug key, because a debug-signed APK is debuggable, and
+ * a debuggable build of an app whose whole claim is "nothing leaves this phone"
+ * would hand its contents to anything that can reach adb.
+ */
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def resolvedStoreFile = keystoreProperties['storeFile'] ?: System.getenv('ANDROID_KEYSTORE_PATH')
+def resolvedStorePassword = keystoreProperties['storePassword'] ?: System.getenv('ANDROID_KEYSTORE_PASSWORD')
+def resolvedKeyAlias = keystoreProperties['keyAlias'] ?: System.getenv('ANDROID_KEY_ALIAS')
+def resolvedKeyPassword = keystoreProperties['keyPassword'] ?: System.getenv('ANDROID_KEY_PASSWORD')
+def hasSigningConfig = resolvedStoreFile != null && file(resolvedStoreFile).exists()
+
 android {
     namespace = "com.dailyfashion.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +43,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasSigningConfig) {
+            release {
+                storeFile file(resolvedStoreFile)
+                storePassword resolvedStorePassword
+                keyAlias resolvedKeyAlias
+                keyPassword resolvedKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasSigningConfig) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

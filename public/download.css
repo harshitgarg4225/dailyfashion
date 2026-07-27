@@ -1,0 +1,254 @@
+/*
+ * The download page.
+ *
+ * Same visual language as the app — ivory paper, ink, one Didone, hairline
+ * rules, radius zero — because the page is the first thing anyone sees and a
+ * landing page that looks like a different product is a promise broken before
+ * the app has opened.
+ *
+ * Hand-written rather than built, and deliberately so: it carries no
+ * JavaScript, no framework and no third-party request, which is the same claim
+ * the copy on it makes. It is around four kilobytes over the wire plus one
+ * typeface.
+ */
+
+@font-face {
+  font-family: 'Bodoni Moda Landing';
+  /* Served from this origin. A font CDN would contradict the page's own copy. */
+  src: url('/bodoni.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --paper: #f7f4ef;
+  --ink: #1a1714;
+  --ink-soft: #4a423a;
+  --ink-muted: #857a6d;
+  --ink-faint: #b3a99b;
+  --line: #ddd5c8;
+
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+
+  --font-display: 'Bodoni Moda Landing', 'Didot', 'Bodoni 72', 'Hoefler Text',
+    Garamond, 'Times New Roman', serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI',
+    system-ui, sans-serif;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--s8) var(--s5) var(--s8);
+}
+
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+p {
+  margin: 0 0 var(--s4);
+}
+
+.eyebrow {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: var(--s5);
+}
+
+/* --- masthead ----------------------------------------------------------- */
+
+.masthead {
+  padding-bottom: var(--s6);
+  border-bottom: 1px solid var(--ink);
+  margin-bottom: var(--s7);
+}
+
+.masthead h1 {
+  /* Editorial scale, and it holds on a 320px phone without a second rule. */
+  font-size: clamp(2.1rem, 9vw, 3.4rem);
+  line-height: 1.05;
+  margin-bottom: var(--s5);
+}
+
+.lede {
+  font-size: 1.02rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* --- the loop ----------------------------------------------------------- */
+
+.loop ol {
+  list-style: none;
+  margin: 0 0 var(--s7);
+  padding: 0;
+}
+
+.loop li {
+  padding: var(--s5) 0;
+  border-top: 1px solid var(--line);
+}
+
+.loop li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.step {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: var(--s3);
+}
+
+.loop h2 {
+  font-size: 1.3rem;
+  margin-bottom: var(--s2);
+}
+
+.loop p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.94rem;
+}
+
+/* --- sections ----------------------------------------------------------- */
+
+.section-title {
+  font-size: 1.5rem;
+  margin-bottom: var(--s5);
+}
+
+.get,
+.claim {
+  margin-bottom: var(--s7);
+}
+
+.claim p {
+  color: var(--ink-soft);
+  font-size: 0.94rem;
+}
+
+/* --- calls to action ---------------------------------------------------- */
+
+/*
+ * Square, filled, full measure. The one solid block on an otherwise
+ * rule-and-whitespace page, so there is never a question about where to tap.
+ */
+.cta {
+  display: block;
+  padding: var(--s5);
+  margin-bottom: var(--s3);
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+  border: 1px solid var(--ink);
+}
+
+.cta--quiet {
+  background: transparent;
+  color: var(--ink);
+}
+
+.cta-label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin-bottom: var(--s2);
+}
+
+.cta-meta {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.cta--quiet .cta-meta {
+  color: var(--ink-muted);
+}
+
+.cta:active {
+  opacity: 0.85;
+}
+
+.fineprint {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin: var(--s4) 0 0;
+}
+
+.fineprint strong {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+/* --- footer ------------------------------------------------------------- */
+
+footer {
+  padding-top: var(--s5);
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+footer a {
+  color: var(--ink-soft);
+}
+
+footer span {
+  margin: 0 var(--s2);
+  color: var(--ink-faint);
+}
+
+.colophon {
+  font-family: var(--font-display);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  margin: var(--s5) 0 0;
+}
+
+/* A phone is the common case; a laptop just gets more air around the measure. */
+@media (min-width: 720px) {
+  main {
+    padding-top: 96px;
+  }
+}

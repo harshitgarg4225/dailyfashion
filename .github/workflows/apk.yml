@@ -1,0 +1,114 @@
+name: Android APK
+
+# The APK is built here rather than on anyone's laptop, so the artefact on the
+# download page is reproducible from a commit rather than from someone's
+# machine and someone's memory of which flags they used.
+on:
+  push:
+    branches: [claude/daily-fashion-mvp-u5vr20, main]
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The unit suite guards the things the APK cannot be tested for after the
+      # fact — the ban list over user-facing copy, the insight thresholds, the
+      # worked example. A red suite must not reach a download page.
+      - name: Test
+        run: npm test
+
+      - name: Build the web app and sync it into the Android project
+        run: npm run sync
+
+      # Restores the signing key from repository secrets. Without them the
+      # build still runs and still produces a release APK, but an unsigned one,
+      # which is caught below rather than published.
+      - name: Restore the signing key
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "path=$RUNNER_TEMP/release.keystore" >> "$GITHUB_OUTPUT"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret. Building an unsigned APK; it will not be published. See docs/RELEASE.md."
+          fi
+
+      - name: Assemble the release APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ steps.signing.outputs.path }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease
+
+      - name: Name the artefact after the commit
+        id: apk
+        run: |
+          src=android/app/build/outputs/apk/release/app-release.apk
+          [ -f "$src" ] || src=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          mkdir -p out
+          cp "$src" "out/daily-fashion.apk"
+          echo "sha256=$(sha256sum out/daily-fashion.apk | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daily-fashion-apk
+          path: out/daily-fashion.apk
+
+      # Only a signed build becomes a public download. An unsigned APK cannot
+      # be installed on a phone, and a signed-with-a-throwaway-key one could
+      # never be updated in place — either would be worse than no link at all.
+      - name: Publish the download
+        if: steps.signing.outputs.signed == 'true' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA256: ${{ steps.apk.outputs.sha256 }}
+        run: |
+          gh release delete beta --yes --cleanup-tag 2>/dev/null || true
+          gh release create beta out/daily-fashion.apk \
+            --title "Daily Fashion — beta" \
+            --prerelease \
+            --notes "Built from ${GITHUB_SHA}.
+
+          SHA-256 of daily-fashion.apk:
+          \`${SHA256}\`
+
+          Android 7.0 or later. Sideloaded, so your phone will ask you to allow
+          installs from your browser once.
+
+          The app makes no network requests. There is no account and no server."

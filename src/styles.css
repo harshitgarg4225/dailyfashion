@@ -1167,12 +1167,23 @@ input[type='time'] {
 }
 
 /*
- * Reserve two lines for the label so the numbers share a baseline. Without it
- * a wrapping label pushes its own figure down and the row reads as ragged.
+ * The numbers share a baseline however far their labels wrap.
+ *
+ * Reserving a fixed two lines of label almost worked and failed at exactly the
+ * wrong moment: "Evenings answered" wraps to two lines of a 0.62rem face, which
+ * is taller than the 2.2em that was reserved, so the one row anybody actually
+ * sees came out ragged. Letting the label take the slack and pinning the figure
+ * to the bottom holds for any label at any width.
  */
+.figure {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .figure dt {
+  flex: 1;
   margin-bottom: var(--s2);
-  min-height: 2.2em;
 }
 
 .figure dd {
@@ -1330,4 +1341,29 @@ input[type='time'] {
 
 .preview-card h2 {
   font-size: 1.15rem;
+}
+
+/*
+ * The example page's card stack.
+ *
+ * The real tab shows one card at a time and this one shows all of them, so the
+ * stack needs a rule between cards that the single-card screen never needs.
+ * `.card` already draws its own top rule; the last one gets a closing rule so
+ * the set reads as a bounded list rather than as text that ran out.
+ */
+.example-cards {
+  margin-bottom: var(--s6);
+}
+
+.example-cards .card:last-child {
+  border-bottom: 1px solid var(--ink);
+  margin-bottom: 0;
+}
+
+/*
+ * Two lines of framing under the stack, quieter than the cards themselves —
+ * they are notes about the example, not part of it.
+ */
+.example-cards + .note {
+  margin-top: var(--s5);
 }

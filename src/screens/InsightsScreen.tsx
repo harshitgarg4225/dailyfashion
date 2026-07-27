@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { copy } from '../lib/copy'
 import { generateInsights, type GenerateInput } from '../lib/insights'
 import { Photo } from '../app/Photo'
+import { ExamplePatterns } from './ExamplePatterns'
 import type { Entry } from '../types'
 
 /**
@@ -37,6 +38,7 @@ export function InsightsScreen({
   const { gate, insights } = useMemo(() => generateInsights(input), [input])
   const [index, setIndex] = useState(0)
   const [showMethod, setShowMethod] = useState(false)
+  const [showExample, setShowExample] = useState(false)
   const progressRef = useRef<HTMLSpanElement>(null)
 
   /*
@@ -66,6 +68,8 @@ export function InsightsScreen({
       </div>
     )
   }
+
+  if (showExample) return <ExamplePatterns onBack={() => setShowExample(false)} />
 
   if (!gate.unlocked) {
     const remaining = Math.max(0, gate.needed - gate.ratedEntries)
@@ -110,6 +114,20 @@ export function InsightsScreen({
           </article>
 
           <p className="note">{copy.insights.previewFooter}</p>
+
+          {/*
+            * One card answers "what does an observation look like". It does not
+            * answer "is a fortnight of this worth it", which is the question
+            * someone on day three is actually weighing, and the only honest way
+            * to answer that is to show them a whole fortnight.
+            */}
+          <button
+            type="button"
+            className="btn btn--ghost btn--block"
+            onClick={() => setShowExample(true)}
+          >
+            {copy.insights.exampleOpen}
+          </button>
         </div>
       </div>
     )

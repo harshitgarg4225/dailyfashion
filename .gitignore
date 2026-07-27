@@ -14,6 +14,11 @@ android/app/build/
 android/build/
 android/.gradle/
 android/local.properties
+# Release signing. The keystore and its passwords never enter the repository —
+# this one is public, and a published signing key can no longer sign anything.
+android/keystore.properties
+android/**/*.keystore
+android/**/*.jks
 android/app/src/main/assets/public/
 android/app/src/main/res/xml/config.xml
 ios/App/build/

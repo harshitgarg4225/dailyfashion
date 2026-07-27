@@ -262,6 +262,32 @@ export const copy = {
     previewSample: 'from 7 days',
     previewFooter:
       'Yours will use your own days, and nothing appears until there are enough of them to be fair.',
+
+    /*
+     * The whole fortnight, not one card of it.
+     *
+     * A single teaser answers "what does a card look like" but not "is two
+     * weeks of this worth my time", which is the question someone on day three
+     * is actually asking. The example page answers it with the real output of
+     * the real engine — see `example.ts` — so the answer cannot be more
+     * flattering than the product.
+     */
+    exampleOpen: 'See a full two weeks',
+    example: {
+      eyebrow: 'An example',
+      title: 'Two weeks in',
+      intro:
+        'A made-up fortnight, read by the same engine that will read yours. None of it is about you.',
+      daysLabel: 'Days',
+      eveningsLabel: 'Evenings answered',
+      outfitsLabel: 'Outfits recognised',
+      found: 'What it found',
+      oneAtATime:
+        'In your own log these arrive one at a time, each carrying the photograph from the day.',
+      later:
+        'One kind needs longer than a fortnight: the thing you like most and quietly stop reaching for. It cannot be certain until something has gone three weeks unworn.',
+      back: 'Back to my log',
+    },
     howTitle: 'How was this worked out?',
     howShow: 'How was this worked out?',
     howHide: 'Close',

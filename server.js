@@ -100,6 +100,17 @@ const server = createServer(async (req, res) => {
   const pathname = url.pathname === '/' ? '/index.html' : url.pathname
   let found = await tryFile(pathname)
 
+  /*
+   * Extensionless paths resolve to a real page before the shell catches them.
+   *
+   * The download page is plain HTML rather than a route inside the app, so
+   * without this the single-page fallback below would hand /download the app
+   * shell — and someone following a link from a shared URL would land in an
+   * onboarding flow instead of on the page that explains what they are
+   * installing.
+   */
+  if (!found && !extname(pathname)) found = await tryFile(`${pathname}.html`)
+
   // Single-page app: unknown paths fall through to the shell.
   if (!found) found = await tryFile('/index.html')
   if (!found) return send(res, 404, 'Not found', { 'Content-Type': 'text/plain; charset=utf-8' })

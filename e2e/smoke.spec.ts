@@ -241,3 +241,31 @@ test.describe('privacy is a property, not a promise', () => {
     expect(blocked).toBe(true)
   })
 })
+
+test.describe('the download page', () => {
+  test('is served as itself rather than as the app shell', async ({ page }) => {
+    // The single-page fallback in server.js hands unknown paths the app shell.
+    // /download is a real file and must win that race, or a shared link drops
+    // the visitor into onboarding instead of onto the page describing what
+    // they are about to install.
+    await page.goto(`${BASE}/download`)
+
+    await expect(page.getByRole('heading', { name: /you already know what works/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /download for android/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /open it in your browser/i })).toBeVisible()
+  })
+
+  test('loads nothing from anywhere but this origin', async ({ page }) => {
+    const external = await watchRequests(page)
+    await page.goto(`${BASE}/download`)
+    // The page claims the app cannot phone home. It has to be able to stand
+    // behind that itself.
+    expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
+  })
+
+  test('leads back into the app', async ({ page }) => {
+    await page.goto(`${BASE}/download`)
+    await page.getByRole('link', { name: /open it in your browser/i }).click()
+    await expect(page.getByRole('heading', { name: /nothing leaves this phone/i })).toBeVisible()
+  })
+})

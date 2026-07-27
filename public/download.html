@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!--
+      The same policy the app runs under, on the page that makes the claim.
+
+      A download page that promised "no network requests" while itself pulling a
+      font from a CDN and a script from an analytics vendor would be arguing
+      against itself in its own source. There is no third-party anything here:
+      no trackers, no tag manager, no embedded fonts from elsewhere. The one
+      typeface is served from this origin, and the page carries no JavaScript at
+      all.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               connect-src 'none';
+               script-src 'none';
+               img-src 'self';
+               style-src 'self';
+               font-src 'self';
+               form-action 'none';
+               base-uri 'self'"
+    />
+
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#f7f4ef" />
+    <meta
+      name="description"
+      content="A private log of what you wore and how the day went. After two weeks it shows you what your own days say — with the numbers attached."
+    />
+
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <link rel="stylesheet" href="/download.css" />
+
+    <title>Daily Fashion — get the app</title>
+  </head>
+
+  <body>
+    <main>
+      <header class="masthead">
+        <p class="eyebrow">Daily Fashion</p>
+        <h1>You already know what works.</h1>
+        <p class="lede">
+          A private log of what you wore and how the day went. After two weeks it
+          starts telling you what your own days say — with the numbers attached,
+          so you can check every word of it.
+        </p>
+      </header>
+
+      <section class="loop" aria-label="How it works">
+        <ol>
+          <li>
+            <span class="step">One</span>
+            <h2>A photo in the morning</h2>
+            <p>One tap. No cataloguing, no tagging, nothing to fill in.</p>
+          </li>
+          <li>
+            <span class="step">Two</span>
+            <h2>Two questions at night</h2>
+            <p>How the day felt, and whether anything happened. Seconds, not minutes.</p>
+          </li>
+          <li>
+            <span class="step">Three</span>
+            <h2>Something you couldn’t have noticed</h2>
+            <p>
+              “Compliments cluster on green. What you actually wear is black.” Every
+              observation arrives with its arithmetic attached.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="get" id="get" aria-label="Get the app">
+        <h2 class="section-title">Get it</h2>
+
+        <a class="cta" href="https://github.com/harshitgarg4225/dailyfashion/releases/download/beta/daily-fashion.apk">
+          <span class="cta-label">Download for Android</span>
+          <span class="cta-meta">daily-fashion.apk · Android 7.0 and later</span>
+        </a>
+
+        <a class="cta cta--quiet" href="/">
+          <span class="cta-label">Open it in your browser</span>
+          <span class="cta-meta">Works on any phone or laptop. Add it to your home screen and it runs offline.</span>
+        </a>
+
+        <p class="fineprint">
+          <strong>On iPhone</strong>, open this site in Safari, tap the share button and
+          choose “Add to Home Screen”. It behaves as an app from then on, camera and
+          all. The App Store version is on its way.
+        </p>
+        <p class="fineprint">
+          <strong>On Android</strong>, your phone will ask once whether to allow installs
+          from your browser. That prompt is Android’s, and it appears for anything not
+          installed from the Play Store.
+        </p>
+      </section>
+
+      <section class="claim" aria-label="Privacy">
+        <h2 class="section-title">Nothing leaves this phone</h2>
+        <p>
+          No account. No sign-up. No server to hold your photographs, because there is
+          no server at all. Your log lives in your phone’s own storage and nowhere else.
+        </p>
+        <p>
+          That is a property of the app rather than a promise about it. The page is
+          served under a policy that forbids the browser from making any outbound
+          request whatsoever, and a test fails the build if the app ever attempts one.
+          Turn on airplane mode and everything works exactly the same.
+        </p>
+      </section>
+
+      <section class="claim" aria-label="What it will not do">
+        <h2 class="section-title">What it will never do</h2>
+        <p>
+          It records clothes and days. There is no field anywhere in it for anything
+          else about you, and there never will be. It has no verdict to offer about
+          you and it never will — every observation it makes is about a garment and
+          a day, drawn from what you yourself wrote down.
+        </p>
+        <p>
+          It says nothing at all until it has fourteen answered evenings, and it stays
+          quiet about anything it cannot support. An app that guesses early teaches you
+          not to believe it later.
+        </p>
+      </section>
+
+      <footer>
+        <p>
+          <a href="/">Open the app</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://github.com/harshitgarg4225/dailyfashion">Read the source</a>
+        </p>
+        <p class="colophon">Daily Fashion</p>
+      </footer>
+    </main>
+  </body>
+</html>
