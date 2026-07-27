@@ -27,7 +27,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # 22, not 20: the Capacitor CLI refuses to run on anything older, and
+          # it fails at `cap sync` — after the web build has already succeeded,
+          # which makes the log read as a build problem rather than a runtime
+          # requirement.
+          node-version: '22'
           cache: npm
 
       - uses: actions/setup-java@v4
@@ -46,8 +50,12 @@ jobs:
       - name: Test
         run: npm test
 
+      # `npm run sync` syncs every platform, and the iOS half of that wants a
+      # macOS toolchain this runner does not have. Only Android is being built.
       - name: Build the web app and sync it into the Android project
-        run: npm run sync
+        run: |
+          npm run build
+          npx cap sync android
 
       # Restores the signing key from repository secrets. Without them the
       # build still runs and still produces a release APK, but an unsigned one,
