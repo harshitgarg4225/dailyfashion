@@ -41,7 +41,17 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker
       .register('/sw.js')
-      .then(() => {
+      .then((registration) => {
+        /*
+         * Ask for a fresh worker on every launch.
+         *
+         * Browsers only check for an updated worker on their own schedule, which
+         * can be hours. Without this a deploy reaches an installed app whenever
+         * the browser feels like it — and the first version of this shipped a
+         * stale shell that hid two features from a real user.
+         */
+        void registration.update().catch(() => undefined)
+
         /*
          * Reload once a *replacement* worker takes control.
          *

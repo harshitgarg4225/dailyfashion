@@ -244,6 +244,24 @@ export const copy = {
     next: 'Show me another',
     // P4a: scepticism is the right response to a claim about yourself. The only
     // useful answer is to show the arithmetic.
+    /*
+     * What a locked Patterns tab shows.
+     *
+     * A countdown alone tells someone how long to wait without telling them
+     * what for. The example is a real card, with the numbers of a made-up
+     * person, labelled unmistakably so it can never be mistaken for a claim
+     * about them.
+     */
+    previewLabel: 'An example',
+    previewIntro: 'Once there is enough, observations look like this.',
+    previewObservation:
+      'The green jacket sits at the top of your log, and you almost never reach for it.',
+    previewEvidence:
+      '4.6 average across 7 days, against 3.4 for everything else. Last worn a month ago.',
+    previewQuestion: 'Worth putting on this week?',
+    previewSample: 'from 7 days',
+    previewFooter:
+      'Yours will use your own days, and nothing appears until there are enough of them to be fair.',
     howTitle: 'How was this worked out?',
     howShow: 'How was this worked out?',
     howHide: 'Close',

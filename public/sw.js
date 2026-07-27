@@ -19,7 +19,16 @@
  * which is exactly the thing this app promises not to have.
  */
 
-const CACHE = 'daily-fashion-v1'
+/*
+ * Bumped on every release that changes the shell.
+ *
+ * A fixed name meant `activate` never deleted anything — the sweep only removes
+ * caches whose key differs — so an old shell could sit in storage indefinitely
+ * and keep being served against a build that had moved on. That is not a
+ * theoretical failure: it shipped, and it hid two whole features from the first
+ * person to open the app.
+ */
+const CACHE = 'daily-fashion-v3'
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
@@ -51,6 +60,28 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() => caches.match('/index.html').then((r) => r || Response.error())),
+    )
+    return
+  }
+
+  /*
+   * The shell and the worker are never served from cache while the network is
+   * available. Everything under /assets/ is content-hashed, so a stale copy is
+   * impossible by construction and cache-first is safe there; index.html is the
+   * one file whose name never changes, and serving an old one against a new
+   * asset manifest is exactly how a deploy fails to reach anybody.
+   */
+  if (url.pathname === '/index.html' || url.pathname === '/sw.js') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok && response.type === 'basic') {
+            const copy = response.clone()
+            caches.open(CACHE).then((cache) => cache.put(request, copy))
+          }
+          return response
+        })
+        .catch(() => caches.match(request).then((r) => r || Response.error())),
     )
     return
   }

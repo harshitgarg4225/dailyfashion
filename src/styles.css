@@ -216,11 +216,22 @@ p {
 
 /* --- navigation -------------------------------------------------------- */
 
+/*
+ * The navigation follows the content's measure.
+ *
+ * Both bars were full-bleed, so on anything wider than a phone three labels
+ * were flung to the far corners of a 2000px screen with a void between them —
+ * the layout reading as broken rather than spare. The content column has
+ * always been 680px; the chrome now agrees with it.
+ */
 .tabs {
   position: sticky;
   bottom: 0;
   display: flex;
   align-items: stretch;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
   background: var(--paper);
   border-top: 1px solid var(--line);
   /* Landscape leaves an inset on the notch side; without this the first tab
@@ -257,6 +268,8 @@ p {
   bottom: 0;
   display: block;
   width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
   padding: var(--s4) calc(var(--s4) + env(safe-area-inset-right, 0px)) var(--s4)
     calc(var(--s4) + env(safe-area-inset-left, 0px));
   background: var(--ink);
@@ -674,13 +687,23 @@ p {
  * wins — and the photographs were spilling past their cells. Absolute
  * positioning against the cell makes containment independent of that.
  */
+/*
+ * `contain`, not `cover`.
+ *
+ * Cropping a portrait photograph to a 3:4 tile cuts the top and bottom off the
+ * outfit — which on a full-length shot means a grid of faces and a grid of
+ * shoes, with the clothes gone. In a log about what you wore, the garment being
+ * visible beats the tiles being uniformly filled. It is the same call already
+ * made for the camera preview, for the same reason.
+ */
 .grid-cell img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background: var(--paper-warm);
   transition: opacity 0.25s ease;
 }
 
@@ -1277,4 +1300,34 @@ input[type='time'] {
 .insight-photo,
 .strip-item img {
   animation: develop 520ms ease both;
+}
+
+/* --- the worked example on a locked Patterns tab ------------------------ */
+
+/*
+ * Held at arm's length on purpose. It is quieter than a real observation and
+ * labelled before it is read, because the one thing this screen cannot afford
+ * is for an illustration to be mistaken for a finding about the person looking
+ * at it.
+ */
+.preview {
+  margin-top: var(--s7);
+  padding-top: var(--s5);
+  border-top: 1px solid var(--line);
+}
+
+.preview-label {
+  margin-bottom: var(--s2);
+}
+
+.preview-card {
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  padding-left: var(--s4);
+  margin-top: var(--s4);
+  opacity: 0.72;
+}
+
+.preview-card h2 {
+  font-size: 1.15rem;
 }

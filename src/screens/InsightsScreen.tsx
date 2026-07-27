@@ -87,7 +87,30 @@ export function InsightsScreen({
         </div>
 
         <p className="progress-label">{copy.insights.countdown(remaining)}</p>
-        <p className="empty">{copy.insights.thin(gate.ratedEntries, gate.needed)}</p>
+        <p className="note">{copy.insights.thin(gate.ratedEntries, gate.needed)}</p>
+
+        {/*
+          * A worked example, so the wait has a visible point.
+          *
+          * The countdown said how long, never what for — a new user was asked
+          * for a fortnight of effort with no idea what arrived at the end of
+          * it. This is a real card built from a made-up person's numbers, held
+          * at arm's length by the label and the muted treatment so it can never
+          * read as a claim about them.
+          */}
+        <div className="preview">
+          <span className="eyebrow preview-label">{copy.insights.previewLabel}</span>
+          <p className="note">{copy.insights.previewIntro}</p>
+
+          <article className="card preview-card" aria-label={copy.insights.previewLabel}>
+            <h2>{copy.insights.previewObservation}</h2>
+            <p className="evidence">{copy.insights.previewEvidence}</p>
+            <p className="question">{copy.insights.previewQuestion}</p>
+            <span className="sample">{copy.insights.previewSample}</span>
+          </article>
+
+          <p className="note">{copy.insights.previewFooter}</p>
+        </div>
       </div>
     )
   }
