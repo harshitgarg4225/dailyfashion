@@ -171,11 +171,34 @@ describe('recognising the same outfit on a different day', () => {
  * places tuning against real photographs should focus.
  */
 describe('limits and behaviours, measured rather than assumed', () => {
-  it('does not recognise the same outfit photographed much closer', () => {
-    // Structure is scale-sensitive by design. Fixing this properly needs
-    // subject detection, which is a v1.1 problem and not a threshold tweak.
-    const value = score({ garment: NAVY }, { garment: NAVY, scale: 1.35 })
-    expect(value).toBeLessThan(SAME_OUTFIT_THRESHOLD)
+  it('recognises the same outfit photographed much closer', () => {
+    // This was the one limitation the suite actually measured, and it is gone.
+    // The descriptor is computed over the subject's own bounding box, so a step
+    // towards the mirror produces the same box contents and the same
+    // fingerprint. Previously below the threshold; now effectively identical.
+    expect(score({ garment: NAVY }, { garment: NAVY, scale: 1.35 })).toBeGreaterThan(
+      SAME_OUTFIT_THRESHOLD,
+    )
+  })
+
+  it('recognises it from further away too', () => {
+    expect(score({ garment: NAVY }, { garment: NAVY, scale: 0.75 })).toBeGreaterThan(
+      SAME_OUTFIT_THRESHOLD,
+    )
+  })
+
+  it('keeps a wide margin between the same outfit and a different one', () => {
+    // The number that matters for real photographs, which will be messier than
+    // these: how much room is there between a match and a non-match.
+    const same = score(
+      { garment: CAMEL, texture: 0.02 },
+      { garment: CAMEL, shiftX: 0.02, exposure: 0.85, texture: 0.025 },
+    )
+    const different = score(
+      { garment: NAVY, exposure: 0.9, texture: 0.02 },
+      { garment: CAMEL, exposure: 0.9, texture: 0.02 },
+    )
+    expect(same - different).toBeGreaterThan(0.4)
   })
 
   it('does still recognise it behind a large bag or a raised arm', () => {

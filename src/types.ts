@@ -79,10 +79,25 @@ export type ColorFamily =
 
 /** Everything needed to say "have you worn this before?" without a database of garments. */
 export interface ImageSignature {
-  /** 64-bit difference hash, as 16 hex chars. Structure. */
+  /**
+   * Fingerprint format. Absent on entries written before subject detection.
+   *
+   * Signatures of different versions describe different things and are never
+   * compared — see `similarity`.
+   */
+  v?: number
+  /** 64-bit difference hash over the subject's box, as 16 hex chars. Structure. */
   dhash: string
-  /** 4x4x4 RGB histogram, normalized to sum 1. Palette. */
+  /** HSV histogram over the whole subject, normalized to sum 1. Palette. */
   hist: number[]
+  /**
+   * Histograms for the subject's top, middle and lower thirds.
+   *
+   * Keeps the outfit's vertical composition, which a single histogram throws
+   * away — it is what distinguishes a navy top over grey trousers from the
+   * reverse. Absent on signatures written before this existed.
+   */
+  bands?: number[][]
   /** Dominant color family of the outfit region. */
   color: ColorFamily
 }

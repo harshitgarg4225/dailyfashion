@@ -41,6 +41,7 @@ import {
   scheduleReminder,
 } from './lib/reminders'
 import { requestPersistence } from './lib/storage'
+import { refingerprintOldEntries } from './lib/refingerprint'
 import { hasSystemScheduledReminders } from './lib/platform'
 import { cancelNativeReminder, onReminderAction, scheduleNativeReminder } from './lib/nativeReminders'
 import { getLock } from './db/db'
@@ -174,6 +175,31 @@ export default function App() {
   useEffect(() => {
     if (log.loading || !log.settings.onboarded) return
     void requestPersistence()
+  }, [log.loading, log.settings.onboarded])
+
+  /*
+   * Bring older photographs onto the current fingerprint format.
+   *
+   * Signatures written before subject detection cannot be compared with current
+   * ones, so without this a user's log would silently split in two at the
+   * update — nothing from before could ever be recognised as the same outfit as
+   * anything after, and the flagship observation needs five wears of one
+   * outfit to appear.
+   *
+   * Deferred and batched. Someone opening the app to photograph an outfit must
+   * not wait on housekeeping.
+   */
+  useEffect(() => {
+    if (log.loading || !log.settings.onboarded) return
+
+    const timer = setTimeout(() => {
+      void refingerprintOldEntries().then((result) => {
+        if (result.updated > 0) void log.refresh()
+      })
+    }, 1500)
+
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [log.loading, log.settings.onboarded])
 
   /*
