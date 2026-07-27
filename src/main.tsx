@@ -1,6 +1,23 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+
+/*
+ * Bodoni Moda, bundled rather than linked.
+ *
+ * The display face was a platform stack — Didot on Apple devices, Noto Serif on
+ * Android — which meant the brand was literally a different typeface depending
+ * on the phone, on the two platforms we are shipping to. For a product sold on
+ * how considered it looks, that is not a detail to leave to chance.
+ *
+ * Bodoni Moda is a true Didone, which is the register the whole design is
+ * reaching for, and it is open-licensed. Bundled as two variable woff2 subsets
+ * (~56KB) so it is served same-origin and `connect-src 'none'` still holds — a
+ * font CDN was never an option here, and it turns out not to be a loss.
+ */
+import '@fontsource-variable/bodoni-moda/wght.css'
+import '@fontsource-variable/bodoni-moda/wght-italic.css'
+
 import './styles.css'
 
 const container = document.getElementById('root')

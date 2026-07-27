@@ -9,9 +9,14 @@ import { resolve, dirname } from 'node:path'
  * reviewable in a diff and reproducible from source. It also avoids adding an
  * image-processing dependency for four small squares.
  *
- * The mark is a ring — a mirror, an aperture — on the app's own background.
- * Deliberately not a coat hanger or a dress: this is a log about how days felt,
- * and a garment icon would frame it as a wardrobe tool.
+ * The mark is two rings, one offset inside the other: a reflection that does
+ * not quite line up with the thing reflected. That is the product — a mirror
+ * with a memory, showing you something slightly different from what you
+ * expected to see.
+ *
+ * Deliberately not a coat hanger or a dress. This is a log about how days
+ * felt, and a garment icon would frame it as a wardrobe tool. A single plain
+ * ring, which is what this was, said nothing at all.
  */
 
 /*
@@ -54,24 +59,37 @@ function chunk(type, data) {
 function renderPng(size, inset, height = size) {
   const centreX = (size - 1) / 2
   const centreY = (height - 1) / 2
-  const outer = (Math.min(size, height) / 2) * (1 - inset)
-  // Thinner than before: the design language is hairlines, not heavy strokes.
-  const thickness = Math.max(2, Math.min(size, height) * 0.055)
-  const inner = outer - thickness
+  const span = Math.min(size, height)
+  const outer = (span / 2) * (1 - inset)
+  // Hairlines, matching the interface. The design language is rules, not slabs.
+  const thickness = Math.max(1.5, span * 0.035)
+
+  // The echo: smaller, and shifted up-left so the two never sit concentric.
+  const echoRadius = outer * 0.62
+  const echoShift = outer * 0.16
 
   const rows = []
   for (let y = 0; y < height; y++) {
     const row = Buffer.alloc(1 + size * 3)
     row[0] = 0 // filter: none
     for (let x = 0; x < size; x++) {
-      const dx = x - centreX
-      const dy = y - centreY
-      const distance = Math.sqrt(dx * dx + dy * dy)
+      // Coverage of a ring of the given radius at this pixel, antialiased so
+      // the curve does not read as a staircase at 48px.
+      const ringAlpha = (cx, cy, radius) => {
+        const dx = x - cx
+        const dy = y - cy
+        const d = Math.sqrt(dx * dx + dy * dy)
+        return Math.min(
+          1,
+          Math.max(0, radius + thickness / 2 - d),
+          Math.max(0, d - (radius - thickness / 2)),
+        )
+      }
 
-      // Antialias the ring edges so it does not look like a jagged donut.
-      const outerEdge = Math.min(1, Math.max(0, outer - distance))
-      const innerEdge = Math.min(1, Math.max(0, distance - inner))
-      const alpha = Math.min(outerEdge, innerEdge)
+      const alpha = Math.max(
+        ringAlpha(centreX, centreY, outer),
+        ringAlpha(centreX - echoShift, centreY - echoShift, echoRadius),
+      )
 
       const offset = 1 + x * 3
       for (let c = 0; c < 3; c++) {
@@ -100,7 +118,8 @@ function renderPng(size, inset, height = size) {
 
 const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Fashion">
   <rect width="512" height="512" fill="#f7f4ef"/>
-  <circle cx="256" cy="256" r="158" fill="none" stroke="#1a1714" stroke-width="28"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#1a1714" stroke-width="18"/>
+  <circle cx="229" cy="229" r="104" fill="none" stroke="#1a1714" stroke-width="18"/>
 </svg>
 `
 

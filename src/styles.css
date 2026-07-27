@@ -54,8 +54,12 @@
 
   --page-x: var(--s5);
 
-  --font-display: 'Didot', 'Bodoni 72', 'Hoefler Text', 'Noto Serif', Garamond,
-    'Times New Roman', serif;
+  /*
+   * Bundled, so it is the same face on every device. The stack behind it is
+   * only a first-paint fallback, not a per-platform substitute.
+   */
+  --font-display: 'Bodoni Moda Variable', 'Didot', 'Bodoni 72', 'Hoefler Text',
+    Garamond, 'Times New Roman', serif;
   --font-body: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI',
     system-ui, sans-serif;
 
@@ -1192,4 +1196,85 @@ input[type='time'] {
 .sponsor-headline {
   font-size: 1.2rem;
   margin: var(--s2) 0 var(--s3);
+}
+
+/* --- motion ------------------------------------------------------------ */
+
+/*
+ * One gesture, used everywhere, and slow.
+ *
+ * Luxury motion is not more animation — it is less, done with weight. A single
+ * settle on screen entry reads as considered; three different easings and a
+ * bounce read as a template. 420ms is deliberately slower than the app-default
+ * 200ms: it is the difference between something snapping into place and
+ * something being set down.
+ *
+ * The reduced-motion block at the end of this file overrides all of it, which
+ * is why the layout never depends on the animation having run.
+ */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.screen,
+.onboard,
+.camera-fallback {
+  animation: settle 420ms cubic-bezier(0.16, 0.84, 0.44, 1) both;
+}
+
+/* The sheet arrives from the edge it is anchored to. */
+@keyframes rise {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.sheet {
+  animation: rise 320ms cubic-bezier(0.16, 0.84, 0.44, 1) both;
+}
+
+@keyframes wash {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sheet-backdrop {
+  animation: wash 240ms ease both;
+}
+
+/*
+ * A photograph fades up as it decodes rather than appearing at full strength.
+ * The grid is the one place many images resolve at once, and a hard pop on each
+ * makes an otherwise still screen feel like it is flickering.
+ */
+@keyframes develop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.grid-cell img,
+.tonight-photo,
+.insight-photo,
+.strip-item img {
+  animation: develop 520ms ease both;
 }

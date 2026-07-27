@@ -49,6 +49,7 @@ const CSP = [
   "img-src 'self' blob: data:",
   "media-src 'self' blob:",
   "style-src 'self'",
+  "font-src 'self'",
   "script-src 'self'",
   "form-action 'none'",
   "frame-ancestors 'none'",
