@@ -32,25 +32,36 @@ The download page is served at `/download` from `public/download.html`. It is
 plain HTML with one stylesheet and no JavaScript, so it is not part of the Vite
 build and does not need one.
 
-### Pointing your own domain at it
+### dailyfashion.co
 
-1. Railway → project **Dailyfashion** → service **dailyfashion-web** →
-   *Settings* → *Networking* → **Custom Domain**.
-2. Enter the domain (and `www.` as a second domain if you want both).
-3. Railway shows a `CNAME` target. Add it at your registrar:
+Both names are already registered against the service in Railway. What is left
+is DNS at the registrar. **Each name has its own target** — they are not
+interchangeable, and pointing both at one of them leaves the other permanently
+unverified:
 
-   | Type    | Name  | Value                          |
-   | ------- | ----- | ------------------------------ |
-   | `CNAME` | `www` | *(the target Railway shows)*   |
-   | `ALIAS` | `@`   | *(the same target)*            |
+| Type              | Name  | Value                       |
+| ----------------- | ----- | --------------------------- |
+| `ALIAS` / `ANAME` | `@`   | `u2c4oq4w.up.railway.app`   |
+| `CNAME`           | `www` | `n6l01q2m.up.railway.app`   |
 
-   A bare apex domain needs `ALIAS`/`ANAME`/flattened-`CNAME` support.
-   Cloudflare, Namecheap and Google Domains all have it. If yours does not, use
-   `www` as the primary and redirect the apex at the registrar.
-4. Certificates are issued automatically once DNS resolves. Give it ten minutes.
+Delete whatever is on those two names first. At the time of writing the domain
+was parked — both names resolved to `13.248.243.5` and `76.223.105.230`, and
+`www` was a `CNAME` to the apex — and a leftover parking record will keep
+winning over the new one.
 
-Nothing in the app hardcodes a hostname, so no code change is needed. The one
-exception is the "Read the source" link in `public/download.html`.
+**The apex is the awkward one.** DNS does not allow a plain `CNAME` at the root
+of a zone, so `@` needs a registrar that offers `ALIAS`, `ANAME` or
+CNAME-flattening. Cloudflare (free), Namecheap and Porkbun all do. If yours does
+not, the fallback is to make `www` the real host and use the registrar's
+forwarding to send the apex there — or move the nameservers to Cloudflare, which
+is usually less work than it sounds.
+
+Certificates issue automatically once the records resolve; allow ten minutes,
+longer if the old records had a high TTL.
+
+Nothing in the app hardcodes a hostname, so no code change is needed for any of
+this. The one URL that is written down is the "Read the source" link in
+`public/download.html`, and it points at GitHub rather than at the site.
 
 ---
 
