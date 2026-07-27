@@ -7,8 +7,26 @@ All three are the same `dist/` bundle — Capacitor wraps it, it is not rewritte
 
 ## 1. The web app
 
-Railway builds from the default branch and runs `server.js`. Nothing else is
-needed; a push deploys.
+Railway builds the branch and runs `server.js`.
+
+### Deploy-on-push needs the GitHub App — do this once
+
+Railway knows the repo but has no webhook from it, so **pushes do not deploy**
+until the Railway GitHub App is installed on `harshitgarg4225/dailyfashion`.
+Until then every deploy has to be triggered by hand from the Railway dashboard,
+which is exactly how a fix sits finished-and-unshipped for an hour without
+anybody noticing.
+
+Install it at **railway.com → Account Settings → GitHub → Configure**, granting
+access to this repository. Then in the service's *Settings → Source*, confirm
+the branch is `claude/daily-fashion-mvp-u5vr20` and that automatic deploys are
+on.
+
+Two things that were wrong here and are worth checking if deploys go quiet
+again: the service had no branch set at all, so Railway was watching a `main`
+that does not exist in this repo; and `redeploy` rebuilds the *existing*
+snapshot rather than fetching the branch head, so it will happily "succeed"
+against an old commit.
 
 The download page is served at `/download` from `public/download.html`. It is
 plain HTML with one stylesheet and no JavaScript, so it is not part of the Vite
