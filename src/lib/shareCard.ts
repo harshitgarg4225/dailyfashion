@@ -15,8 +15,9 @@ import { mediumLabel } from './dates'
  * being true. So the rule is: you share what you wore, never how it went.
  *
  * Rendered on-device to a canvas and handed to the OS share sheet as a Blob.
- * Nothing is uploaded, and no network request is made — the app is incapable of
- * one. Where the image goes afterwards is the user's choice, made in their own
+ * Nothing is uploaded: the card never leaves this process until the user hands
+ * it to an app themselves, and the CSP admits no destination it could be sent
+ * to. Where the image goes afterwards is the user's choice, made in their own
  * share sheet, which is the only place that decision belongs.
  */
 

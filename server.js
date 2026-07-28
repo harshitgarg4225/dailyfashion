@@ -39,13 +39,22 @@ const MIME = {
  *
  * A meta CSP is applied by the parser and cannot cover everything a header
  * can; sending both means the restriction holds even for responses the parser
- * never sees. `connect-src 'none'` is the load-bearing directive — with it in
- * place the app is incapable of making a network request, which is a stronger
- * guarantee than any promise in a privacy policy.
+ * never sees.
+ *
+ * `connect-src 'self'` is the load-bearing directive. It was `'none'`, which
+ * made the app incapable of any network request at all; on-device garment
+ * naming needs to fetch a model file, so same-origin had to be allowed for the
+ * web build to have that feature.
+ *
+ * That leaves exactly one reachable host — this one — and the handler below
+ * refuses every method that can carry a body, so the only thing this origin
+ * can do for the page is hand it files. No cross-origin destination is
+ * reachable at all. The privacy claim is still a property rather than a
+ * promise; it now rests on two of them instead of one.
  */
 const CSP = [
   "default-src 'self'",
-  "connect-src 'none'",
+  "connect-src 'self'",
   "img-src 'self' blob: data:",
   "media-src 'self' blob:",
   "style-src 'self'",
@@ -86,6 +95,18 @@ async function tryFile(pathname) {
 }
 
 const server = createServer(async (req, res) => {
+  /*
+   * Half of the privacy guarantee lives on this line.
+   *
+   * Since `connect-src` allows same-origin, the browser would let the page
+   * POST to this server. Refusing every body-carrying method — before routing,
+   * for every path that exists and every path that does not — means there is
+   * nowhere for that request to land. The app cannot upload anything here
+   * because here does not accept uploads.
+   *
+   * Anything added below this line that reads a request body breaks the claim
+   * in onboarding. The end-to-end suite asserts this and will fail the build.
+   */
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     return send(res, 405, 'Method Not Allowed', { Allow: 'GET, HEAD' })
   }

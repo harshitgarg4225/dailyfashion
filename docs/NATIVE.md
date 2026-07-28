@@ -118,9 +118,12 @@ request, still run against it.
 ## Store listing notes
 
 Both stores ask what data the app collects. The answer is none: no account, no
-analytics, no network. Declaring that accurately is straightforward and is
-worth making prominent in the listing — it is the product's main differentiator
-and the thing most competitors cannot say.
+analytics, nothing transmitted. In the packaged build every asset — the shell,
+the fonts, the vision model — is loaded from the local bundle, so `connect-src
+'self'` resolves to the device itself and no request reaches the network at
+all. Declaring that accurately is straightforward and is worth making prominent
+in the listing — it is the product's main differentiator and the thing most
+competitors cannot say.
 
 Camera and notification permissions are both requested in context, at the
 moment they are first needed, rather than at launch.

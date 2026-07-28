@@ -161,9 +161,15 @@ Set the team under *Signing & Capabilities*, then *Product → Archive*.
 Ahead of a submission, the two answers reviewers ask for:
 
 - **Account required?** No. There is no account and no server.
-- **Data collected?** None. Everything is on-device; the app makes no network
-  request at all, which is enforced by the Content-Security-Policy it runs
-  under rather than by policy.
+- **Data collected?** None. Everything is on-device. The app transmits nothing,
+  and that is enforced by the Content-Security-Policy it runs under rather than
+  by promise: `connect-src 'self'` makes every destination except the app's own
+  origin unreachable, and in the packaged build that origin is the local asset
+  bundle. No request leaves the device, and there is no server to receive one.
+
+  Answer "no" to every data-type checkbox, including the diagnostics and crash
+  categories — no crash reporter is linked. Say the same thing in the listing
+  itself, since it is the differentiator most competitors cannot claim.
 
 ---
 

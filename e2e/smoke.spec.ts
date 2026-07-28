@@ -8,9 +8,10 @@ import { test, expect, type Page } from '@playwright/test'
  * matters, because the insight engine starves.
  *
  * The second is J4. This suite fails the build if the app makes a single
- * request to anywhere that is not its own origin. That is the difference
- * between a privacy promise and a privacy property — and it is the reason
- * someone might feel safe photographing themselves in a mirror.
+ * request to anywhere that is not its own origin, or a single request of any
+ * kind that could carry data out. That is the difference between a privacy
+ * promise and a privacy property — and it is the reason someone might feel
+ * safe photographing themselves in a mirror.
  */
 
 const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
@@ -24,6 +25,26 @@ async function watchRequests(page: Page): Promise<string[]> {
     external.push(url)
   })
   return external
+}
+
+/**
+ * Records every request of a method that can carry a body, same-origin
+ * included.
+ *
+ * `connect-src 'self'` permits the page to talk to its own origin, so
+ * "no cross-origin request" stopped being the whole story. What matters now is
+ * that nothing is ever *sent* anywhere: a GET names a file, a POST carries
+ * data. If this list is empty then no user data left the device regardless of
+ * where the request was pointed.
+ */
+async function watchUploads(page: Page): Promise<string[]> {
+  const uploads: string[] = []
+  page.on('request', (request) => {
+    const method = request.method()
+    if (method === 'GET' || method === 'HEAD') return
+    uploads.push(`${method} ${request.url()}`)
+  })
+  return uploads
 }
 
 /**
@@ -197,8 +218,11 @@ test.describe('the sponsor slot', () => {
 })
 
 test.describe('privacy is a property, not a promise', () => {
-  test('makes no cross-origin request during a full session', async ({ page }) => {
+  test('makes no cross-origin request, and uploads nothing, during a full session', async ({
+    page,
+  }) => {
     const external = await watchRequests(page)
+    const uploads = await watchUploads(page)
 
     await page.goto(BASE)
     await completeOnboarding(page)
@@ -213,22 +237,35 @@ test.describe('privacy is a property, not a promise', () => {
     await page.getByRole('button', { name: 'Patterns', exact: true }).click()
 
     expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
+    // Same-origin is now permitted, so "went nowhere else" is no longer
+    // sufficient on its own. Nothing may be sent at all.
+    expect(uploads, `unexpected outbound data: ${uploads.join(', ')}`).toEqual([])
   })
 
-  test('serves a policy that makes network calls impossible', async ({ request }) => {
+  test('serves a policy that permits this origin and nothing beyond it', async ({ request }) => {
     const response = await request.get(BASE)
     const csp = response.headers()['content-security-policy'] ?? ''
 
-    // The load-bearing directive: with this in place the app cannot fetch,
-    // XHR, or open a socket even if some future dependency tried to.
-    expect(csp).toContain("connect-src 'none'")
+    // 'self' rather than 'none' so the vision model can be fetched from our own
+    // origin. Every other destination stays unreachable.
+    expect(csp).toContain("connect-src 'self'")
     expect(csp).toContain("form-action 'none'")
+
+    /*
+     * The failure this guards against is someone widening the directive later
+     * to reach an API or a model CDN. Any host, scheme or wildcard source
+     * added to connect-src ends the guarantee, so the allowed set is asserted
+     * exactly rather than by substring.
+     */
+    const connect = csp.split(';').find((part) => part.trim().startsWith('connect-src'))
+    expect(connect?.trim()).toBe("connect-src 'self'")
   })
 
-  test('blocks a fetch attempt at the browser level', async ({ page }) => {
+  test('blocks a cross-origin fetch at the browser level', async ({ page }) => {
     await page.goto(BASE)
 
-    // Proves the CSP is enforced rather than merely declared.
+    // Proves the CSP is enforced rather than merely declared. This is the test
+    // that would catch a relaxation from 'self' to something wider.
     const blocked = await page.evaluate(async () => {
       try {
         await fetch('https://example.com/collect', { method: 'POST', body: 'x' })
@@ -239,6 +276,29 @@ test.describe('privacy is a property, not a promise', () => {
     })
 
     expect(blocked).toBe(true)
+  })
+
+  test('offers no route that accepts data, on any path', async ({ request }) => {
+    /*
+     * The other half of the guarantee. Same-origin requests are allowed by the
+     * CSP, so the reason nothing can be uploaded is that this origin refuses
+     * to receive it — including on paths that do not exist, since the
+     * single-page fallback would otherwise answer them with the shell.
+     */
+    const paths = ['/', '/healthz', '/collect', '/api/events', '/index.html']
+    const methods = ['POST', 'PUT', 'PATCH', 'DELETE'] as const
+
+    for (const path of paths) {
+      for (const method of methods) {
+        const response = await request.fetch(`${BASE}${path}`, {
+          method,
+          data: 'photo=leaked',
+          failOnStatusCode: false,
+        })
+        expect(response.status(), `${method} ${path} was not refused`).toBe(405)
+        expect(response.headers()['allow']).toBe('GET, HEAD')
+      }
+    }
   })
 })
 

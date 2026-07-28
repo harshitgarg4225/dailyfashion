@@ -55,8 +55,19 @@ export const copy = {
   },
 
   onboarding: {
-    // J4: this claim has to be literally true, not aspirational. It is —
-    // there is no network code in this app and the CSP forbids it.
+    /*
+     * J4: this claim has to be literally true, not aspirational. It is.
+     *
+     * The app sends nothing anywhere. `connect-src 'self'` lets it fetch its
+     * own files — the vision model that names garments is one of them — and
+     * makes every other destination unreachable; the origin those files come
+     * from answers 405 to anything carrying a body. Photos and notes never
+     * leave IndexedDB except through export, which the user initiates and
+     * which writes a file to their own device.
+     *
+     * If a future change adds a host to connect-src or a route that accepts a
+     * body, this string stops being true and has to change with it.
+     */
     privacyTitle: 'Nothing leaves this phone',
     privacyBody:
       'Your photos and notes are stored on this device only. There is no account, no sign-up, and the app never sends anything anywhere. You can turn on airplane mode and it works exactly the same.',

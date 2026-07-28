@@ -13,9 +13,10 @@ import { daysBetween, type DateKey } from './dates'
  * The consequences are worth stating plainly, because they are the whole
  * design:
  *
- *  - `connect-src 'none'` survives. Nothing is fetched, so nothing is tracked,
- *    so the privacy claim stays literally true and the test that fails the
- *    build on any cross-origin request keeps passing.
+ *  - Nothing is fetched from a sponsor, so nothing is tracked. The creative
+ *    ships inside the build, which keeps it inside `connect-src 'self'` and
+ *    keeps the test that fails the build on any cross-origin request passing.
+ *    A hosted creative or an impression pixel would break both.
  *  - There are no impression counts to bill against. Inventory is sold as a
  *    flat placement for a period, the way a magazine sells a page.
  *  - Changing the sponsor means shipping a build. That is a real operational

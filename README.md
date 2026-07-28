@@ -14,11 +14,19 @@ to photograph and tag two hundred garments before doing anything useful. Item-le
 knowledge here accumulates as a side effect of logging: photos are fingerprinted on
 save and compared against recent entries, so "same as Tuesday?" is a single tap.
 
-**Nothing leaves the device.** No account, no sign-up, no sync, no analytics. The
-page is served with `connect-src 'none'`, so the app is *incapable* of making a
-network request — the privacy claim is a property enforced by the browser rather
-than a promise in a policy. The end-to-end suite fails the build if any cross-origin
-request is attempted.
+**Nothing leaves the device.** No account, no sign-up, no sync, no analytics. This
+is a property enforced by the browser, not a promise in a policy, and it stands on
+two legs. The page is served with `connect-src 'self'`, so every destination except
+the app's own origin is unreachable — there is no analytics endpoint or third-party
+API it *can* reach. And that origin accepts no data: `server.js` answers 405 to every
+method that can carry a body, on every path. The end-to-end suite fails the build if
+a cross-origin request is attempted, if the app ever issues anything but a GET, or if
+the server starts accepting a POST.
+
+The directive is `'self'` rather than `'none'` so the web build can load the
+on-device vision model that names garments; a model is a file, and a file has to be
+fetched. It is bundled same-origin, so nothing third-party is involved, and in the
+packaged native builds it resolves to the local asset bundle — no network at all.
 
 **It never talks about your body.** No weight, no measurements, no sizes — those
 fields do not exist in the schema and never will. A ban list of appearance-judgment
@@ -42,7 +50,7 @@ npm run build && npm start   # production build, served by server.js
 |---|---|
 | `npm test` | Unit suite — insight thresholds, similarity, zip, copy ban list |
 | `npm run typecheck` | Strict TypeScript, no emit |
-| `npx playwright test` | Browser suite — the loop, and the no-network guarantee |
+| `npx playwright test` | Browser suite — the loop, and the nothing-transmitted guarantee |
 | `node scripts/make-icons.mjs` | Regenerates app icons from source |
 
 The Playwright suite needs a Chromium. If the environment provides one, point at it
@@ -57,8 +65,10 @@ is nowhere for user data to go even in principle. Healthcheck is `/healthz`.
 Live at `dailyfashion-web-production.up.railway.app` (project `Dailyfashion`).
 
 Both the page and the response header send
-`default-src 'self'; connect-src 'none'; style-src 'self'` with no
-`unsafe-inline`. Pushes to the deployed branch redeploy automatically.
+`default-src 'self'; connect-src 'self'; style-src 'self'` with no
+`unsafe-inline`. The server has no route that accepts a request body, which is
+half the privacy guarantee and is asserted by the browser suite — keep it that
+way. Pushes to the deployed branch redeploy automatically.
 
 ## Layout
 

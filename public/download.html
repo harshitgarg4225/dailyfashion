@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
     <!--
-      The same policy the app runs under, on the page that makes the claim.
+      Stricter than the app, on the page that makes the claim.
+
+      The app itself runs `connect-src 'self'` because the vision model has to
+      be fetched from somewhere. This page has no such need — it is static
+      HTML with no script — so it keeps `'none'` and stays incapable of any
+      request at all. Where strictness is free, it is kept.
 
       A download page that promised "no network requests" while itself pulling a
       font from a CDN and a script from an analytics vendor would be arguing

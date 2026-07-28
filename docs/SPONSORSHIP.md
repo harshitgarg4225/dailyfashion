@@ -11,9 +11,11 @@ at runtime.
 That choice has consequences worth being explicit about, because they are the
 design rather than a limitation to route around later:
 
-- **Nothing is fetched, so nothing is tracked.** `connect-src 'none'` survives
-  intact, the privacy claim in onboarding stays literally true, and the browser
-  test that fails the build on any cross-origin request keeps passing.
+- **Nothing is fetched from a sponsor, so nothing is tracked.** The creative
+  ships inside the build, so it stays within `connect-src 'self'`, the privacy
+  claim in onboarding stays literally true, and the browser test that fails the
+  build on any cross-origin request keeps passing. A hosted image or an
+  impression pixel would break all three, which is why neither is on offer.
 - **There are no impression counts to bill against.** Inventory is sold as a
   flat placement for a period, the way a magazine sells a page. Reach is
   described honestly as an estimate, never as verified delivery.

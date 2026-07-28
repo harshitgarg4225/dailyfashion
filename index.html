@@ -10,10 +10,22 @@
     <!--
       J4, enforced rather than promised.
 
-      `connect-src 'none'` means fetch, XHR, WebSocket and EventSource all fail
-      at the browser level. Even if a future dependency tried to phone home, the
-      request would be blocked before it left the device — the privacy claim in
-      onboarding is a property of the page, not a policy someone has to remember.
+      `connect-src 'self'` — not `'none'`, and the difference is deliberate.
+      On-device garment naming needs a vision model, and a model is a file that
+      has to be fetched from somewhere. Bundling it same-origin and permitting
+      same-origin fetch is what lets the web build have that feature at all.
+
+      What that costs, precisely: the app can now reach one host — the one it
+      was served from. It still cannot reach any other, so there is nowhere to
+      send anything to. Every cross-origin destination, which is to say every
+      analytics endpoint, ad network and third-party API in existence, is still
+      refused by the browser before the request leaves the device.
+
+      What replaces the missing strictness is the origin itself: server.js
+      answers 405 to every method that can carry a body, so the one host this
+      page can talk to has no route that accepts data. Two independent
+      properties — the browser blocks everyone else, the server accepts nothing
+      — and the end-to-end suite fails the build if either stops holding.
 
       `img-src` allows blob: and data: because that is how the app renders
       photos out of IndexedDB. Neither can reach the network.
@@ -28,7 +40,7 @@
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self';
-               connect-src 'none';
+               connect-src 'self';
                img-src 'self' blob: data:;
                media-src 'self' blob:;
                style-src 'self';

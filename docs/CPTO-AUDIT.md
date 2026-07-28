@@ -84,7 +84,7 @@ confidence in white space**. Concretely, what changes:
 | # | Change | Sev | Status |
 |---|---|---|---|
 | D1 | Palette: from dark/amber to ivory (`#F7F4EF`), ink (`#1A1714`), and a single monogram-adjacent brown (`#4E3629`) used sparingly. Camera stays black — it must. | P0 | DONE |
-| D2 | Typography: a self-hosted editorial serif for display, a neutral sans for body, and letterspaced uppercase for eyebrows and labels. Self-hosted because `connect-src 'none'` forbids a font CDN — the privacy constraint dictates the typographic one. | P0 | DONE |
+| D2 | Typography: a self-hosted editorial serif for display, a neutral sans for body, and letterspaced uppercase for eyebrows and labels. Self-hosted because the CSP forbids a font CDN — the privacy constraint dictates the typographic one. | P0 | DONE |
 | D3 | Geometry: corner radius from 14–20px down to 0–2px. Luxury is square. Hairline 1px rules instead of filled surfaces. | P0 | DONE |
 | D4 | Spacing: a proper scale with far more negative space. Current padding is app-generic (20px); editorial layouts want 24–40px margins and much larger vertical rhythm. | P0 | DONE |
 | D5 | Photography: entries presented as gallery objects — generous margins, no rounded corners, no drop shadows, captions in small caps beneath rather than badges laid on top. | P0 | DONE |

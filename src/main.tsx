@@ -12,8 +12,9 @@ import App from './App'
  *
  * Bodoni Moda is a true Didone, which is the register the whole design is
  * reaching for, and it is open-licensed. Bundled as two variable woff2 subsets
- * (~56KB) so it is served same-origin and `connect-src 'none'` still holds — a
- * font CDN was never an option here, and it turns out not to be a loss.
+ * (~56KB) so it is served same-origin, which is all `connect-src 'self'` and
+ * `font-src 'self'` permit — a font CDN was never an option here, and it turns
+ * out not to be a loss.
  */
 import '@fontsource-variable/bodoni-moda/wght.css'
 import '@fontsource-variable/bodoni-moda/wght-italic.css'
