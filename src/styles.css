@@ -1405,3 +1405,100 @@ input[type='time'] {
   height: 100%;
   object-fit: cover;
 }
+
+/* --- search ------------------------------------------------------------- */
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-bottom: var(--s5);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--line);
+}
+
+/*
+ * A rule, not a box. The field reads as a line on paper rather than as a
+ * control bolted onto it — the same reason nothing else here has a filled
+ * background. `appearance: none` removes Safari's search decorations, which
+ * arrive rounded and grey and undo all of it.
+ */
+.search-input {
+  flex: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 0;
+  padding: var(--s2) 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  /* 16px exactly: anything smaller makes iOS zoom the page on focus. */
+  font-size: 1rem;
+}
+
+.search-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.search-input:focus {
+  outline: none;
+}
+
+.search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* --- search results ----------------------------------------------------- */
+
+.result {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s4);
+  width: 100%;
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.result-photo {
+  position: relative;
+  flex: 0 0 64px;
+  aspect-ratio: 4 / 5;
+  background: var(--paper-warm);
+  overflow: hidden;
+}
+
+.result-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.result-text {
+  display: grid;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.result-text strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+.result-note {
+  color: var(--ink-soft);
+  font-size: 0.87rem;
+  /* One line of the note is orientation; the whole thing is the day's screen. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-text small {
+  color: var(--ink-faint);
+  font-size: 0.72rem;
+}

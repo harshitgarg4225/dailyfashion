@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Entry, Settings } from '../types'
 import { copy } from '../lib/copy'
 import { addDays, daysBetween, mediumLabel, type DateKey } from '../lib/dates'
@@ -6,6 +6,8 @@ import { Photo } from '../app/Photo'
 import { isInstalled, isIos } from '../lib/storage'
 import { SponsorSlot } from '../app/SponsorSlot'
 import { shouldShowSponsor } from '../lib/sponsor'
+import { searchEntries } from '../lib/search'
+import type { EntryItem, Item } from '../types'
 
 /**
  * The log grid.
@@ -24,10 +26,21 @@ import { shouldShowSponsor } from '../lib/sponsor'
  */
 const MAX_GAP_CELLS = 6
 
+/**
+ * Days in the log before search is offered.
+ *
+ * Below this the grid fits on a screen and a search field is a control that
+ * offers to find one of the four things already visible — clutter dressed as
+ * capability. Search earns its place when scrolling has become the problem.
+ */
+const SEARCH_MIN_ENTRIES = 12
+
 export function LogScreen({
   entries,
   settings,
   today,
+  items,
+  entryItems,
   onOpen,
   onAddPast,
   onWrite,
@@ -39,6 +52,8 @@ export function LogScreen({
   entries: readonly Entry[]
   settings: Settings
   today: DateKey
+  items: readonly Item[]
+  entryItems: readonly EntryItem[]
   onOpen: (entry: Entry) => void
   onAddPast: () => void
   onWrite: () => void
@@ -93,6 +108,13 @@ export function LogScreen({
     if (sponsorVisible) onSponsorShown()
   }, [sponsorVisible, onSponsorShown])
 
+  const [query, setQuery] = useState('')
+  const searchable = entries.length >= SEARCH_MIN_ENTRIES
+  const results = useMemo(
+    () => (searchable && query.trim() ? searchEntries({ entries, items, entryItems }, query) : null),
+    [searchable, query, entries, items, entryItems],
+  )
+
   return (
     <div className="screen">
       <div className="screen-head">
@@ -100,6 +122,29 @@ export function LogScreen({
         <h1>{copy.log.title}</h1>
         <span className="sub">{copy.log.entryCount(entries.length)}</span>
       </div>
+
+      {searchable ? (
+        <div className="search">
+          <label className="visually-hidden" htmlFor="log-search">
+            {copy.log.searchLabel}
+          </label>
+          <input
+            id="log-search"
+            className="search-input"
+            type="search"
+            inputMode="search"
+            autoComplete="off"
+            placeholder={copy.log.searchPlaceholder}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          {query ? (
+            <button type="button" className="btn btn--quiet" onClick={() => setQuery('')}>
+              {copy.log.searchClear}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {showInstallNudge ? (
         <div className="notice">
@@ -111,7 +156,39 @@ export function LogScreen({
         </div>
       ) : null}
 
-      {entries.length === 0 ? (
+      {results !== null ? (
+        results.length === 0 ? (
+          <p className="empty">{copy.log.searchNone}</p>
+        ) : (
+          <>
+            <p className="note">{copy.log.searchCount(results.length)}</p>
+            <div className="stack">
+              {results.map((match) => (
+                <button
+                  key={match.entry.id}
+                  type="button"
+                  className="result"
+                  onClick={() => onOpen(match.entry)}
+                >
+                  <span className="result-photo">
+                    <Photo photoId={match.entry.photo_id} alt="" className="result-image" />
+                  </span>
+                  <span className="result-text">
+                    <strong>{mediumLabel(match.entry.date)}</strong>
+                    {match.entry.note ? <span className="result-note">{match.entry.note}</span> : null}
+                    {/*
+                      * Why it matched, in the user's terms. The same argument the
+                      * insight engine makes: a result surfaced for reasons it
+                      * cannot explain is the "trust me" this product refuses.
+                      */}
+                    <small>{copy.log.searchWhy(match.reasons.join(', '))}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
+        )
+      ) : entries.length === 0 ? (
         <p className="empty">{copy.log.empty}</p>
       ) : (
         <>

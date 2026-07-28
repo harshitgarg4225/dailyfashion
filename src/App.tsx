@@ -700,6 +700,8 @@ export default function App() {
             entries={log.entries}
             settings={log.settings}
             today={today}
+            items={log.items}
+            entryItems={log.entryItems}
             onOpen={(entry) => {
               setOpenEntry(entry)
               setScreen('tonight')

@@ -228,6 +228,19 @@ export const copy = {
       'Tap the share button, then “Add to Home Screen”. Browsers clear data for sites that are only open in a tab — on the home screen your log is far safer.',
     installDismiss: 'Not now',
     writtenDay: 'Written',
+    /*
+     * Search over the log.
+     *
+     * Appears only once the grid is long enough that scrolling has become the
+     * problem it solves — before that it is a control offering to find one of
+     * the four things already on screen.
+     */
+    searchLabel: 'Find a day',
+    searchPlaceholder: 'grey coat, blue, complimented, March',
+    searchClear: 'Clear',
+    searchCount: (n: number) => (n === 1 ? '1 day' : `${n} days`),
+    searchNone: 'Nothing matching that. Try a colour, a word you wrote, or a month.',
+    searchWhy: (reasons: string) => `Matched on ${reasons}.`,
     backdateLimit: 'You can add days from the past week.',
     entryCount: (n: number) => (n === 1 ? '1 day logged' : `${n} days logged`),
   },
