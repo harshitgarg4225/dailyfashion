@@ -28,10 +28,12 @@ export const CARD_HEIGHT = 1350
 /** At most six frames — a contact sheet, not a scroll. */
 const MAX_PHOTOS = 6
 
-const PAPER = '#f7f4ef'
-const INK = '#1a1714'
-const INK_MUTED = '#857a6d'
-const LINE = '#ddd5c8'
+// The card is typeset in the app's own language, because it is the one piece
+// of the product that travels: white paper, near-black ink, hairline grey.
+const PAPER = '#ffffff'
+const INK = '#111111'
+const INK_MUTED = '#6e6e6e'
+const LINE = '#e5e5e5'
 
 const MARGIN = 72
 const GUTTER = 16
@@ -45,8 +47,8 @@ const CAPTION_BLOCK = 96
 /** Space between the last line of type and the footer rule. */
 const BREATH = 48
 
-const DISPLAY = "'Bodoni Moda Variable', 'Didot', 'Bodoni 72', 'Hoefler Text', Garamond, serif"
-const BODY = "-apple-system, 'Helvetica Neue', 'Segoe UI', system-ui, sans-serif"
+const DISPLAY = "'Instrument Sans Variable', 'Instrument Sans', 'Helvetica Neue', Arial, sans-serif"
+const BODY = DISPLAY
 
 function letterspaced(
   ctx: CanvasRenderingContext2D,
@@ -113,7 +115,7 @@ export async function renderWeekCard({ week, photos, handle }: ShareCardInput): 
   letterspaced(ctx, 'MY WEEK', MARGIN, MARGIN + 24, 5)
 
   ctx.fillStyle = INK
-  ctx.font = `400 84px ${DISPLAY}`
+  ctx.font = `550 84px ${DISPLAY}`
   ctx.fillText(`${week.daysLogged} days`, MARGIN, MARGIN + 128)
 
   ctx.fillStyle = INK_MUTED
@@ -202,7 +204,7 @@ export async function renderWeekCard({ week, photos, handle }: ShareCardInput): 
     letterspaced(ctx, 'WORN', MARGIN, y, 4)
 
     ctx.fillStyle = INK
-    ctx.font = `400 40px ${DISPLAY}`
+    ctx.font = `550 40px ${DISPLAY}`
     ctx.fillText(colours.join(', '), MARGIN, y + CAPTION_VALUE)
     y += CAPTION_BLOCK
   }
@@ -213,7 +215,7 @@ export async function renderWeekCard({ week, photos, handle }: ShareCardInput): 
     letterspaced(ctx, 'REACHED FOR AGAIN', MARGIN, y, 4)
 
     ctx.fillStyle = INK
-    ctx.font = `400 40px ${DISPLAY}`
+    ctx.font = `550 40px ${DISPLAY}`
     ctx.fillText(
       week.repeats.length === 1
         ? `1 outfit, ${week.repeats[0]!.times} days`

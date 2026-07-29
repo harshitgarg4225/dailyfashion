@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Fashion">
-  <rect width="512" height="512" fill="#f7f4ef"/>
-  <circle cx="256" cy="256" r="168" fill="none" stroke="#1a1714" stroke-width="18"/>
-  <circle cx="229" cy="229" r="104" fill="none" stroke="#1a1714" stroke-width="18"/>
+  <rect width="512" height="512" fill="#ffffff"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#111111" stroke-width="18"/>
+  <circle cx="229" cy="229" r="104" fill="none" stroke="#111111" stroke-width="18"/>
 </svg>

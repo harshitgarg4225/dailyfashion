@@ -20,14 +20,14 @@ import { resolve, dirname } from 'node:path'
  */
 
 /*
- * Ivory paper and ink, matching the app.
+ * White paper and ink, matching the app.
  *
  * The first version was dark with an amber ring, from before the design
  * settled — an icon that does not match the first screen reads as a different
  * product, and it is the only part of the app someone sees before opening it.
  */
-const BG = [0xf7, 0xf4, 0xef]
-const RING = [0x1a, 0x17, 0x14]
+const BG = [0xff, 0xff, 0xff]
+const RING = [0x11, 0x11, 0x11]
 
 function crc32(buf) {
   let c
@@ -117,9 +117,9 @@ function renderPng(size, inset, height = size) {
 }
 
 const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Daily Fashion">
-  <rect width="512" height="512" fill="#f7f4ef"/>
-  <circle cx="256" cy="256" r="168" fill="none" stroke="#1a1714" stroke-width="18"/>
-  <circle cx="229" cy="229" r="104" fill="none" stroke="#1a1714" stroke-width="18"/>
+  <rect width="512" height="512" fill="#ffffff"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#111111" stroke-width="18"/>
+  <circle cx="229" cy="229" r="104" fill="none" stroke="#111111" stroke-width="18"/>
 </svg>
 `
 

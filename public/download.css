@@ -1,10 +1,10 @@
 /*
  * The download page.
  *
- * Same visual language as the app — ivory paper, ink, one Didone, hairline
- * rules, radius zero — because the page is the first thing anyone sees and a
- * landing page that looks like a different product is a promise broken before
- * the app has opened.
+ * Same visual language as the app — white paper, near-black ink, one sans,
+ * hairline rules, radius zero — because the page is the first thing anyone
+ * sees and a landing page that looks like a different product is a promise
+ * broken before the app has opened.
  *
  * Hand-written rather than built, and deliberately so: it carries no
  * JavaScript, no framework and no third-party request, which is the same claim
@@ -13,21 +13,21 @@
  */
 
 @font-face {
-  font-family: 'Bodoni Moda Landing';
+  font-family: 'Instrument Sans Landing';
   /* Served from this origin. A font CDN would contradict the page's own copy. */
-  src: url('/bodoni.woff2') format('woff2-variations');
-  font-weight: 400 900;
+  src: url('/instrument-sans.woff2') format('woff2-variations');
+  font-weight: 400 700;
   font-style: normal;
   font-display: swap;
 }
 
 :root {
-  --paper: #f7f4ef;
-  --ink: #1a1714;
-  --ink-soft: #4a423a;
-  --ink-muted: #857a6d;
-  --ink-faint: #b3a99b;
-  --line: #ddd5c8;
+  --paper: #ffffff;
+  --ink: #111111;
+  --ink-soft: #444444;
+  --ink-muted: #6e6e6e;
+  --ink-faint: #b9b9b9;
+  --line: #e5e5e5;
 
   --s2: 8px;
   --s3: 12px;
@@ -37,10 +37,8 @@
   --s7: 48px;
   --s8: 64px;
 
-  --font-display: 'Bodoni Moda Landing', 'Didot', 'Bodoni 72', 'Hoefler Text',
-    Garamond, 'Times New Roman', serif;
-  --font-body: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI',
-    system-ui, sans-serif;
+  --font-display: 'Instrument Sans Landing', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Instrument Sans Landing', 'Helvetica Neue', Arial, sans-serif;
 
   color-scheme: light;
 }
@@ -71,8 +69,8 @@ main {
 h1,
 h2 {
   font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: -0.01em;
+  font-weight: 550;
+  letter-spacing: -0.025em;
   margin: 0;
 }
 
@@ -83,7 +81,7 @@ p {
 .eyebrow {
   font-size: 0.62rem;
   font-weight: 500;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--ink-muted);
   margin-bottom: var(--s5);

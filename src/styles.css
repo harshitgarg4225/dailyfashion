@@ -1,25 +1,28 @@
 /*
  * Daily Fashion — visual language.
  *
- * The reference is a maison, not an app: ivory paper, ink, one restrained
- * brown, hairline rules, and a great deal of air. Three rules govern
- * everything below.
+ * The reference is a white gallery, not an app: pure white paper, near-black
+ * ink, hairline grey rules, photographs on quiet grey blocks, and a great
+ * deal of air. This is the language mira arrived at, adopted here whole.
+ * Four rules govern everything below.
  *
- *  1. **Square.** Radius is 0. Rounded corners read as software; luxury
- *     print, packaging and retail are square.
+ *  1. **Square.** Radius is 0. Rounded corners read as software; galleries,
+ *     print and packaging are square.
  *
  *  2. **Rules, not surfaces.** Hierarchy comes from 1px lines and white space
  *     rather than filled cards and shadows. Nothing floats.
  *
- *  3. **Photographs are the only colour.** The palette is near-monochrome on
- *     purpose, so the one saturated thing on any screen is the user's own
- *     photograph, presented as an object with margin around it.
+ *  3. **Photographs are the only colour.** The chrome is strictly
+ *     monochrome — there is no accent colour at all, only ink — so the one
+ *     saturated thing on any screen is the user's own photograph, presented
+ *     on a quiet grey block like a print on a wall.
  *
- * The typeface strategy is dictated by the privacy constraint: `connect-src
- * 'none'` forbids a font CDN, and shipping a webfont binary is weight on every
- * cold launch. So the display face is a stack of the editorial serifs that
- * already ship with the platforms this audience uses — Didot on Apple devices,
- * Noto Serif on Android — costing zero bytes and zero requests.
+ *  4. **Buttons invert, never tint.** A pressed or hovered control swaps ink
+ *     and paper; nothing ever goes translucent or pastel.
+ *
+ * One typeface does everything: Instrument Sans, bundled same-origin. The
+ * voice comes from how it is set, not from a second face — tiny letterspaced
+ * uppercase for eyebrows and labels, medium-weight tight-tracked for titles.
  *
  * The camera stays black. That is not a theme decision: bright viewfinder
  * chrome ruins the preview and misleads the eye about exposure.
@@ -27,18 +30,19 @@
 
 :root {
   /* Paper and ink. */
-  --paper: #f7f4ef;
-  --paper-warm: #efe9e0;
-  --ink: #1a1714;
-  --ink-soft: #4a423a;
-  --ink-muted: #857a6d;
-  --ink-faint: #b3a99b;
+  --paper: #ffffff;
+  --paper-warm: #f6f6f6;
+  --ink: #111111;
+  --ink-soft: #444444;
+  --ink-muted: #6e6e6e;
+  --ink-faint: #b9b9b9;
 
-  /* The single accent. At most one use per screen. */
-  --brown: #4e3629;
+  /* Monochrome on purpose: the accent is ink. Kept as a token so any future
+     retreat from that position is one line. */
+  --brown: #111111;
 
-  --line: #ddd5c8;
-  --danger: #8c3b30;
+  --line: #e5e5e5;
+  --danger: #8a3a34;
 
   --radius: 0px;
 
@@ -58,10 +62,10 @@
    * Bundled, so it is the same face on every device. The stack behind it is
    * only a first-paint fallback, not a per-platform substitute.
    */
-  --font-display: 'Bodoni Moda Variable', 'Didot', 'Bodoni 72', 'Hoefler Text',
-    Garamond, 'Times New Roman', serif;
-  --font-body: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI',
-    system-ui, sans-serif;
+  --font-display: 'Instrument Sans Variable', 'Instrument Sans',
+    'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Instrument Sans Variable', 'Instrument Sans', 'Helvetica Neue',
+    Arial, sans-serif;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -111,17 +115,19 @@ h2,
 h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.005em;
-  line-height: 1.18;
+  /* Medium weight, tight tracking: how a sans earns a masthead's authority. */
+  font-weight: 550;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
 }
 
 h1 {
-  font-size: 2rem;
+  font-size: 1.9rem;
 }
 
 h2 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.015em;
 }
 
 p {
@@ -136,9 +142,10 @@ p {
 .eyebrow {
   display: block;
   font-family: var(--font-body);
-  font-size: 0.65rem;
+  font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  /* Mira's signature: tracking wide enough to read as engraving. */
+  letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--ink-muted);
 }
@@ -153,8 +160,8 @@ p {
   text-align: center;
   padding: var(--s8) var(--s5);
   font-family: var(--font-display);
-  font-size: 1.05rem;
-  line-height: 1.5;
+  font-size: 0.95rem;
+  line-height: 1.55;
 }
 
 /* --- layout ------------------------------------------------------------ */
@@ -306,14 +313,46 @@ p {
   transition: opacity 0.2s ease;
 }
 
+/*
+ * Buttons invert, never tint — mira's rule, kept absolute. A pressed or
+ * hovered control swaps ink and paper outright; nothing goes translucent,
+ * because translucency reads as hesitation.
+ */
 .btn:active {
-  opacity: 0.7;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
 
 .btn--primary {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--paper);
+}
+
+.btn--primary:active {
+  background: var(--paper);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  .btn--primary:hover {
+    background: var(--paper);
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .btn--ghost {
@@ -930,7 +969,6 @@ button:focus-visible {
   color: var(--ink-muted);
   font-size: 0.9rem;
   font-family: var(--font-display);
-  font-style: italic;
 }
 
 .wordmark {
@@ -940,10 +978,11 @@ button:focus-visible {
 
 .wordmark .name {
   font-family: var(--font-display);
+  font-weight: 600;
   font-size: 1.4rem;
-  letter-spacing: 0.34em;
+  letter-spacing: 0.42em;
   text-transform: uppercase;
-  text-indent: 0.34em;
+  text-indent: 0.42em;
 }
 
 .dots {
@@ -1125,7 +1164,6 @@ input[type='time'] {
 
 .write-area::placeholder {
   color: var(--ink-faint);
-  font-style: italic;
 }
 
 /*
@@ -1528,11 +1566,10 @@ input[type='time'] {
 }
 
 .garment-line--named {
-  font-style: italic;
+  color: var(--ink-soft);
 }
 
 .garment-edit {
-  font-style: normal;
   font-size: 0.8rem;
   opacity: 0.55;
   letter-spacing: 0.04em;
