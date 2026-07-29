@@ -145,6 +145,8 @@ export const copy = {
     undo: 'Undo',
     notePrompt: 'Anything else?',
     noteHint: 'Optional. A few words, only for you.',
+    wornBefore: (times: number) =>
+      times === 1 ? 'Also worn once before' : `Also worn ${times} times`,
     // U9: connects the daily chore to the payoff it is building toward.
     why: 'Answering these is what lets the log tell you something later.',
     // J9: returning after a gap is neutral, never a reprimand.

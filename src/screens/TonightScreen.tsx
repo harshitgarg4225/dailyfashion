@@ -22,6 +22,7 @@ export function TonightScreen({
   onSkip,
   onRemove,
   onRename,
+  wears,
   showWelcomeBack,
 }: {
   entry: Entry | null
@@ -31,6 +32,8 @@ export function TonightScreen({
   onRemove?: (() => void) | undefined
   /** Stores the user's own name for the garment, which outranks the model's. */
   onRename?: ((name: string) => void) | undefined
+  /** The cluster's other wears, newest first — the outfit's history in place. */
+  wears?: readonly Entry[]
   showWelcomeBack: boolean
 }) {
   const [felt, setFelt] = useState<FeltScore | null>(entry?.felt_score ?? null)
@@ -129,6 +132,28 @@ export function TonightScreen({
             {copy.garment.add}
           </button>
         )
+      ) : null}
+
+      {/*
+        * The outfit's history, in place. J3 built the clusters; this is where
+        * they pay off without a separate screen — every other wear of the same
+        * outfit, right under the day being looked at. Dates only, no felt
+        * scores: this strip may be glanced at with someone else present.
+        */}
+      {wears && wears.length > 0 ? (
+        <div className="field">
+          <span className="field-label">{copy.tonight.wornBefore(wears.length)}</span>
+          <div className="wear-strip">
+            {wears.slice(0, 6).map((wear) => (
+              <div key={wear.id} className="wear-item">
+                <div className="week-frame">
+                  <Photo photoId={wear.photo_id} alt="" className="week-photo" thumb />
+                </div>
+                <span className="wear-date">{mediumLabel(wear.date)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       <div className="field">

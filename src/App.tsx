@@ -669,6 +669,13 @@ export default function App() {
               setScreen('log')
             }}
             onRemove={openEntry ? () => setConfirmRemove(openEntry) : undefined}
+            wears={
+              target?.outfit_id
+                ? log.entries.filter(
+                    (e) => e.outfit_id === target.outfit_id && e.id !== target.id,
+                  )
+                : undefined
+            }
             onRename={
               target
                 ? (name) => {
@@ -827,7 +834,20 @@ export default function App() {
       {followUp ? (
         <CaptureFollowUp
           match={followUp.matchId ? (entriesById.get(followUp.matchId) ?? null) : null}
-          suggestions={log.items.map((item) => item.label)}
+          suggestions={[
+            ...new Set([
+              ...log.items.map((item) => item.label),
+              // Garment words already in the log are the vocabulary someone
+              // is most likely to reach for again — their own corrections
+              // first, then the model's.
+              ...log.entries
+                .filter((e) => e.garment?.source === 'user')
+                .map((e) => e.garment!.name),
+              ...log.entries
+                .filter((e) => e.garment?.source === 'model')
+                .map((e) => e.garment!.name),
+            ]),
+          ]}
           onDone={(result) => void applyFollowUp(followUp.entryId, result)}
         />
       ) : null}

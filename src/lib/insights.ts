@@ -264,6 +264,27 @@ function outfitLabel(
       bestCount = count
     }
   }
+  if (best) return best
+
+  /*
+   * Failing a tag, a garment name the user *confirmed* — typed or corrected
+   * themselves — can name the cluster. The model's own guesses deliberately
+   * cannot: a card that says "the black cardigan" is making a claim in the
+   * user's voice, and only the user's word is licensed to do that. Two wears
+   * under the same user-given name is the floor, so one hasty rename cannot
+   * caption a whole cluster.
+   */
+  const named = new Map<string, number>()
+  for (const entry of group) {
+    if (entry.garment?.source !== 'user') continue
+    named.set(entry.garment.name, (named.get(entry.garment.name) ?? 0) + 1)
+  }
+  for (const [name, count] of named) {
+    if (count >= 2 && (best === null || count > bestCount)) {
+      best = name
+      bestCount = count
+    }
+  }
   return best
 }
 
