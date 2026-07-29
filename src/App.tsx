@@ -388,12 +388,14 @@ export default function App() {
 
   const onCaptured = useCallback(
     async (blob: Blob, signature: ImageSignature, thumb: Blob) => {
+      // Read before the save so "first ever" means what it says.
+      const firstEver = log.entries.length === 0
       await saveEntry(blob, signature, { thumb, ...(pendingDate ? { date: pendingDate } : {}) })
       setPendingDate(null)
-      flash(copy.camera.saved)
+      flash(firstEver ? copy.camera.savedFirst : copy.camera.saved)
       setScreen('log')
     },
-    [flash, pendingDate, saveEntry],
+    [flash, log.entries.length, pendingDate, saveEntry],
   )
 
   const onPickFile = useCallback(

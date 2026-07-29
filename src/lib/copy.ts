@@ -100,6 +100,7 @@ export const copy = {
     timerOn: 'Timer on',
     flip: 'Flip camera',
     saved: 'Saved.',
+    savedFirst: 'Saved. Day one.',
     denied: 'Camera access is off. You can turn it on in your browser settings, or add a photo from your library instead.',
     pickInstead: 'Add from library',
     alreadyToday: 'You already logged today.',
@@ -179,6 +180,7 @@ export const copy = {
     lastTime: (numbers: string, when: string) => `Last time: ${numbers} — ${when}.`,
     record: (best: number, sessions: number) =>
       sessions === 1 ? `Best so far: ${best}.` : `Best: ${best}, across ${sessions} days.`,
+    newBest: (name: string) => `A new best for ${name}.`,
     today: 'Today',
     previousDay: 'Previous day',
     nextDay: 'Next day',

@@ -404,6 +404,13 @@ test.describe('the week', () => {
 
     expect(file.suggestedFilename()).toMatch(/^daily-fashion-\d{4}-\d{2}-\d{2}\.jpg$/)
 
+    // The 9:16 variant is a separate render path (different canvas, different
+    // crop budget), so it earns its own proof that bytes actually come out.
+    const storyDownload = page.waitForEvent('download', { timeout: 30_000 })
+    await page.getByRole('button', { name: /make it story-sized/i }).click()
+    const storyFile = await storyDownload
+    expect(storyFile.suggestedFilename()).toMatch(/^daily-fashion-story-\d{4}-\d{2}-\d{2}\.jpg$/)
+
     // The whole point of sharing this way: the image is made here, and nothing
     // about it leaves except by the user's own hand.
     expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])

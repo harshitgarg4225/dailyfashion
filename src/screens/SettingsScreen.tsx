@@ -538,7 +538,7 @@ export function SettingsScreen({
         <input
           ref={importRef}
           type="file"
-          accept=".zip,application/zip"
+          accept=".zip,.sealed,application/zip,application/octet-stream"
           className="visually-hidden"
           onChange={(event) => {
             const file = event.target.files?.[0]

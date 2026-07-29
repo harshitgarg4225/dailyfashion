@@ -309,7 +309,8 @@ export function LogScreen({
               type="button"
               className="btn btn--ghost btn--block"
               onClick={() => {
-                const unanswered = entries.find((e) => e.felt_score === null)
+                // Oldest first: the day most at risk of being forgotten.
+                const unanswered = [...entries].reverse().find((e) => e.felt_score === null)
                 if (unanswered) onOpen(unanswered)
               }}
             >

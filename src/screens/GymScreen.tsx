@@ -38,6 +38,7 @@ export function GymScreen({ today }: { today: DateKey }) {
   const [load, setLoad] = useState('')
   const [reps, setReps] = useState('')
   const [sets, setSets] = useState('')
+  const [bestNote, setBestNote] = useState<string | null>(null)
 
   useEffect(() => {
     void allWorkouts().then(setRows)
@@ -65,6 +66,10 @@ export function GymScreen({ today }: { today: DateKey }) {
     if (!name || !Number.isFinite(loadN) || loadN <= 0) return
     if (!Number.isInteger(repsN) || repsN <= 0 || !Number.isInteger(setsN) || setsN <= 0) return
 
+    // Read before the insert, so "new best" means beating a previous day —
+    // not beating the set logged thirty seconds ago.
+    const prevBest = exerciseStats(rows, name)?.best ?? null
+
     const row: WorkoutSet = {
       id: newId('set'),
       date,
@@ -76,6 +81,7 @@ export function GymScreen({ today }: { today: DateKey }) {
     }
     await putWorkout(row)
     setRows((current) => [...current, row])
+    setBestNote(prevBest !== null && loadN > prevBest ? copy.gym.newBest(name) : null)
     void track('workout')
     // Keep the exercise; a session is usually several entries of the same one.
     setLoad('')
@@ -221,6 +227,13 @@ export function GymScreen({ today }: { today: DateKey }) {
         <button type="submit" className="btn btn--primary btn--block">
           {copy.gym.add}
         </button>
+
+        {/* The delight beat: earned by the numbers, stated once, no confetti. */}
+        {bestNote ? (
+          <p className="note" role="status">
+            {bestNote}
+          </p>
+        ) : null}
       </form>
 
       <div className="spacer" />
