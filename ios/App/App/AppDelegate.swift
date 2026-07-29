@@ -45,9 +45,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
+    /// The blur that covers the app switcher's snapshot.
+    ///
+    /// The iOS counterpart of Android's FLAG_SECURE: when the app resigns
+    /// active, iOS photographs the screen for the switcher, and that snapshot
+    /// would otherwise be a mirror selfie visible to anyone flicking through
+    /// open apps. A full-screen blur laid on just before the snapshot is
+    /// taken, and removed the moment the app is active again, keeps the
+    /// switcher tile abstract. The passcode lock guards the front door; this
+    /// closes the windows.
+    private var privacyShield: UIVisualEffectView?
+
     func applicationWillResignActive(_ application: UIApplication) {
-        // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-        // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
+        guard privacyShield == nil, let window = self.window else { return }
+        let shield = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+        shield.frame = window.bounds
+        shield.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        window.addSubview(shield)
+        privacyShield = shield
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
@@ -60,7 +75,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        privacyShield?.removeFromSuperview()
+        privacyShield = nil
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

@@ -52,7 +52,17 @@ export function OnboardingScreen({ onDone }: { onDone: (seeds: SeedPhoto[]) => v
       }
       // Oldest first, so rating them reads as walking forward through time.
       prepared.sort((a, b) => (a.date < b.date ? -1 : 1))
-      setSeeds(prepared)
+      /*
+       * One seed per day. Two photos from the same afternoon carry the same
+       * EXIF date, and seeding both would open the log with a duplicate day —
+       * the first thing a new user sees being a mistake they then have to
+       * clean up. The first pick for a date wins; burst shots lose quietly.
+       */
+      const seen = new Set<string>()
+      const unique = prepared.filter((seed) =>
+        seen.has(seed.date) ? false : (seen.add(seed.date), true),
+      )
+      setSeeds(unique)
       setRating(0)
       setStep(3)
     } finally {

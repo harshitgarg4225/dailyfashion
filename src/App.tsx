@@ -471,6 +471,10 @@ export default function App() {
   const onSeedsDone = useCallback(
     async (seeds: SeedPhoto[]) => {
       for (const seed of seeds) {
+        // Seeding normally meets an empty log, but onboarding can also run
+        // after an import restored one — a seed must not duplicate a day
+        // that already exists.
+        if (log.entries.some((e) => e.date === seed.date)) continue
         await saveEntry(seed.blob, seed.signature, {
           date: seed.date,
           felt: seed.felt,
