@@ -11,6 +11,7 @@ import { SettingsScreen } from './screens/SettingsScreen'
 import { OnboardingScreen, type SeedPhoto } from './screens/OnboardingScreen'
 import { LockScreen } from './screens/LockScreen'
 import { WriteScreen } from './screens/WriteScreen'
+import { GymScreen } from './screens/GymScreen'
 import { SummaryScreen } from './screens/SummaryScreen'
 import { WeekScreen } from './screens/WeekScreen'
 import { CaptureFollowUp, type FollowUpResult } from './screens/CaptureFollowUp'
@@ -25,6 +26,7 @@ import {
   allEntryItems,
   clonePhoto,
   deleteEntry,
+  setOutfitCost,
   getPhoto,
   getThumb,
   relinkEntry,
@@ -57,6 +59,7 @@ import type { LockRecord } from './lib/lock'
 
 type Screen =
   | 'camera'
+  | 'gym'
   | 'write'
   | 'tonight'
   | 'log'
@@ -80,12 +83,13 @@ function visibleTabs(entryCount: number): Screen[] {
   // different zoom, and it appears as soon as there is a week worth recapping —
   // it is the only payoff that arrives before the fortnight is up.
   if (entryCount >= MIN_DAYS_FOR_WRAP) tabs.push('week')
-  tabs.push('summary', 'insights', 'settings')
+  tabs.push('gym', 'summary', 'insights', 'settings')
   return tabs
 }
 
 const TAB_LABELS: Record<Screen, string> = {
   camera: 'Capture',
+  gym: 'Training',
   write: 'Write',
   tonight: 'Tonight',
   log: 'Journal',
@@ -439,7 +443,9 @@ export default function App() {
       if (!source.outfit_id) await linkEntries(entry.id, source.id)
 
       await log.refresh()
-      flash(copy.log.loggedAgain)
+      // The gym-number moment: the count, said out loud at the rep.
+      const wears = log.entries.filter((e) => e.outfit_id === entry.outfit_id).length + 1
+      flash(entry.outfit_id ? copy.log.wearCounted(wears) : copy.log.loggedAgain)
       setScreen('log')
     },
     [flash, log, today, todayTempBand],
@@ -698,6 +704,18 @@ export default function App() {
                   )
                 : undefined
             }
+            outfit={
+              target?.outfit_id
+                ? (log.outfits.find((o) => o.id === target.outfit_id) ?? null)
+                : null
+            }
+            onSetCost={
+              target?.outfit_id
+                ? (cost) => {
+                    void setOutfitCost(target.outfit_id!, cost).then(() => log.refresh())
+                  }
+                : undefined
+            }
             onRename={
               target
                 ? (name) => {
@@ -715,6 +733,9 @@ export default function App() {
           />
         )
       }
+
+      case 'gym':
+        return <GymScreen today={today} />
 
       case 'shortlist':
         return (

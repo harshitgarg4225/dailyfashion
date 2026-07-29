@@ -1,4 +1,5 @@
 import type { Entry, EntryItem, Item, Outfit, Settings } from '../types'
+import type { WorkoutSet } from '../lib/gym'
 import type { Dismissal } from '../lib/insights'
 import type { LockRecord } from '../lib/lock'
 import { toDateKey } from '../lib/dates'
@@ -25,7 +26,7 @@ const DB_NAME = 'dailyfashion'
  * path onto a bare `createObjectStore` block is where local-first apps lose
  * people's data.
  */
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 export const STORES = {
   entries: 'entries',
@@ -40,6 +41,8 @@ export const STORES = {
    * is a cache with a schema, not a second copy of anyone's data.
    */
   thumbs: 'thumbs',
+  /** The training log — sets of load × reps, keyed by day like entries are. */
+  workouts: 'workouts',
   outfits: 'outfits',
   items: 'items',
   entryItems: 'entry_items',
@@ -113,6 +116,14 @@ export function openDb(): Promise<IDBDatabase> {
       if (from < 2) {
         if (!db.objectStoreNames.contains(STORES.thumbs)) {
           db.createObjectStore(STORES.thumbs)
+        }
+      }
+
+      // v3: the training log.
+      if (from < 3) {
+        if (!db.objectStoreNames.contains(STORES.workouts)) {
+          const workouts = db.createObjectStore(STORES.workouts, { keyPath: 'id' })
+          workouts.createIndex('by_date', 'date')
         }
       }
 
@@ -307,6 +318,8 @@ export async function recomputeOutfit(outfitId: string): Promise<Outfit | null> 
 
   const dates = entries.map((e) => e.date).sort()
   const scored = entries.filter((e) => e.felt_score !== null)
+  // Cost is user-entered, not derived: carry it through the recompute.
+  const existing = await promisify<Outfit | undefined>(store.get(outfitId))
   const outfit: Outfit = {
     id: outfitId,
     first_seen: dates[0]!,
@@ -316,6 +329,7 @@ export async function recomputeOutfit(outfitId: string): Promise<Outfit | null> 
         ? null
         : scored.reduce((sum, e) => sum + e.felt_score!, 0) / scored.length,
     last_worn: dates[dates.length - 1]!,
+    cost: existing?.cost ?? null,
   }
   store.put(outfit)
   await done(transaction)
@@ -343,6 +357,41 @@ export async function linkEntries(entryId: string, matchId: string): Promise<str
 
   await recomputeOutfit(outfitId)
   return outfitId
+}
+
+/** Stores what the user says the outfit cost. Null clears it. */
+export async function setOutfitCost(outfitId: string, cost: number | null): Promise<void> {
+  const db = await openDb()
+  const transaction = tx(db, [STORES.outfits], 'readwrite')
+  const store = transaction.objectStore(STORES.outfits)
+  const existing = await promisify<Outfit | undefined>(store.get(outfitId))
+  if (existing) store.put({ ...existing, cost })
+  await done(transaction)
+}
+
+// --- the training log -------------------------------------------------------
+
+export async function putWorkout(row: WorkoutSet): Promise<void> {
+  const db = await openDb()
+  const transaction = tx(db, [STORES.workouts], 'readwrite')
+  transaction.objectStore(STORES.workouts).put(row)
+  await done(transaction)
+}
+
+export async function deleteWorkout(id: string): Promise<void> {
+  const db = await openDb()
+  const transaction = tx(db, [STORES.workouts], 'readwrite')
+  transaction.objectStore(STORES.workouts).delete(id)
+  await done(transaction)
+}
+
+/** Oldest first within a day, newest day last — natural session order. */
+export async function allWorkouts(): Promise<WorkoutSet[]> {
+  const db = await openDb()
+  const rows = await promisify<WorkoutSet[]>(
+    tx(db, [STORES.workouts], 'readonly').objectStore(STORES.workouts).getAll(),
+  )
+  return rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.created_at - b.created_at))
 }
 
 // --- items (lazy tagging) -------------------------------------------------

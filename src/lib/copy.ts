@@ -147,10 +147,35 @@ export const copy = {
     noteHint: 'Optional. A few words, only for you.',
     wornBefore: (times: number) =>
       times === 1 ? 'Also worn once before' : `Also worn ${times} times`,
+    costAdd: 'Add what it cost',
+    costPlaceholder: 'e.g. 2400',
+    // Their number, their currency — the app never assumes a symbol.
+    costPerWear: (perWear: number, wears: number) =>
+      `${perWear} per wear, across ${wears} wears`,
     // U9: connects the daily chore to the payoff it is building toward.
     why: 'Answering these is what lets the log tell you something later.',
     // J9: returning after a gap is neutral, never a reprimand.
     welcomeBack: 'Welcome back — here is what your log already knows.',
+  },
+
+  /*
+   * The training log. "Load", never the banned word — barbell numbers are
+   * not body talk, but the ban list cannot know that, and "load" is the
+   * more precise lifting term anyway.
+   */
+  gym: {
+    tab: 'Training',
+    title: 'What you lifted',
+    exercise: 'Exercise',
+    exercisePlaceholder: 'e.g. bench press',
+    load: 'Load',
+    reps: 'Reps',
+    sets: 'Sets',
+    add: 'Log it',
+    remove: 'Remove',
+    empty: 'Nothing logged today. The first set starts it.',
+    lastTime: (numbers: string, when: string) => `Last time: ${numbers} — ${when}.`,
+    why: 'Your numbers, in your units, on this device. The app has no programme to sell you.',
   },
 
   // Typing is a first-class way to record a day, not a lesser one.
@@ -262,6 +287,10 @@ export const copy = {
     pickDate: 'Which day?',
     pickDateHint: 'You can add any day from the past week.',
     loggedAgain: 'Added to today.',
+    wearCounted: (n: number) => {
+      const suffix = n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'
+      return `Logged — its ${n}${suffix} wear.`
+    },
     installTitle: 'Keep this on your home screen',
     installBodyIos:
       'Tap the share button, then “Add to Home Screen”. Browsers clear data for sites that are only open in a tab — on the home screen your log is far safer.',

@@ -1660,3 +1660,12 @@ form.garment-line {
   color: var(--ink-muted);
   white-space: nowrap;
 }
+
+
+/* --- the training log ----------------------------------------------------- */
+
+.gym-numbers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s3);
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ChipId, Entry, FeltScore } from '../types'
+import type { ChipId, Entry, FeltScore, Outfit } from '../types'
 import { copy } from '../lib/copy'
 import { mediumLabel } from '../lib/dates'
 import { FeltScale, ChipRow } from '../app/controls'
@@ -23,6 +23,8 @@ export function TonightScreen({
   onRemove,
   onRename,
   wears,
+  outfit,
+  onSetCost,
   showWelcomeBack,
 }: {
   entry: Entry | null
@@ -34,6 +36,10 @@ export function TonightScreen({
   onRename?: ((name: string) => void) | undefined
   /** The cluster's other wears, newest first — the outfit's history in place. */
   wears?: readonly Entry[]
+  /** The cluster's aggregate row, for wear count and cost per wear. */
+  outfit?: Outfit | null
+  /** Stores what the user says the outfit cost. */
+  onSetCost?: ((cost: number) => void) | undefined
   showWelcomeBack: boolean
 }) {
   const [felt, setFelt] = useState<FeltScore | null>(entry?.felt_score ?? null)
@@ -41,6 +47,8 @@ export function TonightScreen({
   const [note, setNote] = useState(entry?.note ?? '')
   const [renaming, setRenaming] = useState(false)
   const [draftName, setDraftName] = useState(entry?.garment?.name ?? '')
+  const [costing, setCosting] = useState(false)
+  const [draftCost, setDraftCost] = useState('')
 
   if (!entry) {
     return (
@@ -153,6 +161,60 @@ export function TonightScreen({
               </div>
             ))}
           </div>
+
+          {/*
+            * Cost per wear: the number that goes down every time you show up.
+            * User-entered cost, plain division, no currency assumed — the
+            * figure is theirs and so is the unit.
+            */}
+          {outfit ? (
+            costing ? (
+              <form
+                className="garment-line"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  const value = Number(draftCost)
+                  if (Number.isFinite(value) && value > 0 && onSetCost) {
+                    onSetCost(Math.round(value))
+                    setCosting(false)
+                  }
+                }}
+              >
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={draftCost}
+                  autoFocus
+                  placeholder={copy.tonight.costPlaceholder}
+                  onChange={(event) => setDraftCost(event.target.value)}
+                  aria-label={copy.tonight.costAdd}
+                />
+                <button type="submit" className="btn btn--quiet">
+                  {copy.garment.save}
+                </button>
+              </form>
+            ) : outfit.cost ? (
+              <button
+                type="button"
+                className="garment-line garment-line--named"
+                onClick={() => {
+                  setDraftCost(String(outfit.cost))
+                  setCosting(true)
+                }}
+              >
+                {copy.tonight.costPerWear(
+                  Math.round(outfit.cost / Math.max(1, outfit.wear_count)),
+                  outfit.wear_count,
+                )}
+                <span className="garment-edit">{copy.garment.edit}</span>
+              </button>
+            ) : onSetCost ? (
+              <button type="button" className="garment-line" onClick={() => setCosting(true)}>
+                {copy.tonight.costAdd}
+              </button>
+            ) : null
+          ) : null}
         </div>
       ) : null}
 

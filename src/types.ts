@@ -176,6 +176,13 @@ export interface Outfit {
   /** Mean felt score across *rated* wears only. Null if none are rated. */
   avg_felt: number | null
   last_worn: string
+  /**
+   * What the outfit cost, in the user's own currency, entered by them and
+   * never required. Cost per wear = cost / wear_count — the one fashion
+   * metric everybody already understands, and the number that goes *down*
+   * every time they show up, the way a gym number goes up.
+   */
+  cost?: number | null
 }
 
 /** Populated only by lazy one-word chip tagging. Never by a cataloging flow. */
