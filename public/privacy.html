@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!--
+      The privacy policy, as plain HTML with no script — the same standard as
+      the download page. A policy page that itself set cookies or loaded a
+      tag manager would be arguing against its own text.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               connect-src 'none';
+               script-src 'none';
+               img-src 'self';
+               style-src 'self';
+               font-src 'self';
+               form-action 'none';
+               base-uri 'self'"
+    />
+
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="What Daily Fashion stores, what it can send, and who controls it." />
+
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/download.css" />
+
+    <title>Daily Fashion — privacy</title>
+  </head>
+
+  <body>
+    <main>
+      <header class="masthead">
+        <p class="eyebrow">Daily Fashion</p>
+        <h1>Privacy, in plain words.</h1>
+        <p class="lede">
+          What the app stores, what it can send, and who controls each part.
+          Short enough to actually read.
+        </p>
+      </header>
+
+      <section class="claim" aria-label="Your log">
+        <h2 class="section-title">Your log never leaves your device</h2>
+        <p>
+          Photographs, written notes, how your days felt, your training numbers,
+          outfit costs — all of it is stored only on your device, in your
+          browser or app's own storage. There is no account, no sign-up, and no
+          server that holds any of it. Our server has no endpoint shaped like a
+          photo or a note, and an automated test fails our builds if the log
+          ever gains a way out.
+        </p>
+        <p>
+          You can export everything as an ordinary zip at any time, optionally
+          sealed with a passphrase only you know. Deleting the app, or using
+          “delete everything” in Settings, removes the log completely — we
+          cannot recover it for you, because we never had it.
+        </p>
+      </section>
+
+      <section class="claim" aria-label="Usage sharing">
+        <h2 class="section-title">Usage sharing is off until you turn it on</h2>
+        <p>
+          In Settings there is a switch called “Share usage counts with us”. It
+          ships off. If you turn it on, the app sends us event names — “a photo
+          was taken today”, “a card was shared” — under a random identifier
+          created at that moment. Never the photo, never a note, never how a
+          day felt.
+        </p>
+        <p>
+          Next to that switch is an optional form where you can tell us an age
+          range, gender, location and profession. Every field is optional, it
+          is sent only when you press the button, and it is linked only to the
+          same random identifier. Turning the switch off stops all of it — the
+          very next event is not sent.
+        </p>
+        <p>
+          To have the server-side data behind your identifier deleted, contact
+          us through the repository below and include the app’s share-usage
+          identifier from Settings; we delete on request.
+        </p>
+      </section>
+
+      <section class="claim" aria-label="Offers">
+        <h2 class="section-title">Offers are ours, not a network’s</h2>
+        <p>
+          The Offers page shows sponsor placements we put in our own database,
+          served from our own domain. There is no advertising network, no
+          tracking pixel, and no third-party script anywhere in the app — the
+          security policy the app runs under refuses every request to any
+          domain that is not ours, so nothing on that page can follow you.
+        </p>
+      </section>
+
+      <section class="claim" aria-label="Third parties">
+        <h2 class="section-title">Third parties</h2>
+        <p>
+          The app makes no request to any third party. Links you choose to tap
+          — the community, an offer, this repository — open in your browser and
+          are governed by those sites from that point on. Our hosting provider
+          (Railway) processes network traffic to serve the site, as any host
+          does.
+        </p>
+      </section>
+
+      <footer>
+        <p>
+          <a href="/">Open the app</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://github.com/harshitgarg4225/dailyfashion">Contact / source</a>
+        </p>
+        <p class="colophon">Daily Fashion</p>
+      </footer>
+    </main>
+  </body>
+</html>

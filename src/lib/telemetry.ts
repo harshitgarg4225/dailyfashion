@@ -27,6 +27,7 @@ export type UsageEvent =
   | 'share_card'
   | 'export'
   | 'ads_view'
+  | 'workout'
 
 export interface UsageProfile {
   age_band: string | null

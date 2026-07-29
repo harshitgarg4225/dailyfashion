@@ -73,3 +73,84 @@ export function knownExercises(rows: readonly WorkoutSet[]): string[] {
   }
   return [...seen.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name)
 }
+
+/**
+ * The catalog: enough structure to make logging two taps, never a programme.
+ *
+ * Chest → bench press, pick, done. Free text stays first-class — the catalog
+ * seeds vocabulary, it does not own it — and the app still offers no sets,
+ * reps or loads of its own. Structure yes, opinion no.
+ */
+export const EXERCISE_CATALOG: ReadonlyArray<{ group: string; exercises: readonly string[] }> = [
+  {
+    group: 'chest',
+    exercises: ['bench press', 'incline press', 'dumbbell press', 'cable fly', 'dips', 'push-up'],
+  },
+  {
+    group: 'back',
+    exercises: ['deadlift', 'pull-up', 'barbell row', 'lat pulldown', 'seated row', 'shrug'],
+  },
+  {
+    group: 'shoulders',
+    exercises: ['overhead press', 'lateral raise', 'front raise', 'face pull', 'rear delt fly'],
+  },
+  {
+    group: 'legs',
+    exercises: ['squat', 'front squat', 'leg press', 'romanian deadlift', 'lunge', 'leg curl', 'calf raise'],
+  },
+  {
+    group: 'arms',
+    exercises: ['barbell curl', 'dumbbell curl', 'hammer curl', 'tricep pushdown', 'skullcrusher', 'close-grip bench'],
+  },
+  {
+    group: 'core',
+    exercises: ['plank', 'hanging leg raise', 'cable crunch', 'ab wheel', 'russian twist'],
+  },
+]
+
+export interface ExerciseStats {
+  sessions: number
+  /** The heaviest load ever logged for this exercise. */
+  best: number
+  /** The most recent row, whatever day it came from. */
+  latest: WorkoutSet
+}
+
+/**
+ * Everything the screen says about one exercise, computed not asserted.
+ * Counts and maxima only — the same licence as everywhere else in the app.
+ */
+export function exerciseStats(rows: readonly WorkoutSet[], exercise: string): ExerciseStats | null {
+  const name = normaliseExercise(exercise)
+  const matching = rows.filter((row) => row.exercise === name)
+  if (matching.length === 0) return null
+
+  const days = new Set(matching.map((row) => row.date))
+  let best = matching[0]!
+  let latest = matching[0]!
+  for (const row of matching) {
+    if (row.load > best.load) best = row
+    if (row.date > latest.date || (row.date === latest.date && row.created_at > latest.created_at)) {
+      latest = row
+    }
+  }
+  return { sessions: days.size, best: best.load, latest }
+}
+
+/** Total work in a list of rows: Σ load × reps × sets. One honest number per day. */
+export function sessionVolume(rows: readonly WorkoutSet[]): number {
+  return rows.reduce((sum, row) => sum + row.load * row.reps * row.sets, 0)
+}
+
+/** Days that have sets, newest first, each with its rows — the history list. */
+export function sessionsByDay(rows: readonly WorkoutSet[]): Array<{ date: DateKey; rows: WorkoutSet[] }> {
+  const byDay = new Map<DateKey, WorkoutSet[]>()
+  for (const row of rows) {
+    const bucket = byDay.get(row.date) ?? []
+    bucket.push(row)
+    byDay.set(row.date, bucket)
+  }
+  return [...byDay.entries()]
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .map(([date, dayRows]) => ({ date, rows: dayRows }))
+}

@@ -160,7 +160,10 @@ Set the team under *Signing & Capabilities*, then *Product → Archive*.
 
 Ahead of a submission, the two answers reviewers ask for:
 
-- **Account required?** No. There is no account and no server.
+- **Privacy policy URL** (both stores require one now that collection is
+  declared): `https://<your-domain>/privacy` — served from `public/privacy.html`.
+- **Account required?** No account for the user; there is a server only for
+  opt-in analytics and ads.
 - **Data collected?** Photos, notes and felt scores: never — they are
   on-device only and have no endpoint shaped like them. Usage analytics:
   **optional and opt-in** — event counts (app opened, photo taken, card

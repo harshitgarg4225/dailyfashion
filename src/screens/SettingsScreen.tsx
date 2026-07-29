@@ -681,7 +681,9 @@ export function SettingsScreen({
         </Sheet>
       ) : null}
 
-      <p className="eyebrow settings-footer">{copy.onboarding.privacyTitle}</p>
+      <p className="eyebrow settings-footer">
+        <a href="/privacy">{copy.settings.privacyLink}</a>
+      </p>
     </div>
   )
 }

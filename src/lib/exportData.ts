@@ -13,6 +13,8 @@ import { chipLabel } from './chips'
 import { parseDateKey } from './dates'
 import { createZip, csvRow, readZip, type ZipEntry } from './zip'
 import type { Entry, EntryItem, Item, Outfit } from '../types'
+import { allWorkouts, putWorkout } from '../db/db'
+import type { WorkoutSet } from './gym'
 
 /**
  * J10: "get my stuff out."
@@ -40,11 +42,12 @@ export async function buildExport(
   /** Called as each photograph is packed, so the UI can say where it is. */
   onProgress?: (done: number, total: number) => void,
 ): Promise<ExportResult> {
-  const [entries, outfits, items, entryItems] = await Promise.all([
+  const [entries, outfits, items, entryItems, workouts] = await Promise.all([
     allEntries(),
     allOutfits(),
     allItems(),
     allEntryItems(),
+    allWorkouts(),
   ])
 
   const itemLabels = new Map(items.map((i) => [i.id, i.label]))
@@ -138,9 +141,22 @@ export async function buildExport(
   files.unshift({
     name: 'log.json',
     data: encoder.encode(
-      JSON.stringify({ version: 1, entries, outfits, items, entryItems, photoNames }, null, 2),
+      JSON.stringify(
+        { version: 1, entries, outfits, items, entryItems, photoNames, workouts },
+        null,
+        2,
+      ),
     ),
   })
+
+  if (workouts.length > 0) {
+    // The training log travels too — "get my stuff out" means all of it.
+    const rows = [csvRow(['date', 'exercise', 'load', 'reps', 'sets'])]
+    for (const set of workouts) {
+      rows.push(csvRow([set.date, set.exercise, String(set.load), String(set.reps), String(set.sets)]))
+    }
+    files.push({ name: 'training.csv', data: encoder.encode(rows.join('\n')) })
+  }
 
   files.push({
     name: 'README.txt',
@@ -153,6 +169,7 @@ export async function buildExport(
         '',
         'log.csv  — one row per day, oldest first.',
         'photos/  — one image per day, named by date.',
+        'training.csv — the lifting log, when there is one.',
         '',
         'This export was made on your device. Nothing was uploaded to produce it.',
       ].join('\n'),
@@ -205,6 +222,8 @@ interface ExportManifest {
   items: Item[]
   entryItems: EntryItem[]
   photoNames: Record<string, string>
+  /** Absent on archives made before the training log existed. */
+  workouts?: WorkoutSet[]
 }
 
 export async function importArchive(blob: Blob): Promise<ImportResult> {
@@ -256,6 +275,18 @@ export async function importArchive(blob: Blob): Promise<ImportResult> {
   }
 
   for (const outfitId of touchedOutfits) await recomputeOutfit(outfitId)
+
+  // The training log, merged by id like entries are — importing the same
+  // archive twice stays harmless.
+  const existingSets = new Set((await allWorkouts()).map((set) => set.id))
+  for (const set of manifest.workouts ?? []) {
+    if (existingSets.has(set.id)) {
+      skipped += 1
+      continue
+    }
+    await putWorkout(set)
+    added += 1
+  }
 
   return { added, skipped }
 }

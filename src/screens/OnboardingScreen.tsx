@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { Switch } from '../app/controls'
+import { disableSharing, enableSharing } from '../lib/telemetry'
 import type { FeltScore } from '../types'
 import { copy } from '../lib/copy'
 import { FeltScale } from '../app/controls'
@@ -31,6 +33,7 @@ const MAX_SEEDS = 3
 export function OnboardingScreen({ onDone }: { onDone: (seeds: SeedPhoto[]) => void }) {
   const [step, setStep] = useState(0)
   const [seeds, setSeeds] = useState<SeedPhoto[]>([])
+  const [consent, setConsent] = useState(false)
   const [rating, setRating] = useState(0)
   const [importing, setImporting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -152,6 +155,28 @@ export function OnboardingScreen({ onDone }: { onDone: (seeds: SeedPhoto[]) => v
         <h1>{current.title}</h1>
         <p>{current.body}</p>
         {current.proof ? <p className="proof">{current.proof}</p> : null}
+
+        {/*
+          * The usage-sharing choice, made where the promise is made. Off by
+          * default, flippable later in Settings either way — but asking here,
+          * honestly, is worth ten buried toggles.
+          */}
+        {step === 0 ? (
+          <div className="row onboard-consent">
+            <span className="row-text">
+              {copy.settings.shareUsage}
+              <small>{copy.onboarding.consentHint}</small>
+            </span>
+            <Switch
+              checked={consent}
+              label={copy.settings.shareUsage}
+              onChange={(next) => {
+                setConsent(next)
+                void (next ? enableSharing() : disableSharing())
+              }}
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className="stack">

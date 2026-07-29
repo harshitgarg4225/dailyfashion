@@ -85,6 +85,8 @@ export const copy = {
     seedPick: 'Choose photos',
     seedAsk: 'How did this day feel?',
 
+    consentHint:
+      'Counts only — "a photo was taken today". Never the photo. Change it any time in Settings.',
     begin: 'Start logging',
     step: (index: number, total: number) => `Step ${index} of ${total}`,
     nextPrivacy: 'How it works',
@@ -175,6 +177,14 @@ export const copy = {
     remove: 'Remove',
     empty: 'Nothing logged today. The first set starts it.',
     lastTime: (numbers: string, when: string) => `Last time: ${numbers} — ${when}.`,
+    record: (best: number, sessions: number) =>
+      sessions === 1 ? `Best so far: ${best}.` : `Best: ${best}, across ${sessions} days.`,
+    today: 'Today',
+    previousDay: 'Previous day',
+    nextDay: 'Next day',
+    volumeLabel: 'Total work',
+    volumeHint: 'Load × reps × sets, added up.',
+    historyTitle: 'Days',
     why: 'Your numbers, in your units, on this device. The app has no programme to sell you.',
   },
 
@@ -461,6 +471,7 @@ export const copy = {
       'Your log has grown and has never been backed up. An export takes a minute and lives wherever you put it.',
     exportNudgeStale:
       'It has been a while since the last export. A fresh one keeps your history safe from a cleared browser.',
+    privacyLink: 'How your data is handled',
     shareUsage: 'Share usage counts with us',
     shareUsageHint:
       'Off unless you turn it on. When on, the app tells us things like "a photo was taken today" — never the photo, never your notes, never how a day felt.',

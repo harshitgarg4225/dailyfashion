@@ -114,3 +114,20 @@ Everything considered, including what was deliberately not selected and why.
   and this app must not acquire one. Refused.
 - App Store / Play Store submission — blocked on signing secrets and a
   developer account, both outside the codebase. Tracked in RELEASE.md.
+
+
+## Third pass — the pivot (July 29)
+
+The constraint changed by owner decision: the product now has a server, a
+database, opt-in usage analytics, an optional self-reported profile, an ads
+page, and a training log. Entries in the long list that say "the app must not
+acquire a server" describe the pre-pivot constraint and are kept as history.
+What did NOT change, and is still test-enforced: photos, notes and felt
+scores never leave the device; analytics is off until the user opts in
+(offered at onboarding, switchable in Settings); no third-party request is
+possible from the app. New since the second pass: cost per wear, wear-count
+announcements, the Training tab (catalog by muscle group, day-wise logging,
+last-time/best/volume analysis), story-format share cards, weekly community
+themes, embedding-fused matching, sealed cloud backups, provisional day-7
+observations, /privacy, admin-token ad management, API rate limiting, and
+workouts in export/import.

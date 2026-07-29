@@ -1,26 +1,39 @@
 import { useEffect, useMemo, useState } from 'react'
 import { copy } from '../lib/copy'
-import { mediumLabel, type DateKey } from '../lib/dates'
+import { addDays, mediumLabel, type DateKey } from '../lib/dates'
 import {
+  EXERCISE_CATALOG,
+  exerciseStats,
   formatSet,
   knownExercises,
   normaliseExercise,
   previousSession,
+  sessionsByDay,
+  sessionVolume,
   type WorkoutSet,
 } from '../lib/gym'
 import { allWorkouts, deleteWorkout, newId, putWorkout } from '../db/db'
+import { track } from '../lib/telemetry'
 
 /**
  * Training: the lifting log, run on the same philosophy as the outfit log.
  *
- * One mechanic carries this screen — last session's numbers shown beside
- * today's empty fields, so every entry is a comparison with a previous self.
- * No plans, no programmes, no coaching text: the app has no opinion about
- * lifting for the same reason it has no opinion about clothes. It hands back
- * the user's own record and gets out of the way.
+ * Three mechanics carry this screen, all computed and none opinionated:
+ *
+ *  - **Last time, beside the empty fields.** Type or pick an exercise and the
+ *    previous session's numbers appear — every entry is a comparison with a
+ *    previous self. Best-ever and session count ride along.
+ *  - **The catalog.** Chest → bench press: two taps instead of typing. It
+ *    seeds vocabulary, it does not own it; free text stays first-class, and
+ *    the app still offers no programme, no target and no coaching line.
+ *  - **Days, not just today.** The date steps backward for the session that
+ *    did not get logged at the rack, and the history below shows every
+ *    training day with its sets and its one honest number — total work.
  */
 export function GymScreen({ today }: { today: DateKey }) {
   const [rows, setRows] = useState<WorkoutSet[]>([])
+  const [date, setDate] = useState<DateKey>(today)
+  const [group, setGroup] = useState<string | null>(null)
   const [exercise, setExercise] = useState('')
   const [load, setLoad] = useState('')
   const [reps, setReps] = useState('')
@@ -30,13 +43,18 @@ export function GymScreen({ today }: { today: DateKey }) {
     void allWorkouts().then(setRows)
   }, [])
 
-  const todays = useMemo(() => rows.filter((row) => row.date === today), [rows, today])
+  const dayRows = useMemo(() => rows.filter((row) => row.date === date), [rows, date])
   const names = useMemo(() => knownExercises(rows), [rows])
+  const history = useMemo(() => sessionsByDay(rows), [rows])
 
-  // The number to beat, live as the exercise name is typed.
+  // The numbers to beat, live as the exercise name is typed or picked.
   const last = useMemo(
-    () => (exercise.trim() ? previousSession(rows, exercise, today) : null),
-    [rows, exercise, today],
+    () => (exercise.trim() ? previousSession(rows, exercise, date) : null),
+    [rows, exercise, date],
+  )
+  const stats = useMemo(
+    () => (exercise.trim() ? exerciseStats(rows, exercise) : null),
+    [rows, exercise],
   )
 
   const add = async () => {
@@ -49,7 +67,7 @@ export function GymScreen({ today }: { today: DateKey }) {
 
     const row: WorkoutSet = {
       id: newId('set'),
-      date: today,
+      date,
       exercise: name,
       load: loadN,
       reps: repsN,
@@ -58,6 +76,7 @@ export function GymScreen({ today }: { today: DateKey }) {
     }
     await putWorkout(row)
     setRows((current) => [...current, row])
+    void track('workout')
     // Keep the exercise; a session is usually several entries of the same one.
     setLoad('')
     setReps('')
@@ -74,8 +93,60 @@ export function GymScreen({ today }: { today: DateKey }) {
       <div className="screen-head">
         <span className="eyebrow">{copy.gym.tab}</span>
         <h1>{copy.gym.title}</h1>
-        <span className="sub">{mediumLabel(today)}</span>
+
+        {/* Day-wise logging: the session that did not get logged at the rack
+            can still land on the day it happened. Never the future. */}
+        <div className="gym-daynav">
+          <button
+            type="button"
+            className="btn btn--quiet"
+            aria-label={copy.gym.previousDay}
+            onClick={() => setDate(addDays(date, -1))}
+          >
+            ←
+          </button>
+          <span className="sub">{date === today ? copy.gym.today : mediumLabel(date)}</span>
+          <button
+            type="button"
+            className="btn btn--quiet"
+            aria-label={copy.gym.nextDay}
+            disabled={date === today}
+            onClick={() => setDate(addDays(date, 1))}
+          >
+            →
+          </button>
+        </div>
       </div>
+
+      {/* The catalog: chest → bench press, two taps. Seeds the field below. */}
+      <div className="gym-groups">
+        {EXERCISE_CATALOG.map((entry) => (
+          <button
+            key={entry.group}
+            type="button"
+            className="btn btn--quiet"
+            aria-pressed={group === entry.group}
+            onClick={() => setGroup(group === entry.group ? null : entry.group)}
+          >
+            {entry.group}
+          </button>
+        ))}
+      </div>
+      {group ? (
+        <div className="gym-groups gym-exercises">
+          {EXERCISE_CATALOG.find((entry) => entry.group === group)!.exercises.map((name) => (
+            <button
+              key={name}
+              type="button"
+              className="btn btn--quiet"
+              aria-pressed={normaliseExercise(exercise) === name}
+              onClick={() => setExercise(name)}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <form
         className="stack"
@@ -101,11 +172,15 @@ export function GymScreen({ today }: { today: DateKey }) {
           </datalist>
         </label>
 
-        {/* Last session, beside the empty fields: the whole mechanic. */}
+        {/* The analysis, at the moment it matters: last session's numbers
+            beside today's empty fields, with best-ever and the day count. */}
         {last ? (
           <p className="note">
             {copy.gym.lastTime(formatSet(last), mediumLabel(last.date))}
+            {stats ? ` ${copy.gym.record(stats.best, stats.sessions)}` : ''}
           </p>
+        ) : stats ? (
+          <p className="note">{copy.gym.record(stats.best, stats.sessions)}</p>
         ) : null}
 
         <div className="gym-numbers">
@@ -115,6 +190,7 @@ export function GymScreen({ today }: { today: DateKey }) {
               type="number"
               inputMode="decimal"
               min={1}
+              step="any"
               value={load}
               onChange={(event) => setLoad(event.target.value)}
             />
@@ -149,11 +225,11 @@ export function GymScreen({ today }: { today: DateKey }) {
 
       <div className="spacer" />
 
-      {todays.length === 0 ? (
+      {dayRows.length === 0 ? (
         <p className="empty">{copy.gym.empty}</p>
       ) : (
         <div className="panel">
-          {todays.map((row) => (
+          {dayRows.map((row) => (
             <div key={row.id} className="row">
               <span className="row-text">
                 {row.exercise}
@@ -164,8 +240,39 @@ export function GymScreen({ today }: { today: DateKey }) {
               </button>
             </div>
           ))}
+          <div className="row">
+            <span className="row-text">
+              {copy.gym.volumeLabel}
+              <small>{copy.gym.volumeHint}</small>
+            </span>
+            <span className="sub">{sessionVolume(dayRows)}</span>
+          </div>
         </div>
       )}
+
+      {/* Every training day, with its sets and its one honest number. */}
+      {history.length > 1 ? (
+        <>
+          <hr className="rule" />
+          <h2 className="summary-heading">{copy.gym.historyTitle}</h2>
+          {history.slice(0, 30).map((day) => (
+            <button
+              key={day.date}
+              type="button"
+              className="row row--full"
+              onClick={() => setDate(day.date)}
+            >
+              <span className="row-text">
+                {mediumLabel(day.date)}
+                <small>
+                  {[...new Set(day.rows.map((row) => row.exercise))].join(', ')}
+                </small>
+              </span>
+              <span className="sub">{sessionVolume(day.rows)}</span>
+            </button>
+          ))}
+        </>
+      ) : null}
 
       <p className="note">{copy.gym.why}</p>
     </div>

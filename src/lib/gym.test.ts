@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  EXERCISE_CATALOG,
+  exerciseStats,
   formatSet,
   knownExercises,
   normaliseExercise,
   previousSession,
+  sessionsByDay,
+  sessionVolume,
   type WorkoutSet,
 } from './gym'
 
@@ -44,5 +48,50 @@ describe('the training log', () => {
       row({ exercise: 'squat', created_at: 9 }),
     ]
     expect(knownExercises(rows)).toEqual(['squat', 'bench press'])
+  })
+})
+
+describe('the catalog and the analysis', () => {
+  it('keeps every catalog name normalised already', () => {
+    for (const { exercises } of EXERCISE_CATALOG) {
+      for (const name of exercises) {
+        expect(name).toBe(normaliseExercise(name))
+      }
+    }
+  })
+
+  it('computes sessions, best and latest for one exercise', () => {
+    const rows = [
+      row({ date: '2026-07-20', load: 55, created_at: 1 }),
+      row({ date: '2026-07-20', load: 57.5, created_at: 2 }),
+      row({ date: '2026-07-25', load: 60, created_at: 3 }),
+      row({ date: '2026-07-25', load: 52.5, created_at: 4 }),
+      row({ date: '2026-07-22', exercise: 'squat', load: 100, created_at: 5 }),
+    ]
+    const stats = exerciseStats(rows, 'bench press')!
+    expect(stats.sessions).toBe(2)
+    expect(stats.best).toBe(60)
+    expect(stats.latest.load).toBe(52.5)
+    expect(exerciseStats(rows, 'unknown lift')).toBeNull()
+  })
+
+  it('sums a day of work as load × reps × sets', () => {
+    expect(
+      sessionVolume([
+        row({ load: 60, reps: 8, sets: 3 }),
+        row({ load: 100, reps: 5, sets: 5 }),
+      ]),
+    ).toBe(60 * 8 * 3 + 100 * 5 * 5)
+  })
+
+  it('groups history by day, newest first', () => {
+    const rows = [
+      row({ date: '2026-07-20' }),
+      row({ date: '2026-07-25' }),
+      row({ date: '2026-07-25' }),
+    ]
+    const days = sessionsByDay(rows)
+    expect(days.map((d) => d.date)).toEqual(['2026-07-25', '2026-07-20'])
+    expect(days[0]!.rows).toHaveLength(2)
   })
 })

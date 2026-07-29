@@ -348,6 +348,14 @@ test.describe('the download page', () => {
     expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
   })
 
+  test('the privacy policy is served, script-free, at /privacy', async ({ page }) => {
+    const external = await watchRequests(page)
+    await page.goto(`${BASE}/privacy`)
+    await expect(page.getByRole('heading', { name: /privacy, in plain words/i })).toBeVisible()
+    await expect(page.getByText(/off until you turn it on/i)).toBeVisible()
+    expect(external).toEqual([])
+  })
+
   test('leads back into the app', async ({ page }) => {
     await page.goto(`${BASE}/download`)
     await page.getByRole('link', { name: /open it in your browser/i }).click()

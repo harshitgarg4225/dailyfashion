@@ -1669,3 +1669,53 @@ form.garment-line {
   grid-template-columns: repeat(3, 1fr);
   gap: var(--s3);
 }
+
+
+.onboard-consent {
+  margin-top: var(--s5);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s4);
+  text-align: left;
+}
+
+
+.gym-daynav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-top: var(--s3);
+}
+
+.gym-daynav .btn {
+  min-height: 40px;
+  padding: 0 var(--s4);
+}
+
+.gym-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-bottom: var(--s4);
+}
+
+.gym-groups .btn {
+  min-height: 36px;
+  padding: 0 var(--s3);
+  font-size: 0.62rem;
+}
+
+.gym-groups .btn[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.gym-exercises {
+  padding-top: var(--s1);
+}
+
+.row--full {
+  width: 100%;
+  text-align: left;
+}
