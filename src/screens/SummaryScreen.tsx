@@ -143,9 +143,12 @@ export function SummaryScreen({
         alreadyShownThisSession={sponsorShown}
       />
           {onOpenOffers ? (
-        <button type="button" className="btn btn--quiet btn--block" onClick={onOpenOffers}>
-          {copy.offers.title}
-        </button>
+        <>
+          <button type="button" className="btn btn--quiet btn--block" onClick={onOpenOffers}>
+            {copy.offers.title}
+          </button>
+          <p className="note note--centred">{copy.offers.sub}</p>
+        </>
       ) : null}
 
     </div>

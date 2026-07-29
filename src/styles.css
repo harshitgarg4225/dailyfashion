@@ -559,29 +559,37 @@ p {
   align-items: center;
   gap: var(--s4);
   width: 100%;
-  padding: var(--s4) var(--s1);
+  padding: var(--s4);
   text-align: left;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink-muted);
+  /* A full border, not a divider: these are the two most important taps of
+     the evening, and they must read as buttons before the first tap. */
+  border: 1px solid var(--line);
+  margin-top: -1px;
+  color: var(--ink-soft);
   font-family: var(--font-display);
   font-size: 1.1rem;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.felt-option:active,
+.felt-option[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+  position: relative;
+  z-index: 1;
 }
 
 .felt-option .marker {
   width: 22px;
   height: 1px;
-  background: var(--line);
+  background: var(--ink-faint);
   flex: none;
   transition: background 0.2s ease, width 0.25s ease;
 }
 
-.felt-option[aria-pressed='true'] {
-  color: var(--ink);
-}
-
 .felt-option[aria-pressed='true'] .marker {
-  background: var(--brown);
+  background: var(--paper);
   width: 40px;
 }
 
@@ -1718,4 +1726,14 @@ form.garment-line {
 .row--full {
   width: 100%;
   text-align: left;
+}
+
+
+/* Form fields never overflow the paper. The browser's default size attribute
+   on number inputs was pushing Training past the viewport on phones. */
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-width: 0;
 }

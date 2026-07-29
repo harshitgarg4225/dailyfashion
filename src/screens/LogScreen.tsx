@@ -300,9 +300,21 @@ export function LogScreen({
           {cells.length > limit ? <div ref={sentinel} aria-hidden="true" /> : null}
 
           {ratedCount < entries.length ? (
-            <p className="note note--centred">
-              {entries.length - ratedCount} waiting for a reflection.
-            </p>
+            /*
+              * Not a status line — the next step, tappable. The evening
+              * answer is the whole product's fuel, and the person most
+              * likely to skip it is the one who only sees a passive count.
+              */
+            <button
+              type="button"
+              className="btn btn--ghost btn--block"
+              onClick={() => {
+                const unanswered = entries.find((e) => e.felt_score === null)
+                if (unanswered) onOpen(unanswered)
+              }}
+            >
+              {copy.log.answerNow(entries.length - ratedCount)}
+            </button>
           ) : null}
         </>
       )}

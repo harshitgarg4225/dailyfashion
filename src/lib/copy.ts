@@ -307,6 +307,8 @@ export const copy = {
     unrated: 'No reflection yet',
     // J9: a missed day is whitespace, not a gap to be explained.
     addPast: 'Add a past day',
+    answerNow: (n: number) =>
+      n === 1 ? '1 day waiting — answer it now' : `${n} days waiting — answer them now`,
     pickDate: 'Which day?',
     pickDateHint: 'You can add any day from the past week.',
     loggedAgain: 'Added to today.',
@@ -535,7 +537,7 @@ export const copy = {
     // "worn before?" matcher is doing its job is to show the user the count.
     groupsFormed: (outfits: number, days: number) =>
       outfits === 0
-        ? `${days} days logged, no repeat outfits recognised yet.`
+        ? `${days} day${days === 1 ? '' : 's'} logged, no repeat outfits recognised yet.`
         : `${days} days logged, grouped into ${outfits} repeated outfit${outfits === 1 ? '' : 's'}.`,
 
     // S2: the one moment the privacy promise legitimately ends.
