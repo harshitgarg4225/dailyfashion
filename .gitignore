@@ -28,3 +28,6 @@ ios/App/output/
 DerivedData/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
+
+# Playwright artifacts
+test-results/
