@@ -618,6 +618,66 @@ export interface SimilarityCandidate<T> {
 }
 
 /**
+ * Cosine over unit vectors. Both sides are normalised at write time, so this
+ * is a plain dot product; ReLU activations make it non-negative, so the
+ * result already lives in [0, 1]. Zero for any length mismatch — a number
+ * from two different models is not a weaker answer, it is a meaningless one.
+ */
+export function cosine(a: readonly number[], b: readonly number[]): number {
+  if (a.length === 0 || a.length !== b.length) return 0
+  let dot = 0
+  for (let i = 0; i < a.length; i++) dot += a[i]! * b[i]!
+  return Math.max(0, Math.min(1, dot))
+}
+
+interface Matchable {
+  signature: ImageSignature | null
+  embedding?: number[] | null
+}
+
+/**
+ * The two signals, fused — and only when both sides carry both.
+ *
+ * The hash sees structure and palette; the embedding sees content. Each has
+ * a blindness the other covers: the hash fails across a change of mirror or
+ * framing, the embedding can be seduced by two different black outfits. An
+ * even split keeps either signal from overruling the other outright, and the
+ * same threshold applies as ever — fusion is a better ruler, not a lower bar.
+ *
+ * Falls back to the signature alone whenever an embedding is missing, which
+ * is every written day, every pre-model photo the backfill has not reached,
+ * and every device where the model failed to load.
+ */
+export function fusedSimilarity(a: Matchable, b: Matchable): number {
+  if (!a.signature || !b.signature) return 0
+  const structural = similarity(a.signature, b.signature)
+  if (!a.embedding || !b.embedding) return structural
+  const semantic = cosine(a.embedding, b.embedding)
+  if (semantic === 0) return structural
+  return 0.5 * structural + 0.5 * semantic
+}
+
+/**
+ * `bestMatch`, with the fused ruler. Kept as its own entry point so the
+ * hash-only path stays available to callers that run before the model has
+ * produced anything.
+ */
+export function bestMatchFused<T extends Matchable>(
+  target: Matchable,
+  candidates: readonly T[],
+  threshold = SAME_OUTFIT_THRESHOLD,
+): SimilarityCandidate<T> | null {
+  let best: SimilarityCandidate<T> | null = null
+  for (const candidate of candidates.slice(0, SIMILARITY_WINDOW)) {
+    const score = fusedSimilarity(target, candidate)
+    if (score >= threshold && (!best || score > best.score)) {
+      best = { entry: candidate, score }
+    }
+  }
+  return best
+}
+
+/**
  * Best match above threshold, or null.
  *
  * Returns at most one candidate on purpose. "Same as Tuesday?" is a yes/no a

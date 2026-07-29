@@ -34,6 +34,10 @@ type Classifier = {
     img: ImageData | HTMLCanvasElement,
     topk?: number,
   ): Promise<Array<{ className: string; probability: number }>>
+  infer(
+    img: ImageData | HTMLCanvasElement,
+    embedding?: boolean,
+  ): { data(): Promise<Float32Array | Int32Array | Uint8Array>; dispose(): void }
 }
 
 let classifierPromise: Promise<Classifier | null> | null = null
@@ -83,20 +87,59 @@ async function toInput(blob: Blob): Promise<ImageData | null> {
   }
 }
 
-/** Classify one photograph. Null means "no name worth offering". */
-export async function guessGarment(blob: Blob): Promise<GarmentGuess | null> {
+export interface PhotoReading {
+  guess: GarmentGuess | null
+  /** Unit-normalised, rounded. Null when inference failed outright. */
+  embedding: number[] | null
+}
+
+/** Rounded to 3 decimals: indistinguishable for cosine, a third of the JSON. */
+function compact(vector: Float32Array): number[] {
+  let norm = 0
+  for (const value of vector) norm += value * value
+  norm = Math.sqrt(norm) || 1
+  return Array.from(vector, (value) => Math.round((value / norm) * 1000) / 1000)
+}
+
+/**
+ * One decode, two readings: the garment name and the embedding.
+ *
+ * The embedding is the matcher's second signal — the hash sees structure and
+ * palette, this sees content — and it comes from the same forward pass
+ * infrastructure the name does, so a photograph is never decoded twice.
+ */
+export async function readPhoto(blob: Blob): Promise<PhotoReading> {
   const classifier = await loadClassifier()
-  if (!classifier) return null
+  if (!classifier) return { guess: null, embedding: null }
 
   const input = await toInput(blob)
-  if (!input) return null
+  if (!input) return { guess: null, embedding: null }
 
+  let guess: GarmentGuess | null = null
   try {
-    const predictions = await classifier.classify(input, TOP_K)
-    return aggregateGarment(predictions)
+    guess = aggregateGarment(await classifier.classify(input, TOP_K))
   } catch {
-    return null
+    guess = null
   }
+
+  let embedding: number[] | null = null
+  try {
+    const tensor = classifier.infer(input, true)
+    try {
+      embedding = compact((await tensor.data()) as Float32Array)
+    } finally {
+      tensor.dispose()
+    }
+  } catch {
+    embedding = null
+  }
+
+  return { guess, embedding }
+}
+
+/** Classify one photograph. Null means "no name worth offering". */
+export async function guessGarment(blob: Blob): Promise<GarmentGuess | null> {
+  return (await readPhoto(blob)).guess
 }
 
 /**
@@ -112,18 +155,25 @@ export async function guessGarment(blob: Blob): Promise<GarmentGuess | null> {
  */
 export async function nameEntryPhoto(entryId: string, blob: Blob): Promise<Entry | null> {
   const settings = await getSettings()
-  if (!settings.garment_naming) return null
 
-  const guess = await guessGarment(blob)
-  if (!guess) return null
+  // The embedding is matching infrastructure, not a model opinion, so it is
+  // computed even with naming switched off; only the *name* respects the
+  // switch.
+  const { guess, embedding } = await readPhoto(blob)
+  if (!guess && !embedding) return null
 
   const current = await getEntry(entryId)
   if (!current) return null
-  if (current.garment && current.garment.source === 'user') return current
 
+  const keepUserName = current.garment?.source === 'user'
   const updated: Entry = {
     ...current,
-    garment: { name: guess.name, source: 'model', confidence: guess.confidence },
+    embedding: embedding ?? current.embedding ?? null,
+    garment: keepUserName
+      ? current.garment
+      : settings.garment_naming && guess
+        ? { name: guess.name, source: 'model', confidence: guess.confidence }
+        : (current.garment ?? null),
   }
   await putEntry(updated)
   return updated
@@ -154,14 +204,18 @@ export async function nameOldEntries(): Promise<{ named: number; skipped: number
 
   try {
     const settings = await getSettings()
-    if (!settings.garment_naming) return { named: 0, skipped: 0 }
 
-    const unnamed = (await allEntries()).filter(
-      (entry) => entry.photo_id !== null && entry.garment === undefined,
+    // Naming respects the switch; embeddings are matching infrastructure and
+    // are backfilled regardless.
+    const pending = (await allEntries()).filter(
+      (entry) =>
+        entry.photo_id !== null &&
+        ((settings.garment_naming && entry.garment === undefined) ||
+          entry.embedding === undefined),
     )
 
-    for (let index = 0; index < unnamed.length; index++) {
-      const entry = unnamed[index]!
+    for (let index = 0; index < pending.length; index++) {
+      const entry = pending[index]!
 
       try {
         const blob = entry.photo_id ? await getPhoto(entry.photo_id) : undefined
@@ -170,14 +224,22 @@ export async function nameOldEntries(): Promise<{ named: number; skipped: number
           continue
         }
 
-        const guess = await guessGarment(blob)
-        // A null guess is still recorded (as null) so the backfill never
-        // re-classifies the same photo on every launch.
+        const { guess, embedding } = await readPhoto(blob)
+        // Nulls are still recorded, so the backfill never re-reads the same
+        // photo on every launch.
         await putEntry({
           ...entry,
-          garment: guess ? { name: guess.name, source: 'model', confidence: guess.confidence } : null,
+          embedding: embedding ?? entry.embedding ?? null,
+          garment:
+            entry.garment !== undefined
+              ? entry.garment
+              : settings.garment_naming
+                ? guess
+                  ? { name: guess.name, source: 'model', confidence: guess.confidence }
+                  : null
+                : entry.garment,
         })
-        if (guess) named++
+        if (guess && entry.garment === undefined) named++
         else skipped++
       } catch {
         skipped++

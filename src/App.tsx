@@ -17,7 +17,7 @@ import { CaptureFollowUp, type FollowUpResult } from './screens/CaptureFollowUp'
 import { copy } from './lib/copy'
 import { captureContext, launchIntent } from './lib/context'
 import { addDays, BACKDATE_LIMIT_DAYS, daysBetween, mediumLabel, toDateKey, type DateKey } from './lib/dates'
-import { bestMatch, SIMILARITY_WINDOW } from './lib/signature'
+import { bestMatch, bestMatchFused, SIMILARITY_WINDOW } from './lib/signature'
 import { shouldOfferSoftening } from './lib/insights'
 import { SHORTLIST_MIN_ENTRIES } from './lib/shortlist'
 import { MIN_DAYS_FOR_WRAP } from './lib/weekWrapped'
@@ -341,16 +341,33 @@ export default function App() {
 
       // Naming runs after the save, never before it. The entry is already
       // durable; the model's word arrives whenever it arrives.
-      void nameEntryPhoto(entry.id, blob).then((updated) => {
+      const naming = nameEntryPhoto(entry.id, blob).then((updated) => {
         if (updated) void log.refresh()
+        return updated
       })
 
       if (options.skipPrompts) return entry
 
-      // "Worn before?" against the most recent entries only. The follow-up is
-      // shown either way — temperature must be asked on repeat wears too, since
-      // those are exactly the entries J7 needs context for.
-      const match = bestMatch(signature, log.entries.slice(0, SIMILARITY_WINDOW))
+      /*
+       * "Worn before?", on the best ruler available in time.
+       *
+       * The fused matcher wants the photo's embedding, which the model is
+       * computing right now. A warm model answers in well under a second, so
+       * the prompt waits briefly for the better answer; a cold start loses
+       * the race and the hash-only match goes out as it always did. The
+       * entry is already saved either way — this delay is only about which
+       * question appears on the follow-up sheet.
+       */
+      const named = await Promise.race([
+        naming.catch(() => null),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+      ])
+      const candidates = log.entries
+        .filter((e) => e.id !== entry.id)
+        .slice(0, SIMILARITY_WINDOW)
+      const match = named?.embedding
+        ? bestMatchFused({ signature, embedding: named.embedding }, candidates)
+        : bestMatch(signature, candidates)
       setFollowUp({ entryId: entry.id, matchId: match?.entry.id ?? null })
 
       return entry
@@ -411,9 +428,10 @@ export default function App() {
         created_at: Date.now(),
         rated_at: null,
         backdated: false,
-        // Same photograph, same garment — re-classifying a copy would only
-        // give the same answer slower.
+        // Same photograph, same garment, same embedding — re-reading a copy
+        // would only give the same answers slower.
         garment: source.garment,
+        embedding: source.embedding,
       }
       await putEntry(entry)
 

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   bestMatch,
+  bestMatchFused,
   classifyColor,
   computeSignature,
+  cosine,
+  fusedSimilarity,
   hammingDistance,
   histogramIntersection,
   similarity,
@@ -141,5 +144,55 @@ describe('same-outfit matching (J3)', () => {
   it('skips entries that never got a signature', () => {
     const target = computeSignature(outfitShot([40, 80, 200]))
     expect(bestMatch(target, [{ id: 'x', signature: null }])).toBeNull()
+  })
+})
+
+describe('the fused matcher', () => {
+  const unit = (values: number[]) => {
+    const norm = Math.sqrt(values.reduce((s, v) => s + v * v, 0)) || 1
+    return values.map((v) => v / norm)
+  }
+
+  it('cosine is 1 for identical unit vectors and 0 for orthogonal ones', () => {
+    expect(cosine(unit([1, 2, 3]), unit([1, 2, 3]))).toBeCloseTo(1)
+    expect(cosine([1, 0], [0, 1])).toBe(0)
+  })
+
+  it('refuses vectors of different lengths outright', () => {
+    // A number from two different models is meaningless, not merely weak.
+    expect(cosine([1, 0, 0], [1, 0])).toBe(0)
+  })
+
+  it('falls back to the signature alone when either embedding is missing', () => {
+    const sig = computeSignature(outfitShot([120, 60, 40]))
+    const a = { signature: sig, embedding: unit([1, 2, 3]) }
+    const b = { signature: sig, embedding: null }
+    expect(fusedSimilarity(a, b)).toBeCloseTo(similarity(sig, sig))
+  })
+
+  it('splits evenly between the two signals when both exist', () => {
+    const sig = computeSignature(outfitShot([120, 60, 40]))
+    const structural = similarity(sig, sig)
+    const a = { signature: sig, embedding: [1, 0, 0] }
+    const b = { signature: sig, embedding: [0.6, 0.8, 0] }
+    expect(fusedSimilarity(a, b)).toBeCloseTo(0.5 * structural + 0.5 * 0.6)
+  })
+
+  it('finds a fused match that the hash alone would refuse', () => {
+    // Same outfit, different room: structure and palette drift, content
+    // holds. The embedding carries the case across the threshold.
+    const here = computeSignature(outfitShot([200, 40, 40]))
+    const there = computeSignature(outfitShot([150, 90, 70], [200, 190, 180], 6))
+    const embedding = unit(Array.from({ length: 16 }, (_, i) => i + 1))
+
+    const hashOnly = bestMatch(here, [{ signature: there }])
+    const fused = bestMatchFused(
+      { signature: here, embedding },
+      [{ signature: there, embedding }],
+      0.6,
+    )
+
+    expect(hashOnly).toBeNull()
+    expect(fused).not.toBeNull()
   })
 })

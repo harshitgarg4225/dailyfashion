@@ -141,6 +141,18 @@ export interface Entry {
    * own word, which permanently outranks it.
    */
   garment?: EntryGarment | null
+  /**
+   * Unit-normalised vision-model embedding of the photograph, or null when
+   * the model could not produce one. Same three-state convention as
+   * `garment`. Stored as plain numbers (rounded) so it survives the JSON
+   * export round-trip; ~6KB per entry, which a year of days carries easily.
+   *
+   * Used as a second matching signal beside the signature: the hash sees
+   * structure and palette, the embedding sees *content*, and fusing them is
+   * what lets "same as Tuesday?" survive a different mirror, a different
+   * room, or a step closer to the glass.
+   */
+  embedding?: number[] | null
 }
 
 export interface EntryGarment {
