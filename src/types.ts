@@ -203,4 +203,6 @@ export interface Settings {
   last_reminder_for: number | null
   /** Whether the on-device model may suggest garment names. Always editable, never uploaded. */
   garment_naming: boolean
+  /** When the last export finished. Drives the quiet back-up nudge. */
+  last_export_at: number | null
 }

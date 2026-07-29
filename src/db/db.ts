@@ -61,6 +61,7 @@ export const DEFAULT_SETTINGS: Settings = {
   // an editable suggestion. The off switch exists for anyone who wants no
   // machine opinion at all, which is a preference worth honouring.
   garment_naming: true,
+  last_export_at: null,
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null

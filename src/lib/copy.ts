@@ -386,6 +386,17 @@ export const copy = {
     reminderMuted: 'Reminders are off. Turn them back on any time.',
     blur: 'Blur photos in the grid',
     blurHint: 'Photos stay blurred until you tap one.',
+    sealLabel: 'Passphrase (optional)',
+    sealHint:
+      'Leave empty for a plain zip. With a passphrase, the file is sealed on this device and cannot be opened without it — by anyone, including us. There is no way to recover it.',
+    unsealTitle: 'This backup is sealed',
+    unsealBody: 'Enter the passphrase it was exported with.',
+    unsealGo: 'Open it',
+    unsealFailed: 'That passphrase did not open it. Nothing was imported.',
+    exportNudgeNever:
+      'Your log has grown and has never been backed up. An export takes a minute and lives wherever you put it.',
+    exportNudgeStale:
+      'It has been a while since the last export. A fresh one keeps your history safe from a cleared browser.',
     garmentNaming: 'Suggest garment names',
     garmentNamingHint:
       'A small model on this device guesses what you wore — "black cardigan". Nothing is sent anywhere, and you can always correct it.',

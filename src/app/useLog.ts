@@ -59,6 +59,7 @@ const EMPTY: LogState = {
     camera_facing: 'user',
     softened_at: null,
     garment_naming: true,
+    last_export_at: null,
     last_reminder_for: null,
   },
   dismissed: [],

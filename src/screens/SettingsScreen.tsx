@@ -3,6 +3,7 @@ import type { Settings } from '../types'
 import { copy } from '../lib/copy'
 import { Sheet, Switch } from '../app/controls'
 import { buildExport, importArchive, triggerDownload } from '../lib/exportData'
+import { isSealedArchive, sealArchive, unsealArchive } from '../lib/cryptoExport'
 import { saveLock, wipeEverything } from '../db/db'
 import {
   createLock,
@@ -28,6 +29,12 @@ import {
  * wipe asks the user to type DELETE, which is friction against a mis-tap
  * rather than against the decision, and then it does exactly what it says.
  */
+/** Days-of-log before the export nudge earns its place. */
+const EXPORT_NUDGE_MIN_ENTRIES = 30
+
+/** A month since the last export counts as stale. */
+const EXPORT_NUDGE_STALE_MS = 30 * 24 * 60 * 60 * 1000
+
 export function SettingsScreen({
   settings,
   onChange,
@@ -49,6 +56,9 @@ export function SettingsScreen({
 }) {
   const [exporting, setExporting] = useState(false)
   const [confirmExport, setConfirmExport] = useState(false)
+  const [sealPass, setSealPass] = useState('')
+  const [sealedImport, setSealedImport] = useState<File | null>(null)
+  const [unsealPass, setUnsealPass] = useState('')
   const [exportProgress, setExportProgress] = useState<{ done: number; total: number } | null>(null)
   const [confirmWipe, setConfirmWipe] = useState(false)
   const [typed, setTyped] = useState('')
@@ -106,6 +116,13 @@ export function SettingsScreen({
    * accumulated history is the difference between a product and a demo.
    */
   const runImport = async (file: File) => {
+    // A sealed archive needs its passphrase before it is anything at all;
+    // park the file and ask, rather than failing with a generic error.
+    if (await isSealedArchive(file)) {
+      setSealedImport(file)
+      setUnsealPass('')
+      return
+    }
     setImporting(true)
     try {
       const result = await importArchive(file)
@@ -114,6 +131,25 @@ export function SettingsScreen({
     } catch {
       setStatus(copy.settings.importFailed)
     } finally {
+      setImporting(false)
+    }
+  }
+
+  const runSealedImport = async () => {
+    const file = sealedImport
+    if (!file) return
+    setSealedImport(null)
+    setImporting(true)
+    try {
+      const zip = await unsealArchive(file, unsealPass)
+      const result = await importArchive(zip)
+      setStatus(copy.settings.importDone(result.added, result.skipped))
+      onImported()
+    } catch {
+      // Overwhelmingly a wrong passphrase — GCM fails hard, nothing partial.
+      setStatus(copy.settings.unsealFailed)
+    } finally {
+      setUnsealPass('')
       setImporting(false)
     }
   }
@@ -129,8 +165,18 @@ export function SettingsScreen({
     setExportProgress(null)
     try {
       const result = await buildExport((done, total) => setExportProgress({ done, total }))
-      triggerDownload(result.blob, result.filename)
+      const passphrase = sealPass.trim()
+      if (passphrase) {
+        const sealed = await sealArchive(result.blob, passphrase)
+        triggerDownload(sealed, result.filename.replace(/\.zip$/, '.sealed'))
+      } else {
+        triggerDownload(result.blob, result.filename)
+      }
+      // The export-health nudge keys off this: a log that has grown far past
+      // its last export is one browser eviction away from being only a memory.
+      onChange({ last_export_at: Date.now() })
     } finally {
+      setSealPass('')
       setExporting(false)
       setExportProgress(null)
     }
@@ -358,6 +404,22 @@ export function SettingsScreen({
           </button>
         </div>
 
+        {/*
+          * The export-health nudge: quiet, factual, and only when the gap has
+          * become a real exposure. Thirty unlogged-elsewhere days is the point
+          * where a browser eviction stops being an annoyance and becomes a
+          * loss; below that the nudge would be nagging.
+          */}
+        {entryCount >= EXPORT_NUDGE_MIN_ENTRIES &&
+        (settings.last_export_at === null ||
+          Date.now() - settings.last_export_at > EXPORT_NUDGE_STALE_MS) ? (
+          <p className="note">
+            {settings.last_export_at === null
+              ? copy.settings.exportNudgeNever
+              : copy.settings.exportNudgeStale}
+          </p>
+        ) : null}
+
         <div className="row">
           <span className="row-text">
             {copy.settings.import}
@@ -453,6 +515,22 @@ export function SettingsScreen({
           onDismiss={() => setConfirmExport(false)}
         >
           <div className="stack">
+            {/*
+              * The passphrase is optional and the field says exactly what
+              * choosing one means: sealed with it, unrecoverable without it.
+              * No confirmation field — an export can simply be re-made, which
+              * is not true of the things confirmation fields protect.
+              */}
+            <label className="field">
+              <span className="field-label">{copy.settings.sealLabel}</span>
+              <span className="field-hint">{copy.settings.sealHint}</span>
+              <input
+                type="password"
+                value={sealPass}
+                autoComplete="new-password"
+                onChange={(event) => setSealPass(event.target.value)}
+              />
+            </label>
             <button type="button" className="btn btn--primary btn--block" onClick={runExport}>
               {copy.settings.exportWarnGo}
             </button>
@@ -460,6 +538,42 @@ export function SettingsScreen({
               type="button"
               className="btn btn--quiet btn--block"
               onClick={() => setConfirmExport(false)}
+            >
+              {copy.settings.wipeCancel}
+            </button>
+          </div>
+        </Sheet>
+      ) : null}
+
+      {sealedImport ? (
+        <Sheet
+          title={copy.settings.unsealTitle}
+          body={copy.settings.unsealBody}
+          onDismiss={() => setSealedImport(null)}
+        >
+          <div className="stack">
+            <label className="field">
+              <span className="field-label">{copy.settings.sealLabel}</span>
+              <input
+                type="password"
+                value={unsealPass}
+                autoComplete="current-password"
+                autoFocus
+                onChange={(event) => setUnsealPass(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="btn btn--primary btn--block"
+              disabled={unsealPass.length === 0}
+              onClick={() => void runSealedImport()}
+            >
+              {copy.settings.unsealGo}
+            </button>
+            <button
+              type="button"
+              className="btn btn--quiet btn--block"
+              onClick={() => setSealedImport(null)}
             >
               {copy.settings.wipeCancel}
             </button>
