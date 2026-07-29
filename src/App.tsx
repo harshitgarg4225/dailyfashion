@@ -45,6 +45,7 @@ import {
 import { requestPersistence } from './lib/storage'
 import { refingerprintOldEntries } from './lib/refingerprint'
 import { nameEntryPhoto, nameOldEntries } from './lib/garmentNamer'
+import { thumbOldEntries } from './lib/thumbs'
 import { hasSystemScheduledReminders } from './lib/platform'
 import { cancelNativeReminder, onReminderAction, scheduleNativeReminder } from './lib/nativeReminders'
 import { getLock } from './db/db'
@@ -210,6 +211,9 @@ export default function App() {
       void nameOldEntries().then((result) => {
         if (result.named > 0) void log.refresh()
       })
+      // And small renditions, so an old log's grid stops decoding full-size
+      // JPEGs. No refresh needed — the grid falls back per-photo until then.
+      void thumbOldEntries()
     }, 1500)
 
     return () => clearTimeout(timer)
@@ -303,11 +307,16 @@ export default function App() {
     async (
       blob: Blob,
       signature: ImageSignature,
-      options: { date?: DateKey; felt?: FeltScore | null; skipPrompts?: boolean } = {},
+      options: {
+        date?: DateKey
+        felt?: FeltScore | null
+        skipPrompts?: boolean
+        thumb?: Blob
+      } = {},
     ) => {
       const date = options.date ?? today
       const photoId = newId('photo')
-      await putPhoto(photoId, blob)
+      await putPhoto(photoId, blob, options.thumb)
 
       const entry: Entry = {
         id: newId('entry'),
@@ -346,8 +355,8 @@ export default function App() {
   )
 
   const onCaptured = useCallback(
-    async (blob: Blob, signature: ImageSignature) => {
-      await saveEntry(blob, signature, pendingDate ? { date: pendingDate } : {})
+    async (blob: Blob, signature: ImageSignature, thumb: Blob) => {
+      await saveEntry(blob, signature, { thumb, ...(pendingDate ? { date: pendingDate } : {}) })
       setPendingDate(null)
       flash(copy.camera.saved)
       setScreen('log')
@@ -358,7 +367,10 @@ export default function App() {
   const onPickFile = useCallback(
     async (file: File) => {
       const prepared = await preparePhoto(file)
-      await saveEntry(prepared.blob, prepared.signature, pendingDate ? { date: pendingDate } : {})
+      await saveEntry(prepared.blob, prepared.signature, {
+        thumb: prepared.thumb,
+        ...(pendingDate ? { date: pendingDate } : {}),
+      })
       setPendingDate(null)
       flash(copy.camera.saved)
       setScreen('log')
@@ -431,6 +443,7 @@ export default function App() {
           date: seed.date,
           felt: seed.felt,
           skipPrompts: true,
+          thumb: seed.thumb,
         })
       }
       await updateSettings({ onboarded: true })

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Entry, Settings } from '../types'
 import { copy } from '../lib/copy'
 import { addDays, daysBetween, mediumLabel, type DateKey } from '../lib/dates'
@@ -34,6 +34,21 @@ const MAX_GAP_CELLS = 6
  * capability. Search earns its place when scrolling has become the problem.
  */
 const SEARCH_MIN_ENTRIES = 12
+
+/** Cells rendered per slice; the sentinel extends the window on approach. */
+const GRID_SLICE = 120
+
+/** Below this the whole log is one screen and month headers are furniture. */
+const MONTH_HEADER_MIN_ENTRIES = 30
+
+/** "July 2026", from a YYYY-MM-DD key, in the user's locale. */
+function monthLabel(date: string): string {
+  const [y, m] = date.split('-').map(Number)
+  return new Date(y!, m! - 1, 1).toLocaleDateString(undefined, {
+    month: 'long',
+    year: 'numeric',
+  })
+}
 
 export function LogScreen({
   entries,
@@ -79,10 +94,25 @@ export function LogScreen({
   const cells = useMemo(() => {
     if (entries.length === 0) return []
 
-    const out: Array<{ kind: 'entry'; entry: Entry } | { kind: 'gap'; key: string }> = []
+    const out: Array<
+      | { kind: 'entry'; entry: Entry }
+      | { kind: 'gap'; key: string }
+      | { kind: 'month'; key: string; label: string }
+    > = []
     let cursor: DateKey = entries[0]!.date > today ? entries[0]!.date : today
 
+    // Month headers appear once the grid is long enough that "when was that?"
+    // has become a scrolling question. Below that they are furniture.
+    const withMonths = entries.length > MONTH_HEADER_MIN_ENTRIES
+    let lastMonth: string | null = null
+
     for (const entry of entries) {
+      const month = entry.date.slice(0, 7)
+      if (withMonths && month !== lastMonth) {
+        out.push({ kind: 'month', key: month, label: monthLabel(entry.date) })
+        lastMonth = month
+      }
+
       // Cap the run of blanks — a six-month pause should not mean scrolling
       // past six months of nothing to reach the log.
       const gap = Math.min(daysBetween(entry.date, cursor), MAX_GAP_CELLS)
@@ -95,6 +125,32 @@ export function LogScreen({
 
     return out
   }, [entries, today])
+
+  /*
+   * The grid renders in slices. A year of cells mounted at once is hundreds
+   * of IntersectionObservers and thousands of DOM nodes for the dozen tiles
+   * on screen; the sentinel below extends the window as it approaches.
+   */
+  const [limit, setLimit] = useState(GRID_SLICE)
+  const sentinel = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (cells.length <= limit) return
+    const node = sentinel.current
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setLimit(cells.length)
+      return
+    }
+    const observer = new IntersectionObserver(
+      (hits) => {
+        if (hits.some((hit) => hit.isIntersecting)) {
+          setLimit((current) => current + GRID_SLICE)
+        }
+      },
+      { rootMargin: '900px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [cells.length, limit])
 
   const ratedCount = entries.filter((e) => e.felt_score !== null).length
 
@@ -171,7 +227,7 @@ export function LogScreen({
                   onClick={() => onOpen(match.entry)}
                 >
                   <span className="result-photo">
-                    <Photo photoId={match.entry.photo_id} alt="" className="result-image" />
+                    <Photo photoId={match.entry.photo_id} alt="" className="result-image" thumb />
                   </span>
                   <span className="result-text">
                     <strong>{mediumLabel(match.entry.date)}</strong>
@@ -193,16 +249,19 @@ export function LogScreen({
       ) : (
         <>
           <div className="grid">
-            {cells.map((cell) =>
+            {cells.slice(0, limit).map((cell) =>
               cell.kind === 'gap' ? (
                 <div key={cell.key} className="grid-gap" aria-hidden="true" />
+              ) : cell.kind === 'month' ? (
+                <div key={cell.key} className="grid-month">
+                  {cell.label}
+                </div>
               ) : (
                 <button
                   key={cell.entry.id}
                   type="button"
                   className={[
                     'grid-cell',
-                    cell.entry.photo_id === null ? 'grid-cell--written' : '',
                     settings.blur_thumbnails && cell.entry.photo_id !== null ? 'blurred' : '',
                   ]
                     .filter(Boolean)
@@ -212,20 +271,33 @@ export function LogScreen({
                     cell.entry.photo_id === null ? `, ${copy.log.writtenDay}` : ''
                   }${cell.entry.felt_score === null ? `, ${copy.log.unrated}` : ''}`}
                 >
-                  {cell.entry.photo_id === null ? (
-                    <span>{cell.entry.note}</span>
-                  ) : (
-                    <Photo photoId={cell.entry.photo_id} alt="" />
-                  )}
-                  {cell.entry.felt_score !== null ? (
-                    <span className="felt-badge">{cell.entry.felt_score}</span>
-                  ) : (
-                    <span className="unrated-dot" aria-hidden="true" />
-                  )}
+                  <span
+                    className={
+                      cell.entry.photo_id === null
+                        ? 'cell-frame cell-frame--written'
+                        : 'cell-frame'
+                    }
+                  >
+                    {cell.entry.photo_id === null ? (
+                      <span>{cell.entry.note}</span>
+                    ) : (
+                      <Photo photoId={cell.entry.photo_id} alt="" thumb />
+                    )}
+                    {cell.entry.felt_score !== null ? (
+                      <span className="felt-badge">{cell.entry.felt_score}</span>
+                    ) : (
+                      <span className="unrated-dot" aria-hidden="true" />
+                    )}
+                  </span>
+                  {cell.entry.garment ? (
+                    <span className="cell-word">{cell.entry.garment.name}</span>
+                  ) : null}
                 </button>
               ),
             )}
           </div>
+
+          {cells.length > limit ? <div ref={sentinel} aria-hidden="true" /> : null}
 
           {ratedCount < entries.length ? (
             <p className="note note--centred">

@@ -25,11 +25,21 @@ const DB_NAME = 'dailyfashion'
  * path onto a bare `createObjectStore` block is where local-first apps lose
  * people's data.
  */
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 export const STORES = {
   entries: 'entries',
   photos: 'photos',
+  /**
+   * Small renditions of the photos, keyed by the same photo id.
+   *
+   * The journal grid was decoding full 1400px JPEGs to paint 120px cells — a
+   * year of logging meant hundreds of megabytes of bitmap for a screenful of
+   * thumbnails, which is exactly the memory profile that gets a background tab
+   * killed. A thumb is regenerable from its photo at any time, so this store
+   * is a cache with a schema, not a second copy of anyone's data.
+   */
+  thumbs: 'thumbs',
   outfits: 'outfits',
   items: 'items',
   entryItems: 'entry_items',
@@ -93,6 +103,15 @@ export function openDb(): Promise<IDBDatabase> {
         }
         if (!db.objectStoreNames.contains(STORES.dismissed)) {
           db.createObjectStore(STORES.dismissed)
+        }
+      }
+
+      // v2: the thumbnail store. No data migration — thumbs are generated
+      // lazily by the backfill in thumbs.ts, because decoding a year of
+      // photos inside onupgradeneeded would block the open indefinitely.
+      if (from < 2) {
+        if (!db.objectStoreNames.contains(STORES.thumbs)) {
+          db.createObjectStore(STORES.thumbs)
         }
       }
 
@@ -176,9 +195,16 @@ export async function entriesOn(date: string): Promise<Entry[]> {
 export async function deleteEntry(id: string): Promise<void> {
   const db = await openDb()
   const entry = await getEntry(id)
-  const transaction = tx(db, [STORES.entries, STORES.photos, STORES.entryItems], 'readwrite')
+  const transaction = tx(
+    db,
+    [STORES.entries, STORES.photos, STORES.thumbs, STORES.entryItems],
+    'readwrite',
+  )
   transaction.objectStore(STORES.entries).delete(id)
-  if (entry?.photo_id) transaction.objectStore(STORES.photos).delete(entry.photo_id)
+  if (entry?.photo_id) {
+    transaction.objectStore(STORES.photos).delete(entry.photo_id)
+    transaction.objectStore(STORES.thumbs).delete(entry.photo_id)
+  }
 
   // Drop the tag links too, so a deleted day cannot keep voting in insights.
   const linkStore = transaction.objectStore(STORES.entryItems)
@@ -195,10 +221,13 @@ export async function deleteEntry(id: string): Promise<void> {
 
 // --- photos ---------------------------------------------------------------
 
-export async function putPhoto(id: string, blob: Blob): Promise<void> {
+export async function putPhoto(id: string, blob: Blob, thumb?: Blob): Promise<void> {
   const db = await openDb()
-  const transaction = tx(db, [STORES.photos], 'readwrite')
+  const transaction = tx(db, [STORES.photos, STORES.thumbs], 'readwrite')
   transaction.objectStore(STORES.photos).put(blob, id)
+  // Same transaction, so a photo and its thumb can never disagree about
+  // existing.
+  if (thumb) transaction.objectStore(STORES.thumbs).put(thumb, id)
   await done(transaction)
 }
 
@@ -207,6 +236,22 @@ export async function getPhoto(id: string): Promise<Blob | undefined> {
   return promisify<Blob | undefined>(
     tx(db, [STORES.photos], 'readonly').objectStore(STORES.photos).get(id),
   )
+}
+
+/** The small rendition alone, for grids. Regenerable, so absence is normal. */
+export async function getThumb(id: string): Promise<Blob | undefined> {
+  const db = await openDb()
+  return promisify<Blob | undefined>(
+    tx(db, [STORES.thumbs], 'readonly').objectStore(STORES.thumbs).get(id),
+  )
+}
+
+/** Used by the backfill, which thumbs old photos without rewriting them. */
+export async function putThumb(id: string, thumb: Blob): Promise<void> {
+  const db = await openDb()
+  const transaction = tx(db, [STORES.thumbs], 'readwrite')
+  transaction.objectStore(STORES.thumbs).put(thumb, id)
+  await done(transaction)
 }
 
 // --- outfits --------------------------------------------------------------
@@ -346,7 +391,7 @@ export async function clonePhoto(sourceId: string): Promise<string | null> {
   const blob = await getPhoto(sourceId)
   if (!blob) return null
   const id = newId('photo')
-  await putPhoto(id, blob)
+  await putPhoto(id, blob, await getThumb(sourceId))
   return id
 }
 

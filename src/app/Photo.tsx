@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getPhoto } from '../db/db'
+import { getPhoto, getThumb } from '../db/db'
 
 /**
  * Renders a photo out of IndexedDB, loading it only when it comes near the
@@ -28,6 +28,7 @@ export function Photo({
   alt,
   className,
   eager = false,
+  thumb = false,
 }: {
   /** Null for a written day, which simply renders nothing. */
   photoId: string | null
@@ -35,6 +36,12 @@ export function Photo({
   className?: string
   /** Set for the one large photo on a screen, where there is nothing to defer. */
   eager?: boolean
+  /**
+   * Set in grids, where the cell is small and the count is large. Prefers the
+   * stored small rendition and falls back to the full photo for anything the
+   * backfill has not reached — slower for that cell, never wrong.
+   */
+  thumb?: boolean
 }) {
   const holder = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(eager)
@@ -71,7 +78,11 @@ export function Photo({
     let cancelled = false
     let objectUrl: string | null = null
 
-    void getPhoto(photoId).then((blob) => {
+    const load = thumb
+      ? getThumb(photoId).then((small) => small ?? getPhoto(photoId))
+      : getPhoto(photoId)
+
+    void load.then((blob) => {
       if (!blob || cancelled) return
       objectUrl = URL.createObjectURL(blob)
       setUrl(objectUrl)
@@ -81,7 +92,7 @@ export function Photo({
       cancelled = true
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [photoId, visible])
+  }, [photoId, visible, thumb])
 
   if (!photoId || !url) return <div ref={holder} className={className} aria-hidden="true" />
   return <img className={className} src={url} alt={alt} decoding="async" />

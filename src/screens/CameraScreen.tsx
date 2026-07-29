@@ -23,7 +23,11 @@ export function CameraScreen({
   alreadyLoggedToday,
 }: {
   settings: Settings
-  onCaptured: (blob: Blob, signature: Awaited<ReturnType<typeof preparePhoto>>['signature']) => void
+  onCaptured: (
+    blob: Blob,
+    signature: Awaited<ReturnType<typeof preparePhoto>>['signature'],
+    thumb: Blob,
+  ) => void
   onPickFile: (file: File) => void
   onExit: () => void
   alreadyLoggedToday: boolean
@@ -100,7 +104,7 @@ export function CameraScreen({
       const raw = await captureFrame(video)
       const prepared = await preparePhoto(raw)
       stop()
-      onCaptured(prepared.blob, prepared.signature)
+      onCaptured(prepared.blob, prepared.signature, prepared.thumb)
     } catch {
       // Never fail silently on the core interaction — say so and stay put so
       // the shot can be retaken.

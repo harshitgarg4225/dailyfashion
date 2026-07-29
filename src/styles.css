@@ -710,12 +710,52 @@ p {
 }
 
 .grid-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+/* The photograph's box; the caption lives outside it, mira's tile grammar. */
+.cell-frame {
   position: relative;
+  display: block;
+  width: 100%;
   aspect-ratio: 3 / 4;
   overflow: hidden;
   background: var(--paper-warm);
-  display: block;
   border-radius: var(--radius);
+}
+
+/*
+ * The garment word under the tile — the one derived fact worth a caption.
+ * Absent for unnamed days; the grid must never show a blank slot where a
+ * word failed to arrive.
+ */
+.cell-word {
+  font-size: 0.56rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A month's first tile carries the month, spanning the full row. */
+.grid-month {
+  grid-column: 1 / -1;
+  margin-top: var(--s4);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.grid-month:first-child {
+  margin-top: 0;
 }
 
 /*
@@ -735,7 +775,7 @@ p {
  * visible beats the tiles being uniformly filled. It is the same call already
  * made for the camera preview, for the same reason.
  */
-.grid-cell img {
+.cell-frame img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -760,7 +800,7 @@ p {
   aspect-ratio: 3 / 4;
 }
 
-.grid-cell .felt-badge {
+.cell-frame .felt-badge {
   position: absolute;
   left: 0;
   bottom: 0;
@@ -773,7 +813,7 @@ p {
   text-transform: uppercase;
 }
 
-.grid-cell .unrated-dot {
+.cell-frame .unrated-dot {
   position: absolute;
   right: var(--s2);
   top: var(--s2);
@@ -1173,7 +1213,7 @@ input[type='time'] {
  * one — the moment written days look like second-class entries, people stop
  * making them, and those are the days the log most needs.
  */
-.grid-cell--written {
+.cell-frame--written {
   display: flex;
   align-items: flex-start;
   padding: var(--s3);
@@ -1182,7 +1222,7 @@ input[type='time'] {
   overflow: hidden;
 }
 
-.grid-cell--written span {
+.cell-frame--written span {
   font-family: var(--font-display);
   font-size: 0.82rem;
   line-height: 1.4;

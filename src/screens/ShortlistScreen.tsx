@@ -93,7 +93,7 @@ export function ShortlistScreen({
               className="strip-item"
               onClick={() => onWearAgain(entry)}
             >
-              <Photo photoId={entry.photo_id} alt="" />
+              <Photo photoId={entry.photo_id} alt="" thumb />
               <span className="strip-meta">
                 <strong>{mediumLabel(entry.date)}</strong>
                 <span className="note">

@@ -20,6 +20,10 @@ const JPEG_QUALITY = 0.82
 /** Working size for fingerprinting. Small is fine and much faster. */
 const ANALYSIS_DIMENSION = 128
 
+/** Long edge of the grid rendition. Twice a 3-across cell on a 3x phone. */
+const THUMB_DIMENSION = 320
+const THUMB_QUALITY = 0.72
+
 function scaledSize(width: number, height: number, max: number) {
   if (width <= max && height <= max) return { width, height }
   const scale = max / Math.max(width, height)
@@ -66,9 +70,34 @@ function canvasToBlob(canvas: HTMLCanvasElement, quality = JPEG_QUALITY): Promis
 
 export interface PreparedPhoto {
   blob: Blob
+  /** The grid rendition, stored beside the photo under the same id. */
+  thumb: Blob
   signature: ImageSignature
   width: number
   height: number
+}
+
+/**
+ * A thumbnail from an already-stored photo, for the backfill.
+ *
+ * Old logs predate the thumbs store; their grids were decoding full-size
+ * JPEGs. This regenerates the small rendition from the copy on the device —
+ * derived data, like a fingerprint, so failure is skippable and nothing is
+ * ever lost by it.
+ */
+export async function makeThumb(source: Blob): Promise<Blob | null> {
+  try {
+    const bitmap = await toBitmap(source)
+    try {
+      const size = scaledSize(bitmap.width, bitmap.height, THUMB_DIMENSION)
+      const canvas = drawTo(bitmap, size.width, size.height)
+      return await canvasToBlob(canvas, THUMB_QUALITY)
+    } finally {
+      bitmap.close()
+    }
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -129,12 +158,12 @@ async function prepareInWorker(source: Blob): Promise<PreparedPhoto | null> {
       clearTimeout(timeout)
       active.removeEventListener('message', onMessage)
 
-      const { ok, blob, signature, width, height } = event.data
-      if (!ok || !blob || !signature || width === undefined || height === undefined) {
+      const { ok, blob, thumb, signature, width, height } = event.data
+      if (!ok || !blob || !thumb || !signature || width === undefined || height === undefined) {
         resolve(null)
         return
       }
-      resolve({ blob, signature, width, height })
+      resolve({ blob, thumb, signature, width, height })
     }
 
     active.addEventListener('message', onMessage)
@@ -160,6 +189,10 @@ export async function preparePhoto(source: Blob): Promise<PreparedPhoto> {
     const canvas = drawTo(bitmap, stored.width, stored.height)
     const blob = await canvasToBlob(canvas)
 
+    const thumbSize = scaledSize(bitmap.width, bitmap.height, THUMB_DIMENSION)
+    const thumbCanvas = drawTo(bitmap, thumbSize.width, thumbSize.height)
+    const thumb = await canvasToBlob(thumbCanvas, THUMB_QUALITY)
+
     const analysis = scaledSize(bitmap.width, bitmap.height, ANALYSIS_DIMENSION)
     const analysisCanvas = drawTo(bitmap, analysis.width, analysis.height)
     const context = analysisCanvas.getContext('2d', { willReadFrequently: true })!
@@ -171,7 +204,13 @@ export async function preparePhoto(source: Blob): Promise<PreparedPhoto> {
       height: imageData.height,
     }
 
-    return { blob, signature: computeSignature(raw), width: stored.width, height: stored.height }
+    return {
+      blob,
+      thumb,
+      signature: computeSignature(raw),
+      width: stored.width,
+      height: stored.height,
+    }
   } finally {
     bitmap.close()
   }

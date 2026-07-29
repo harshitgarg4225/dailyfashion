@@ -20,6 +20,8 @@ import type { ImageSignature } from '../types'
 const MAX_DIMENSION = 1400
 const JPEG_QUALITY = 0.82
 const ANALYSIS_DIMENSION = 128
+const THUMB_DIMENSION = 320
+const THUMB_QUALITY = 0.72
 
 export interface PhotoWorkerRequest {
   id: number
@@ -30,6 +32,7 @@ export interface PhotoWorkerResponse {
   id: number
   ok: boolean
   blob?: Blob
+  thumb?: Blob
   signature?: ImageSignature
   width?: number
   height?: number
@@ -58,6 +61,12 @@ self.onmessage = async (event: MessageEvent<PhotoWorkerRequest>) => {
     const storedCanvas = draw(bitmap, stored.width, stored.height)
     const blob = await storedCanvas.convertToBlob({ type: 'image/jpeg', quality: JPEG_QUALITY })
 
+    // The grid rendition, made here while the bitmap is already decoded —
+    // making it later would mean decoding the full JPEG a second time.
+    const thumbSize = scaledSize(bitmap.width, bitmap.height, THUMB_DIMENSION)
+    const thumbCanvas = draw(bitmap, thumbSize.width, thumbSize.height)
+    const thumb = await thumbCanvas.convertToBlob({ type: 'image/jpeg', quality: THUMB_QUALITY })
+
     const analysis = scaledSize(bitmap.width, bitmap.height, ANALYSIS_DIMENSION)
     const analysisCanvas = draw(bitmap, analysis.width, analysis.height)
     const context = analysisCanvas.getContext('2d', { willReadFrequently: true })!
@@ -67,6 +76,7 @@ self.onmessage = async (event: MessageEvent<PhotoWorkerRequest>) => {
       id,
       ok: true,
       blob,
+      thumb,
       signature: computeSignature({
         data: imageData.data,
         width: imageData.width,

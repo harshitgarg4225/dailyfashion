@@ -105,7 +105,7 @@ export function WeekScreen({
             <div className="week-strip">
               {week.photoIds.slice(0, CARD_PHOTOS).map((id) => (
                 <div key={id} className="week-frame">
-                  <Photo photoId={id} alt="" className="week-photo" />
+                  <Photo photoId={id} alt="" className="week-photo" thumb />
                 </div>
               ))}
             </div>

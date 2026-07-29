@@ -20,6 +20,7 @@ import { mediumLabel, toDateKey } from '../lib/dates'
 
 export interface SeedPhoto {
   blob: Blob
+  thumb: Blob
   signature: Awaited<ReturnType<typeof preparePhoto>>['signature']
   date: string
   felt: FeltScore | null
@@ -43,6 +44,7 @@ export function OnboardingScreen({ onDone }: { onDone: (seeds: SeedPhoto[]) => v
         const [photo, date] = await Promise.all([preparePhoto(file), inferPhotoDate(file)])
         prepared.push({
           blob: photo.blob,
+          thumb: photo.thumb,
           signature: photo.signature,
           date: toDateKey(date),
           felt: null,
