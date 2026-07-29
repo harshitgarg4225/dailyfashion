@@ -229,6 +229,7 @@ export const copy = {
     shareBody:
       'Makes one image of this week’s photos to send wherever you like. It carries what you wore — never how the days felt, and never your notes.',
     shareGo: 'Make the image',
+    storyGo: 'Make it story-sized',
     sharePreparing: 'Putting it together…',
     shareShared: 'Sent to your share sheet.',
     shareSaved: 'Saved to your device.',

@@ -868,6 +868,15 @@ export default function App() {
               ...log.entries
                 .filter((e) => e.garment?.source === 'model')
                 .map((e) => e.garment!.name),
+              // Occasion starters, last. Tags already power search and get
+              // their own insight cards, which makes "gym" a first-class use
+              // of the log — these words just make that discoverable before
+              // anyone has invented their own vocabulary.
+              'work',
+              'gym',
+              'date',
+              'home',
+              'travel',
             ]),
           ]}
           onDone={(result) => void applyFollowUp(followUp.entryId, result)}

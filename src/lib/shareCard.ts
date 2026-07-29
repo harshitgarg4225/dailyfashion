@@ -25,6 +25,12 @@ import { mediumLabel } from './dates'
 export const CARD_WIDTH = 1080
 export const CARD_HEIGHT = 1350
 
+/** 9:16 — the story. Same layout grammar, taller paper. */
+export const STORY_WIDTH = 1080
+export const STORY_HEIGHT = 1920
+
+export type CardFormat = 'post' | 'story'
+
 /** At most six frames — a contact sheet, not a scroll. */
 const MAX_PHOTOS = 6
 
@@ -98,17 +104,27 @@ export interface ShareCardInput {
   handle?: string
   /** The masthead label. The year card reuses this whole layout. */
   eyebrow?: string
+  /** 'post' (4:5, the default) or 'story' (9:16). Same grammar, taller paper. */
+  format?: CardFormat
 }
 
-export async function renderWeekCard({ week, photos, handle, eyebrow }: ShareCardInput): Promise<Blob> {
+export async function renderWeekCard({
+  week,
+  photos,
+  handle,
+  eyebrow,
+  format = 'post',
+}: ShareCardInput): Promise<Blob> {
+  const width = format === 'story' ? STORY_WIDTH : CARD_WIDTH
+  const height = format === 'story' ? STORY_HEIGHT : CARD_HEIGHT
   const canvas = document.createElement('canvas')
-  canvas.width = CARD_WIDTH
-  canvas.height = CARD_HEIGHT
+  canvas.width = width
+  canvas.height = height
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('canvas unavailable')
 
   ctx.fillStyle = PAPER
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT)
+  ctx.fillRect(0, 0, width, height)
   ctx.textBaseline = 'alphabetic'
 
   // --- masthead ---------------------------------------------------------
@@ -132,7 +148,7 @@ export async function renderWeekCard({ week, photos, handle, eyebrow }: ShareCar
   ctx.lineWidth = 2
   ctx.beginPath()
   ctx.moveTo(MARGIN, MARGIN + 216)
-  ctx.lineTo(CARD_WIDTH - MARGIN, MARGIN + 216)
+  ctx.lineTo(width - MARGIN, MARGIN + 216)
   ctx.stroke()
 
   // --- the contact sheet ------------------------------------------------
@@ -144,7 +160,7 @@ export async function renderWeekCard({ week, photos, handle, eyebrow }: ShareCar
   // not. Everything below reserves its space first; the photographs take what
   // remains.
   const gridTop = MARGIN + 264
-  const footRuleY = CARD_HEIGHT - MARGIN - 56
+  const footRuleY = height - MARGIN - 56
 
   const colours = week.colours.slice(0, 3).map((c) => c.colour)
   const garments = week.garments.slice(0, 3)
@@ -153,7 +169,7 @@ export async function renderWeekCard({ week, photos, handle, eyebrow }: ShareCar
   const shown = photos.slice(0, MAX_PHOTOS)
   const columns = 3
   const rows = Math.max(1, Math.ceil(shown.length / columns))
-  const cell = (CARD_WIDTH - MARGIN * 2 - GUTTER * (columns - 1)) / columns
+  const cell = (width - MARGIN * 2 - GUTTER * (columns - 1)) / columns
 
   /*
    * The caption hangs from the footer, not from the grid.
@@ -180,10 +196,9 @@ export async function renderWeekCard({ week, photos, handle, eyebrow }: ShareCar
    * an editorial layout would do with it anyway.
    */
   const available = captionTop - (blocks === 0 ? 0 : CAPTION_LEAD) - gridTop
-  const cellHeight = Math.max(
-    0,
-    Math.min(cell * 1.25, (available - GUTTER * (rows - 1)) / rows),
-  )
+  // Story paper is taller, so frames may be too: 3:4 there, 4:5 on a post.
+  const tallest = format === 'story' ? cell * (4 / 3) : cell * 1.25
+  const cellHeight = Math.max(0, Math.min(tallest, (available - GUTTER * (rows - 1)) / rows))
 
   // Centred in whatever the cap left over, so a short week reads as composed
   // rather than as a layout that ran out of pictures.
@@ -249,13 +264,13 @@ export async function renderWeekCard({ week, photos, handle, eyebrow }: ShareCar
   ctx.strokeStyle = LINE
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(MARGIN, CARD_HEIGHT - MARGIN - 56)
-  ctx.lineTo(CARD_WIDTH - MARGIN, CARD_HEIGHT - MARGIN - 56)
+  ctx.moveTo(MARGIN, height - MARGIN - 56)
+  ctx.lineTo(width - MARGIN, height - MARGIN - 56)
   ctx.stroke()
 
   ctx.fillStyle = INK_MUTED
   ctx.font = `500 20px ${BODY}`
-  letterspaced(ctx, handle ?? 'DAILY FASHION', MARGIN, CARD_HEIGHT - MARGIN - 8, 5)
+  letterspaced(ctx, handle ?? 'DAILY FASHION', MARGIN, height - MARGIN - 8, 5)
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(

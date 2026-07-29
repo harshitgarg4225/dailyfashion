@@ -43,7 +43,12 @@ export function WeekScreen({
   const [note, setNote] = useState<string | null>(null)
 
   /** Renders and hands over a card — the week's by default, the year's on request. */
-  const share = async (wrap = week, eyebrow?: string, stem = 'daily-fashion') => {
+  const share = async (
+    wrap = week,
+    eyebrow?: string,
+    stem = 'daily-fashion',
+    format: 'post' | 'story' = 'post',
+  ) => {
     setBusy(true)
     setNote(null)
     try {
@@ -56,13 +61,13 @@ export function WeekScreen({
           .map((blob) => createImageBitmap(blob)),
       )
 
-      const card = await renderWeekCard({ week: wrap, photos: bitmaps, eyebrow })
+      const card = await renderWeekCard({ week: wrap, photos: bitmaps, eyebrow, format })
       // Decoded bitmaps hold real memory; a week of 1400px frames is not free.
       bitmaps.forEach((bitmap) => bitmap.close())
 
       const outcome = await shareImage({
         blob: card,
-        filename: `${stem}-${wrap.to}.jpg`,
+        filename: `${stem}${format === 'story' ? '-story' : ''}-${wrap.to}.jpg`,
         title: copy.week.shareCaption,
       })
 
@@ -178,6 +183,16 @@ export function WeekScreen({
                 onClick={() => void share(week)}
               >
                 {busy ? copy.week.sharePreparing : copy.week.shareGo}
+              </button>
+              {/* 9:16 — made for the story, where an outfit log actually gets
+                  posted. Same grammar, taller paper. */}
+              <button
+                type="button"
+                className="btn btn--quiet btn--block"
+                disabled={busy}
+                onClick={() => void share(week, undefined, 'daily-fashion', 'story')}
+              >
+                {busy ? copy.week.sharePreparing : copy.week.storyGo}
               </button>
               <p className="note">{copy.week.shareHint}</p>
             </>
