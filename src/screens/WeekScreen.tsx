@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { copy } from '../lib/copy'
 import { buildWeekWrapped, buildYearWrapped, MIN_DAYS_FOR_WRAP } from '../lib/weekWrapped'
 import { themeForWeek } from '../lib/theme'
+import { track } from '../lib/telemetry'
 import { renderWeekCard } from '../lib/shareCard'
 import { shareImage } from '../lib/share'
 import { chipLabel } from '../lib/chips'
@@ -71,6 +72,7 @@ export function WeekScreen({
         title: copy.week.shareCaption,
       })
 
+      if (outcome !== 'dismissed') void track('share_card')
       if (outcome === 'shared') setNote(copy.week.shareShared)
       else if (outcome === 'saved') setNote(copy.week.shareSaved)
     } catch {

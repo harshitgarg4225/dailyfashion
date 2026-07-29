@@ -17,14 +17,17 @@ and an on-device vision model (MobileNet, bundled same-origin, eleven megabytes)
 suggests a name for what you wore. The suggestion is always editable, your own
 word permanently outranks the model's, and a settings switch turns it off.
 
-**Nothing leaves the device.** No account, no sign-up, no sync, no analytics. This
-is a property enforced by the browser, not a promise in a policy, and it stands on
-two legs. The page is served with `connect-src 'self'`, so every destination except
-the app's own origin is unreachable — there is no analytics endpoint or third-party
-API it *can* reach. And that origin accepts no data: `server.js` answers 405 to every
-method that can carry a body, on every path. The end-to-end suite fails the build if
-a cross-origin request is attempted, if the app ever issues anything but a GET, or if
-the server starts accepting a POST.
+**The log never leaves the device.** No account, no sign-up, no sync. Photos,
+notes and felt scores are stored on-device only, and that part is still a
+browser-enforced property: `connect-src 'self'` makes every third-party
+destination unreachable, and outside `/api` the server answers 405 to every
+body-carrying method on every path, so the log has nowhere to arrive even in
+principle. What changed: the app now has **opt-in usage analytics** — off by
+default, a switch in Settings — which sends event names ("a photo was taken
+today") and an optional self-reported profile to our own origin, and nothing
+else; the server drops unknown event names and oversized bodies. The e2e suite
+enforces both halves: a session with the switch off issues no data-carrying
+request at all, and `/api` accepts only its own narrow shapes.
 
 The directive is `'self'` rather than `'none'` so the web build can load the
 on-device vision model that names garments; a model is a file, and a file has to be
@@ -69,9 +72,11 @@ Live at `dailyfashion-web-production.up.railway.app` (project `Dailyfashion`).
 
 Both the page and the response header send
 `default-src 'self'; connect-src 'self'; style-src 'self'` with no
-`unsafe-inline`. The server has no route that accepts a request body, which is
-half the privacy guarantee and is asserted by the browser suite — keep it that
-way. Pushes to the deployed branch redeploy automatically.
+`unsafe-inline`. Outside `/api`, the server has no route that accepts a request body — that
+remains half the privacy guarantee and is asserted by the browser suite. The
+`/api` routes (opt-in events, optional profile, read-only ads) live in `api.js`
+and need a `DATABASE_URL`; without one they decline politely. Pushes to the
+deployed branch redeploy automatically.
 
 ## Layout
 

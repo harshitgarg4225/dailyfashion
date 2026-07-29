@@ -70,7 +70,7 @@ async function dismissOverlays(page: Page) {
 }
 
 async function completeOnboarding(page: Page) {
-  await expect(page.getByRole('heading', { name: /nothing leaves this phone/i })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /your photos stay on this phone/i })).toBeVisible()
   // Each step's button names where it goes, rather than three identical "Next"s.
   await page.getByRole('button', { name: /how it works/i }).click()
   await page.getByRole('button', { name: /one last thing/i }).click()
@@ -285,7 +285,7 @@ test.describe('privacy is a property, not a promise', () => {
      * to receive it — including on paths that do not exist, since the
      * single-page fallback would otherwise answer them with the shell.
      */
-    const paths = ['/', '/healthz', '/collect', '/api/events', '/index.html']
+    const paths = ['/', '/healthz', '/collect', '/index.html', '/upload']
     const methods = ['POST', 'PUT', 'PATCH', 'DELETE'] as const
 
     for (const path of paths) {
@@ -299,6 +299,31 @@ test.describe('privacy is a property, not a promise', () => {
         expect(response.headers()['allow']).toBe('GET, HEAD')
       }
     }
+  })
+
+  test('the API accepts only its own narrow shapes', async ({ request }) => {
+    /*
+     * The one deliberate exception to the rule above, held to its shape:
+     * unknown API paths are 404, a photo-sized body is refused outright,
+     * and with no database provisioned the events endpoint declines rather
+     * than pretends. Nothing under /api will ever accept the log.
+     */
+    const unknown = await request.post(`${BASE}/api/anything-else`, {
+      data: 'x',
+      failOnStatusCode: false,
+    })
+    expect(unknown.status()).toBe(404)
+
+    const oversized = await request.post(`${BASE}/api/events`, {
+      data: 'x'.repeat(64 * 1024),
+      failOnStatusCode: false,
+    })
+    // Too large is a hard refusal whether or not a database exists.
+    expect([400, 503]).toContain(oversized.status())
+
+    const ads = await request.get(`${BASE}/api/ads`)
+    expect(ads.status()).toBe(200)
+    expect(await ads.json()).toEqual({ ads: [] })
   })
 })
 
@@ -326,7 +351,7 @@ test.describe('the download page', () => {
   test('leads back into the app', async ({ page }) => {
     await page.goto(`${BASE}/download`)
     await page.getByRole('link', { name: /open it in your browser/i }).click()
-    await expect(page.getByRole('heading', { name: /nothing leaves this phone/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /your photos stay on this phone/i })).toBeVisible()
   })
 })
 

@@ -12,6 +12,7 @@ import { OnboardingScreen, type SeedPhoto } from './screens/OnboardingScreen'
 import { LockScreen } from './screens/LockScreen'
 import { WriteScreen } from './screens/WriteScreen'
 import { GymScreen } from './screens/GymScreen'
+import { OffersScreen } from './screens/OffersScreen'
 import { SummaryScreen } from './screens/SummaryScreen'
 import { WeekScreen } from './screens/WeekScreen'
 import { CaptureFollowUp, type FollowUpResult } from './screens/CaptureFollowUp'
@@ -52,6 +53,7 @@ import { requestPersistence } from './lib/storage'
 import { refingerprintOldEntries } from './lib/refingerprint'
 import { nameEntryPhoto, nameOldEntries } from './lib/garmentNamer'
 import { thumbOldEntries } from './lib/thumbs'
+import { track } from './lib/telemetry'
 import { hasSystemScheduledReminders } from './lib/platform'
 import { cancelNativeReminder, onReminderAction, scheduleNativeReminder } from './lib/nativeReminders'
 import { getLock } from './db/db'
@@ -60,6 +62,7 @@ import type { LockRecord } from './lib/lock'
 type Screen =
   | 'camera'
   | 'gym'
+  | 'offers'
   | 'write'
   | 'tonight'
   | 'log'
@@ -90,6 +93,7 @@ function visibleTabs(entryCount: number): Screen[] {
 const TAB_LABELS: Record<Screen, string> = {
   camera: 'Capture',
   gym: 'Training',
+  offers: 'Offers',
   write: 'Write',
   tonight: 'Tonight',
   log: 'Journal',
@@ -193,6 +197,8 @@ export default function App() {
   useEffect(() => {
     if (log.loading || !log.settings.onboarded) return
     void requestPersistence()
+    // A no-op unless the user opted into usage sharing in Settings.
+    void track('app_open')
   }, [log.loading, log.settings.onboarded])
 
   /*
@@ -342,6 +348,7 @@ export default function App() {
       }
       await putEntry(entry)
       await log.refresh()
+      void track('capture')
 
       // Naming runs after the save, never before it. The entry is already
       // durable; the model's word arrives whenever it arrives.
@@ -554,6 +561,7 @@ export default function App() {
       // rather than left to drift away from its entries.
       if (updated.outfit_id) await recomputeOutfit(updated.outfit_id)
       await log.refresh()
+      void track('reflection')
 
       flash(copy.tonight.savedThanks, {
         label: copy.tonight.undo,
@@ -737,6 +745,9 @@ export default function App() {
       case 'gym':
         return <GymScreen today={today} />
 
+      case 'offers':
+        return <OffersScreen />
+
       case 'shortlist':
         return (
           <ShortlistScreen
@@ -814,6 +825,7 @@ export default function App() {
             today={today}
             sponsorShown={sponsorShown}
             onSponsorShown={() => setSponsorShown(true)}
+            onOpenOffers={() => setScreen('offers')}
           />
         )
 

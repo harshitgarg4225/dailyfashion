@@ -1,19 +1,20 @@
 import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, join, normalize, resolve } from 'node:path'
+import { handleApi } from './api.js'
 
 /**
- * Static file server for the built PWA.
+ * The server: static files, plus exactly one narrow API.
  *
- * This is the only server-side code in the project, and it is worth being
- * precise about what it does: it hands out HTML, JS, CSS and icons. It has no
- * database, no API routes, no session handling, and no logging of anything a
- * user does. There is nowhere for a photo or a rating to go even in principle,
- * because nothing here accepts a request body.
+ * The original contract was "nothing here accepts a request body, anywhere".
+ * The product now collects opt-in usage analytics, so the contract is
+ * narrower but still exact and still testable:
  *
- * That is what makes the claim in onboarding survive being hosted. "Nothing
- * leaves this phone" would be a lie if the origin serving the app also had an
- * endpoint willing to receive it. It doesn't.
+ *  - Under /api: consented usage events, an optional profile, and read-only
+ *    ads. See api.js for what those endpoints refuse.
+ *  - Everywhere else: the old rule holds byte for byte — any body-carrying
+ *    method gets 405 before routing, so a photograph still has nowhere to
+ *    arrive. The e2e suite asserts both halves.
  */
 
 const PORT = Number(process.env.PORT ?? 3000)
@@ -95,23 +96,21 @@ async function tryFile(pathname) {
 }
 
 const server = createServer(async (req, res) => {
+  const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
+
+  // The API is the one deliberate exception to the no-bodies rule below,
+  // and it is routed first so the exception is exactly /api/* and nothing else.
+  if (await handleApi(req, res, url, send)) return
+
   /*
-   * Half of the privacy guarantee lives on this line.
-   *
-   * Since `connect-src` allows same-origin, the browser would let the page
-   * POST to this server. Refusing every body-carrying method — before routing,
-   * for every path that exists and every path that does not — means there is
-   * nowhere for that request to land. The app cannot upload anything here
-   * because here does not accept uploads.
-   *
-   * Anything added below this line that reads a request body breaks the claim
-   * in onboarding. The end-to-end suite asserts this and will fail the build.
+   * Outside /api, the original guarantee holds byte for byte: any
+   * body-carrying method gets 405 before routing, for every path that exists
+   * and every path that does not. Photographs and notes still have nowhere
+   * to arrive. The end-to-end suite asserts this and will fail the build.
    */
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     return send(res, 405, 'Method Not Allowed', { Allow: 'GET, HEAD' })
   }
-
-  const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
 
   // Railway's healthcheck.
   if (url.pathname === '/healthz') {

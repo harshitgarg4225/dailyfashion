@@ -76,9 +76,14 @@ describe('the ban list', () => {
 
 describe('what the copy promises', () => {
   it('states the privacy claim plainly enough to be checked', () => {
-    const text = `${copy.onboarding.privacyTitle} ${copy.onboarding.privacyBody}`
+    // The airplane-mode proof moved to its own line when the claim was
+    // narrowed for opt-in analytics; it is still made, and still true.
+    const text = `${copy.onboarding.privacyTitle} ${copy.onboarding.privacyBody} ${copy.onboarding.privacyProof}`
     expect(text).toMatch(/airplane mode/i)
     expect(text).toMatch(/no account/i)
+    // The narrowed claim's load-bearing words, pinned.
+    expect(text).toMatch(/never uploaded/i)
+    expect(text).toMatch(/never the photo/i)
   })
 
   it('never frames a gap as a failure', () => {

@@ -56,21 +56,21 @@ export const copy = {
 
   onboarding: {
     /*
-     * J4: this claim has to be literally true, not aspirational. It is.
+     * J4, amended when the product started collecting opt-in analytics —
+     * and amended here, out loud, rather than left to quietly rot.
      *
-     * The app sends nothing anywhere. `connect-src 'self'` lets it fetch its
-     * own files — the vision model that names garments is one of them — and
-     * makes every other destination unreachable; the origin those files come
-     * from answers 405 to anything carrying a body. Photos and notes never
-     * leave IndexedDB except through export, which the user initiates and
-     * which writes a file to their own device.
+     * The claim is now narrower and still literally true: the LOG never
+     * leaves. Photos, notes and felt scores have no endpoint shaped like
+     * them anywhere (the server answers 405 to any body outside /api, and
+     * /api accepts only a short list of event names). Usage counts are sent
+     * only after the user flips the switch in Settings, which ships off.
      *
-     * If a future change adds a host to connect-src or a route that accepts a
-     * body, this string stops being true and has to change with it.
+     * If a future change gives the log a way out, this string stops being
+     * true and has to change with it.
      */
-    privacyTitle: 'Nothing leaves this phone',
+    privacyTitle: 'Your photos stay on this phone',
     privacyBody:
-      'Your photos and notes are stored on this device only. There is no account, no sign-up, and the app never sends anything anywhere. You can turn on airplane mode and it works exactly the same.',
+      'Your photos, notes and how your days felt live on this device only — there is no account and they are never uploaded. If you choose to share usage counts with us in Settings (it starts off), the app sends things like "a photo was taken today". Never the photo.',
     privacyProof: 'Want to check? Turn on airplane mode and keep using it.',
 
     whatTitle: 'Two questions a day',
@@ -192,6 +192,19 @@ export const copy = {
   // The answer to "what am I getting out of this?", told with the log itself.
   sponsor: {
     label: 'Sponsored',
+  },
+
+  /*
+   * The one page that shows ads. Labelled as such in its first word, reached
+   * only on purpose, served from our own database — no ad network, no
+   * third-party script, and the CSP still refuses every cross-origin request.
+   */
+  offers: {
+    title: 'Offers',
+    sub: 'Things from sponsors, on one page, only when you open it.',
+    empty: 'Nothing here right now.',
+    open: 'Have a look',
+    how: 'These are placed by us, shown from our own server, and nothing about you goes to anyone when you read this page.',
   },
 
   summary: {
@@ -448,6 +461,19 @@ export const copy = {
       'Your log has grown and has never been backed up. An export takes a minute and lives wherever you put it.',
     exportNudgeStale:
       'It has been a while since the last export. A fresh one keeps your history safe from a cleared browser.',
+    shareUsage: 'Share usage counts with us',
+    shareUsageHint:
+      'Off unless you turn it on. When on, the app tells us things like "a photo was taken today" — never the photo, never your notes, never how a day felt.',
+    profileIntro:
+      'If you want to, tell us who this is for. Every field is optional, it is sent once when you save, and none of it touches your log.',
+    profileAge: 'Age',
+    profileGender: 'Gender',
+    profileLocation: 'Location',
+    profileProfession: 'Profession',
+    profileSkip: 'Prefer not to say',
+    profileSave: 'Send it to us',
+    profileSaved: 'Received. Thank you.',
+    profileFailed: 'That did not go through. It can wait.',
     garmentNaming: 'Suggest garment names',
     garmentNamingHint:
       'A small model on this device guesses what you wore — "black cardigan". Nothing is sent anywhere, and you can always correct it.',

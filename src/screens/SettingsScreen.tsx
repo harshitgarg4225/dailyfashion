@@ -4,6 +4,7 @@ import { copy } from '../lib/copy'
 import { Sheet, Switch } from '../app/controls'
 import { buildExport, importArchive } from '../lib/exportData'
 import { shareArchive } from '../lib/share'
+import { AGE_BANDS, disableSharing, enableSharing, sendProfile, track } from '../lib/telemetry'
 import { isSealedArchive, sealArchive, unsealArchive } from '../lib/cryptoExport'
 import { saveLock, wipeEverything } from '../db/db'
 import {
@@ -71,6 +72,10 @@ export function SettingsScreen({
   const [pass1, setPass1] = useState('')
   const [pass2, setPass2] = useState('')
   const [lockError, setLockError] = useState<string | null>(null)
+  const [ageBand, setAgeBand] = useState('')
+  const [gender, setGender] = useState('')
+  const [location, setLocation] = useState('')
+  const [profession, setProfession] = useState('')
 
   const closeLockForm = () => {
     setLockStep('off')
@@ -183,6 +188,7 @@ export function SettingsScreen({
       if (outcome !== 'dismissed') {
         setStatus(outcome === 'shared' ? copy.settings.exportShared : copy.settings.exportSaved)
         onChange({ last_export_at: Date.now() })
+        void track('export')
       }
     } finally {
       setSealPass('')
@@ -378,6 +384,91 @@ export function SettingsScreen({
             onChange={(next) => onChange({ garment_naming: next })}
           />
         </div>
+
+        {/*
+          * Usage sharing: off until this switch, and the hint says exactly
+          * what turning it on sends — event names, never the log. The
+          * profile form below it is a form, typed by the user, sent once on
+          * Save: the most literal version of "the user gives us this".
+          */}
+        <div className="row">
+          <span className="row-text">
+            {copy.settings.shareUsage}
+            <small>{copy.settings.shareUsageHint}</small>
+          </span>
+          <Switch
+            checked={settings.share_usage}
+            label={copy.settings.shareUsage}
+            onChange={(next) => {
+              void (next ? enableSharing() : disableSharing()).then(() =>
+                onChange({ share_usage: next }),
+              )
+            }}
+          />
+        </div>
+
+        {settings.share_usage ? (
+          <form
+            className="stack profile-form"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void sendProfile({
+                age_band: ageBand || null,
+                gender: gender.trim() || null,
+                location: location.trim() || null,
+                profession: profession.trim() || null,
+              }).then((ok) =>
+                setStatus(ok ? copy.settings.profileSaved : copy.settings.profileFailed),
+              )
+            }}
+          >
+            <p className="note">{copy.settings.profileIntro}</p>
+            <label className="field">
+              <span className="field-label">{copy.settings.profileAge}</span>
+              <select value={ageBand} onChange={(event) => setAgeBand(event.target.value)}>
+                <option value="">{copy.settings.profileSkip}</option>
+                {AGE_BANDS.map((band) => (
+                  <option key={band.id} value={band.id}>
+                    {band.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span className="field-label">{copy.settings.profileGender}</span>
+              <input
+                type="text"
+                value={gender}
+                maxLength={32}
+                placeholder={copy.settings.profileSkip}
+                onChange={(event) => setGender(event.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">{copy.settings.profileLocation}</span>
+              <input
+                type="text"
+                value={location}
+                maxLength={80}
+                placeholder={copy.settings.profileSkip}
+                onChange={(event) => setLocation(event.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">{copy.settings.profileProfession}</span>
+              <input
+                type="text"
+                value={profession}
+                maxLength={80}
+                placeholder={copy.settings.profileSkip}
+                onChange={(event) => setProfession(event.target.value)}
+              />
+            </label>
+            <button type="submit" className="btn btn--ghost btn--block">
+              {copy.settings.profileSave}
+            </button>
+          </form>
+        ) : null}
 
         <div className="row">
           <span className="row-text">

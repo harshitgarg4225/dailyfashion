@@ -117,13 +117,14 @@ request, still run against it.
 
 ## Store listing notes
 
-Both stores ask what data the app collects. The answer is none: no account, no
-analytics, nothing transmitted. In the packaged build every asset — the shell,
-the fonts, the vision model — is loaded from the local bundle, so `connect-src
-'self'` resolves to the device itself and no request reaches the network at
-all. Declaring that accurately is straightforward and is worth making prominent
-in the listing — it is the product's main differentiator and the thing most
-competitors cannot say.
+Both stores ask what data the app collects. The honest answer since telemetry
+shipped: photos, notes and felt scores are never collected; optional, opt-in
+usage counts and an optional self-reported profile are, when the user turns
+the switch on. Note that in the packaged build the bundle's origin has no API,
+so the native apps currently transmit nothing regardless of the switch — but
+declare the capability anyway; declarations describe the app, not the build
+quirk. The photos-never-leave half is still the differentiator worth making
+prominent in the listing.
 
 Camera and notification permissions are both requested in context, at the
 moment they are first needed, rather than at launch.

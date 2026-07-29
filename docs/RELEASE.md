@@ -161,15 +161,18 @@ Set the team under *Signing & Capabilities*, then *Product → Archive*.
 Ahead of a submission, the two answers reviewers ask for:
 
 - **Account required?** No. There is no account and no server.
-- **Data collected?** None. Everything is on-device. The app transmits nothing,
-  and that is enforced by the Content-Security-Policy it runs under rather than
-  by promise: `connect-src 'self'` makes every destination except the app's own
-  origin unreachable, and in the packaged build that origin is the local asset
-  bundle. No request leaves the device, and there is no server to receive one.
+- **Data collected?** Photos, notes and felt scores: never — they are
+  on-device only and have no endpoint shaped like them. Usage analytics:
+  **optional and opt-in** — event counts (app opened, photo taken, card
+  shared) plus an optional self-reported profile (age band, gender, location,
+  profession), sent to our own origin only after the user turns the Settings
+  switch on. It ships off.
 
-  Answer "no" to every data-type checkbox, including the diagnostics and crash
-  categories — no crash reporter is linked. Say the same thing in the listing
-  itself, since it is the differentiator most competitors cannot claim.
+  Declare accordingly: "App interactions" and (if the user opts in)
+  self-reported "Personal info", both marked optional and user-controllable;
+  photos and health-adjacent categories stay "not collected". Do not answer
+  "no data collected" any more — that stopped being true when telemetry
+  shipped, and a false declaration is a listing-removal offence.
 
 ---
 

@@ -26,12 +26,15 @@ export function SummaryScreen({
   today,
   sponsorShown,
   onSponsorShown,
+  onOpenOffers,
 }: {
   input: SummaryInput
   entries: readonly Entry[]
   today: string
   sponsorShown: boolean
   onSponsorShown: () => void
+  /** Opens the one page that shows ads. A quiet door, never an interruption. */
+  onOpenOffers?: (() => void) | undefined
 }) {
   const summary = buildSummary(input)
 
@@ -139,6 +142,12 @@ export function SummaryScreen({
         slot="summary"
         alreadyShownThisSession={sponsorShown}
       />
+          {onOpenOffers ? (
+        <button type="button" className="btn btn--quiet btn--block" onClick={onOpenOffers}>
+          {copy.offers.title}
+        </button>
+      ) : null}
+
     </div>
   )
 }

@@ -21,11 +21,12 @@
       analytics endpoint, ad network and third-party API in existence, is still
       refused by the browser before the request leaves the device.
 
-      What replaces the missing strictness is the origin itself: server.js
-      answers 405 to every method that can carry a body, so the one host this
-      page can talk to has no route that accepts data. Two independent
-      properties — the browser blocks everyone else, the server accepts nothing
-      — and the end-to-end suite fails the build if either stops holding.
+      What replaces the missing strictness is the origin itself: outside
+      /api, server.js answers 405 to every method that can carry a body, and
+      /api accepts only a short list of opt-in usage event names — never
+      anything shaped like a photo or a note. Two properties — the browser
+      blocks everyone else, the server refuses the log — and the end-to-end
+      suite fails the build if either stops holding.
 
       `img-src` allows blob: and data: because that is how the app renders
       photos out of IndexedDB. Neither can reach the network.

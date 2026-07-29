@@ -65,6 +65,8 @@ export const DEFAULT_SETTINGS: Settings = {
   // machine opinion at all, which is a preference worth honouring.
   garment_naming: true,
   last_export_at: null,
+  share_usage: false,
+  client_id: null,
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null

@@ -28,7 +28,7 @@
  * theoretical failure: it shipped, and it hid two whole features from the first
  * person to open the app.
  */
-const CACHE = 'daily-fashion-v5'
+const CACHE = 'daily-fashion-v6'
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
@@ -55,6 +55,11 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
+
+  // The API is live data and consented traffic — never cached, never
+  // served stale, never intercepted. Ads and events go to the network or
+  // they go nowhere.
+  if (url.pathname.startsWith('/api/')) return
 
   // Navigations fall back to the cached shell so a cold launch works offline.
   if (request.mode === 'navigate') {

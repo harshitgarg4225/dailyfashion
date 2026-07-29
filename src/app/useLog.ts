@@ -60,6 +60,8 @@ const EMPTY: LogState = {
     softened_at: null,
     garment_naming: true,
     last_export_at: null,
+    share_usage: false,
+    client_id: null,
     last_reminder_for: null,
   },
   dismissed: [],

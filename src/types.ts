@@ -224,4 +224,12 @@ export interface Settings {
   garment_naming: boolean
   /** When the last export finished. Drives the quiet back-up nudge. */
   last_export_at: number | null
+  /**
+   * Whether the app may report anonymous usage counts to us. Off by
+   * default and off until the user flips it themselves; see telemetry.ts
+   * for the exact — and deliberately short — list of what can be sent.
+   */
+  share_usage: boolean
+  /** Pseudonymous id minted at first consent. Null until then. */
+  client_id: string | null
 }
