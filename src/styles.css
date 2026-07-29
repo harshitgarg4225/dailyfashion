@@ -1502,3 +1502,54 @@ input[type='time'] {
   color: var(--ink-faint);
   font-size: 0.72rem;
 }
+
+/* --- garment naming ------------------------------------------------------ */
+
+/*
+ * The garment line sits between the photograph and the questions: quiet,
+ * one line, visibly editable. The model's suggestion and the user's own word
+ * share a shape so correcting one into the other moves nothing around.
+ */
+.garment-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.95rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.garment-line--named {
+  font-style: italic;
+}
+
+.garment-edit {
+  font-style: normal;
+  font-size: 0.8rem;
+  opacity: 0.55;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+form.garment-line {
+  cursor: default;
+}
+
+.garment-line input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  outline: none;
+}

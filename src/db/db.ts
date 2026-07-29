@@ -47,6 +47,10 @@ export const DEFAULT_SETTINGS: Settings = {
   camera_facing: 'user',
   softened_at: null,
   last_reminder_for: null,
+  // On by default: the model runs on-device, sends nothing, and its output is
+  // an editable suggestion. The off switch exists for anyone who wants no
+  // machine opinion at all, which is a preference worth honouring.
+  garment_naming: true,
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null

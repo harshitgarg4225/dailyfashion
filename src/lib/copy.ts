@@ -112,6 +112,16 @@ export const copy = {
     notificationBody: 'Two taps and it is logged.',
   },
 
+  garment: {
+    // "Looks like" marks it as the app's guess, not a fact. The user's own
+    // word is shown bare — their word needs no hedge.
+    suggested: (name: string) => `Looks like: ${name}`,
+    add: 'Name this outfit',
+    edit: 'Correct it',
+    save: 'Save',
+    placeholder: 'e.g. green linen shirt',
+  },
+
   tonight: {
     title: 'Tonight',
     prompt: 'How did today feel?',
@@ -368,6 +378,9 @@ export const copy = {
     reminderMuted: 'Reminders are off. Turn them back on any time.',
     blur: 'Blur photos in the grid',
     blurHint: 'Photos stay blurred until you tap one.',
+    garmentNaming: 'Suggest garment names',
+    garmentNamingHint:
+      'A small model on this device guesses what you wore — "black cardigan". Nothing is sent anywhere, and you can always correct it.',
     lock: 'Require a passcode to open',
     lockHint: 'Four digits or more. Asked once each time you open the app.',
     lockSet: 'Choose a passcode',

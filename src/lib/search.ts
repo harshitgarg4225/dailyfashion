@@ -45,6 +45,10 @@ export interface SearchIndexInput {
  */
 const WEIGHT_NOTE = 10
 const WEIGHT_TAG = 8
+/** A user-typed garment name is deliberate, so it ranks with tags. */
+const WEIGHT_GARMENT_USER = 8
+/** A model-suggested one is derived, so it ranks with colour. */
+const WEIGHT_GARMENT_MODEL = 3
 const WEIGHT_CHIP = 4
 const WEIGHT_COLOUR = 3
 const WEIGHT_DATE = 3
@@ -141,6 +145,19 @@ export function searchEntries(
     if (colour && wantedColours.includes(colour)) {
       score += WEIGHT_COLOUR * EXACT_BONUS
       reasons.push(colour)
+    }
+
+    // "cardigan" finds the days the cardigan was worn. The user's own name
+    // for it ranks like a tag; the model's suggestion ranks like a colour.
+    const garment = entry.garment
+    if (garment) {
+      const weight =
+        garment.source === 'user' ? WEIGHT_GARMENT_USER : WEIGHT_GARMENT_MODEL
+      const garmentScore = scoreField(garment.name, tokens, weight)
+      if (garmentScore > 0) {
+        score += garmentScore
+        reasons.push(garment.name)
+      }
     }
 
     const chipHits = entry.chips.filter((chip) => wantedChips.has(chip))

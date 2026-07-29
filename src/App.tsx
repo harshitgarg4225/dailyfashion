@@ -44,6 +44,7 @@ import {
 } from './lib/reminders'
 import { requestPersistence } from './lib/storage'
 import { refingerprintOldEntries } from './lib/refingerprint'
+import { nameEntryPhoto, nameOldEntries } from './lib/garmentNamer'
 import { hasSystemScheduledReminders } from './lib/platform'
 import { cancelNativeReminder, onReminderAction, scheduleNativeReminder } from './lib/nativeReminders'
 import { getLock } from './db/db'
@@ -204,6 +205,11 @@ export default function App() {
       void refingerprintOldEntries().then((result) => {
         if (result.updated > 0) void log.refresh()
       })
+      // After fingerprints, names. Same reasoning: photos already on the
+      // device deserve features that shipped after they were taken.
+      void nameOldEntries().then((result) => {
+        if (result.named > 0) void log.refresh()
+      })
     }, 1500)
 
     return () => clearTimeout(timer)
@@ -320,6 +326,12 @@ export default function App() {
       await putEntry(entry)
       await log.refresh()
 
+      // Naming runs after the save, never before it. The entry is already
+      // durable; the model's word arrives whenever it arrives.
+      void nameEntryPhoto(entry.id, blob).then((updated) => {
+        if (updated) void log.refresh()
+      })
+
       if (options.skipPrompts) return entry
 
       // "Worn before?" against the most recent entries only. The follow-up is
@@ -383,6 +395,9 @@ export default function App() {
         created_at: Date.now(),
         rated_at: null,
         backdated: false,
+        // Same photograph, same garment — re-classifying a copy would only
+        // give the same answer slower.
+        garment: source.garment,
       }
       await putEntry(entry)
 
@@ -609,6 +624,20 @@ export default function App() {
               setScreen('log')
             }}
             onRemove={openEntry ? () => setConfirmRemove(openEntry) : undefined}
+            onRename={
+              target
+                ? (name) => {
+                    const updated: Entry = {
+                      ...target,
+                      garment: { name, source: 'user', confidence: null },
+                    }
+                    // Keep the open entry current so the rename is visible
+                    // immediately, not after the next navigation.
+                    if (openEntry?.id === target.id) setOpenEntry(updated)
+                    void putEntry(updated).then(() => log.refresh())
+                  }
+                : undefined
+            }
           />
         )
       }

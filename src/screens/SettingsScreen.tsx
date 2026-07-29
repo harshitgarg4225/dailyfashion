@@ -314,6 +314,18 @@ export function SettingsScreen({
 
         <div className="row">
           <span className="row-text">
+            {copy.settings.garmentNaming}
+            <small>{copy.settings.garmentNamingHint}</small>
+          </span>
+          <Switch
+            checked={settings.garment_naming}
+            label={copy.settings.garmentNaming}
+            onChange={(next) => onChange({ garment_naming: next })}
+          />
+        </div>
+
+        <div className="row">
+          <span className="row-text">
             {settings.softened_at === null
               ? copy.settings.pauseInsights
               : copy.settings.resumeInsights}

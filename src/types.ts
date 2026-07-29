@@ -131,6 +131,23 @@ export interface Entry {
   rated_at: number | null
   /** True when logged for a past date (J9 allows backdating up to 7 days). */
   backdated: boolean
+  /**
+   * The day's garment, named.
+   *
+   * Three states, and the difference matters: `undefined` means naming has
+   * never been attempted (the backfill will try), `null` means it was tried
+   * and nothing cleared the confidence floor (the backfill must not retry
+   * forever), and a value is a name — the model's suggestion, or the user's
+   * own word, which permanently outranks it.
+   */
+  garment?: EntryGarment | null
+}
+
+export interface EntryGarment {
+  name: string
+  source: 'model' | 'user'
+  /** Model confidence at naming time; null when the user typed the name. */
+  confidence: number | null
 }
 
 /**
@@ -184,4 +201,6 @@ export interface Settings {
    * moment a notification is ignored.
    */
   last_reminder_for: number | null
+  /** Whether the on-device model may suggest garment names. Always editable, never uploaded. */
+  garment_naming: boolean
 }

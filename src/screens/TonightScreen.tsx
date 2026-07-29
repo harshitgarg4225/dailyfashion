@@ -21,6 +21,7 @@ export function TonightScreen({
   onSave,
   onSkip,
   onRemove,
+  onRename,
   showWelcomeBack,
 }: {
   entry: Entry | null
@@ -28,11 +29,15 @@ export function TonightScreen({
   onSkip: () => void
   /** Only offered when opening an existing day, not on the evening prompt. */
   onRemove?: (() => void) | undefined
+  /** Stores the user's own name for the garment, which outranks the model's. */
+  onRename?: ((name: string) => void) | undefined
   showWelcomeBack: boolean
 }) {
   const [felt, setFelt] = useState<FeltScore | null>(entry?.felt_score ?? null)
   const [chips, setChips] = useState<ChipId[]>(entry?.chips ?? [])
   const [note, setNote] = useState(entry?.note ?? '')
+  const [renaming, setRenaming] = useState(false)
+  const [draftName, setDraftName] = useState(entry?.garment?.name ?? '')
 
   if (!entry) {
     return (
@@ -68,6 +73,63 @@ export function TonightScreen({
           eager
         />
       </div>
+
+      {/*
+        * The garment line. The model's word is a suggestion, visibly marked as
+        * one; the user's correction replaces it permanently and is never
+        * re-guessed. Absent entirely on written days and when the model had
+        * nothing confident to say — silence beats a wrong label.
+        */}
+      {entry.photo_id !== null && onRename ? (
+        renaming ? (
+          <form
+            className="garment-line"
+            onSubmit={(event) => {
+              event.preventDefault()
+              const name = draftName.trim().toLowerCase()
+              if (name) {
+                onRename(name)
+                setRenaming(false)
+              }
+            }}
+          >
+            <input
+              type="text"
+              value={draftName}
+              maxLength={40}
+              autoFocus
+              placeholder={copy.garment.placeholder}
+              onChange={(event) => setDraftName(event.target.value)}
+              aria-label={copy.garment.edit}
+            />
+            <button type="submit" className="btn btn--quiet">
+              {copy.garment.save}
+            </button>
+          </form>
+        ) : entry.garment ? (
+          <button
+            type="button"
+            className="garment-line garment-line--named"
+            onClick={() => {
+              setDraftName(entry.garment?.name ?? '')
+              setRenaming(true)
+            }}
+          >
+            {entry.garment.source === 'model'
+              ? copy.garment.suggested(entry.garment.name)
+              : entry.garment.name}
+            <span className="garment-edit">{copy.garment.edit}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="garment-line"
+            onClick={() => setRenaming(true)}
+          >
+            {copy.garment.add}
+          </button>
+        )
+      ) : null}
 
       <div className="field">
         <span className="field-label">{copy.tonight.prompt}</span>
