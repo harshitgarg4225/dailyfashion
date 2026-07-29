@@ -31,11 +31,11 @@ const config: CapacitorConfig = {
   // No `server.url`. The bundle is shipped inside the app and loaded from
   // disk, so the packaged build makes no network request to start either.
   android: {
-    // Matches the app's paper, so the WebView never flashes white.
-    backgroundColor: '#F7F4EF',
+    // Matches the app's paper, so the WebView never flashes a different shade.
+    backgroundColor: '#FFFFFF',
   },
   ios: {
-    backgroundColor: '#F7F4EF',
+    backgroundColor: '#FFFFFF',
     // The camera and journal both want the full screen.
     contentInset: 'never',
   },
@@ -43,7 +43,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchShowDuration: 600,
-      backgroundColor: '#F7F4EF',
+      backgroundColor: '#FFFFFF',
       showSpinner: false,
       androidSplashResourceName: 'splash',
       splashFullScreen: true,
@@ -51,7 +51,7 @@ const config: CapacitorConfig = {
     },
     LocalNotifications: {
       smallIcon: 'ic_stat_notification',
-      iconColor: '#1A1714',
+      iconColor: '#111111',
     },
   },
 }

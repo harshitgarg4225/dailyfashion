@@ -374,5 +374,16 @@ test.describe('the week', () => {
     // The whole point of sharing this way: the image is made here, and nothing
     // about it leaves except by the user's own hand.
     expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
+
+    /*
+     * The community links: anchors, not fetches. They must point at the one
+     * community and open in a new tab — and their mere presence on the page
+     * must not have produced a request, which the assertion above already
+     * proved.
+     */
+    const communityLink = page.getByRole('link', { name: /post it in the community/i })
+    await expect(communityLink).toBeVisible()
+    await expect(communityLink).toHaveAttribute('href', /reddit\.com\/r\/DailyFashionLog/)
+    await expect(communityLink).toHaveAttribute('target', '_blank')
   })
 })

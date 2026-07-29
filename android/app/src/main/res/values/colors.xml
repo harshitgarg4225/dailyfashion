@@ -6,9 +6,9 @@
     announces that it is a wrapped web app.
 -->
 <resources>
-    <color name="colorPrimary">#F7F4EF</color>
-    <color name="colorPrimaryDark">#F7F4EF</color>
-    <color name="colorAccent">#1A1714</color>
-    <color name="ic_launcher_background">#F7F4EF</color>
-    <color name="splashBackground">#F7F4EF</color>
+    <color name="colorPrimary">#FFFFFF</color>
+    <color name="colorPrimaryDark">#FFFFFF</color>
+    <color name="colorAccent">#111111</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="splashBackground">#FFFFFF</color>
 </resources>

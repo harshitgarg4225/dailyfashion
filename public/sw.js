@@ -28,7 +28,7 @@
  * theoretical failure: it shipped, and it hid two whole features from the first
  * person to open the app.
  */
-const CACHE = 'daily-fashion-v3'
+const CACHE = 'daily-fashion-v4'
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {

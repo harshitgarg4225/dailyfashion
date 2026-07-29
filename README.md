@@ -12,7 +12,10 @@ colour you rarely wear. It argues with you using your own receipts.
 **It never asks you to build a wardrobe.** Every wardrobe app that died asked people
 to photograph and tag two hundred garments before doing anything useful. Item-level
 knowledge here accumulates as a side effect of logging: photos are fingerprinted on
-save and compared against recent entries, so "same as Tuesday?" is a single tap.
+save and compared against recent entries, so "same as Tuesday?" is a single tap —
+and an on-device vision model (MobileNet, bundled same-origin, eleven megabytes)
+suggests a name for what you wore. The suggestion is always editable, your own
+word permanently outranks the model's, and a settings switch turns it off.
 
 **Nothing leaves the device.** No account, no sign-up, no sync, no analytics. This
 is a property enforced by the browser, not a promise in a policy, and it stands on
@@ -75,6 +78,9 @@ way. Pushes to the deployed branch redeploy automatically.
 ```
 src/lib/insights.ts    the insight engine — thresholds, confound suppression
 src/lib/signature.ts   dHash + HSV palette histogram for "worn before?"
+src/lib/garments.ts    the naming rules — class map, confidence floor
+src/lib/garmentNamer.ts the model runtime — lazy tfjs, backfill
+src/lib/community.ts   the one link out, to the Reddit community
 src/lib/photoWorker.ts capture pipeline, off the main thread
 src/lib/reminders.ts   the evening nudge, scheduled on-device
 src/lib/lock.ts        the optional passcode gate
