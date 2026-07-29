@@ -193,6 +193,22 @@ export async function entriesOn(date: string): Promise<Entry[]> {
   return promisify<Entry[]>(index.getAll(IDBKeyRange.only(date)))
 }
 
+/**
+ * Re-inserts tag links verbatim, for undo.
+ *
+ * Undo restores a deleted day exactly as it was, and the tag links are part
+ * of "exactly" — without them the restored day would have silently stopped
+ * voting in insights.
+ */
+export async function relinkEntry(links: EntryItem[]): Promise<void> {
+  if (links.length === 0) return
+  const db = await openDb()
+  const transaction = tx(db, [STORES.entryItems], 'readwrite')
+  const store = transaction.objectStore(STORES.entryItems)
+  for (const link of links) store.put(link)
+  await done(transaction)
+}
+
 export async function deleteEntry(id: string): Promise<void> {
   const db = await openDb()
   const entry = await getEntry(id)

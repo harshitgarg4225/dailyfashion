@@ -22,8 +22,12 @@ import { shouldOfferSoftening } from './lib/insights'
 import { SHORTLIST_MIN_ENTRIES } from './lib/shortlist'
 import { MIN_DAYS_FOR_WRAP } from './lib/weekWrapped'
 import {
+  allEntryItems,
   clonePhoto,
   deleteEntry,
+  getPhoto,
+  getThumb,
+  relinkEntry,
   dismissInsight,
   linkEntries,
   newId,
@@ -423,14 +427,42 @@ export default function App() {
     [flash, log, today, todayTempBand],
   )
 
+  /*
+   * U2 finished properly: removal is undoable for the length of the toast.
+   *
+   * The row, its photograph, its thumb and its tag links are captured before
+   * the delete, so undo restores the day *exactly* — not a lookalike. The
+   * snapshot lives only in this closure; once the toast is gone, so is it,
+   * and the delete is what it always claimed to be.
+   */
   const removeEntry = useCallback(
     async (entry: Entry) => {
       setConfirmRemove(null)
       setOpenEntry(null)
+
+      const [photo, thumbBlob, links] = await Promise.all([
+        entry.photo_id ? getPhoto(entry.photo_id) : Promise.resolve(undefined),
+        entry.photo_id ? getThumb(entry.photo_id) : Promise.resolve(undefined),
+        allEntryItems().then((rows) => rows.filter((row) => row.entry_id === entry.id)),
+      ])
+
       await deleteEntry(entry.id)
       if (entry.outfit_id) await recomputeOutfit(entry.outfit_id)
       await log.refresh()
-      flash(copy.tonight.removed)
+
+      const undo = async () => {
+        if (entry.photo_id && photo) await putPhoto(entry.photo_id, photo, thumbBlob)
+        await putEntry(entry)
+        await relinkEntry(links)
+        if (entry.outfit_id) await recomputeOutfit(entry.outfit_id)
+        await log.refresh()
+        setToast(null)
+      }
+
+      flash(copy.tonight.removed, {
+        label: copy.tonight.undo,
+        onAction: () => void undo(),
+      })
       setScreen('log')
     },
     [flash, log],
