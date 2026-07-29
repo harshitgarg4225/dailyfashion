@@ -233,6 +233,14 @@ export const copy = {
     shareFailed: 'That did not come together. Try again.',
     shareCaption: 'My week in Daily Fashion',
     shareNothing: 'Photograph a day or two first — the image is made of them.',
+    // On a phone, the OS share sheet is the direct road to both apps.
+    shareHint:
+      'On your phone, the share sheet posts it straight to Instagram or Reddit.',
+    communityTitle: 'The community',
+    communityBody:
+      'A quiet corner of Reddit where people post their week cards. It is only reachable from here — make your image first, then take it over.',
+    communityGo: 'Post it in the community',
+    communityJoin: 'Have a look first',
   },
 
   log: {

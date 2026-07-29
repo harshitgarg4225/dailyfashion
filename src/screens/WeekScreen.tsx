@@ -7,6 +7,7 @@ import { chipLabel } from '../lib/chips'
 import { mediumLabel } from '../lib/dates'
 import { Photo } from '../app/Photo'
 import { getPhoto } from '../db/db'
+import { COMMUNITY_SUBMIT_URL, COMMUNITY_URL } from '../lib/community'
 import type { Entry } from '../types'
 
 /**
@@ -155,17 +156,52 @@ export function WeekScreen({
           {week.photoIds.length === 0 ? (
             <p className="note">{copy.week.shareNothing}</p>
           ) : (
-            <button
-              type="button"
-              className="btn btn--ghost btn--block"
-              disabled={busy}
-              onClick={() => void share()}
-            >
-              {busy ? copy.week.sharePreparing : copy.week.shareGo}
-            </button>
+            <>
+              <button
+                type="button"
+                className="btn btn--ghost btn--block"
+                disabled={busy}
+                onClick={() => void share()}
+              >
+                {busy ? copy.week.sharePreparing : copy.week.shareGo}
+              </button>
+              <p className="note">{copy.week.shareHint}</p>
+            </>
           )}
 
           {note ? <p className="note note--centred">{note}</p> : null}
+
+          {/*
+            * The community. A plain link, deliberately: an anchor cannot be
+            * popup-blocked after the async card render the way window.open
+            * can, and it makes the one-directional relationship visible in
+            * the markup — the app links out, nothing links in.
+            */}
+          {week.photoIds.length > 0 ? (
+            <>
+              <hr className="rule" />
+              <h2 className="summary-heading">{copy.week.communityTitle}</h2>
+              <p className="note">{copy.week.communityBody}</p>
+              <div className="stack">
+                <a
+                  className="btn btn--ghost btn--block"
+                  href={COMMUNITY_SUBMIT_URL}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {copy.week.communityGo}
+                </a>
+                <a
+                  className="btn btn--quiet btn--block"
+                  href={COMMUNITY_URL}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {copy.week.communityJoin}
+                </a>
+              </div>
+            </>
+          ) : null}
         </>
       )}
     </div>
