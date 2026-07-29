@@ -241,6 +241,12 @@ export const copy = {
       'A quiet corner of Reddit where people post their week cards. It is only reachable from here — make your image first, then take it over.',
     communityGo: 'Post it in the community',
     communityJoin: 'Have a look first',
+    // Counts, never conclusions — same licence as the rest of the recap.
+    garmentsWorn: (text: string) => `Named: ${text}.`,
+    yearTitle: 'The year so far',
+    yearBody: (days: number) =>
+      `${days} days logged across the last twelve months. The card samples photos from the whole span.`,
+    yearGo: 'Make the year image',
   },
 
   log: {

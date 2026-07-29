@@ -96,9 +96,11 @@ export interface ShareCardInput {
   photos: ImageBitmap[]
   /** Overrides the footline. Used by tests and by the example card. */
   handle?: string
+  /** The masthead label. The year card reuses this whole layout. */
+  eyebrow?: string
 }
 
-export async function renderWeekCard({ week, photos, handle }: ShareCardInput): Promise<Blob> {
+export async function renderWeekCard({ week, photos, handle, eyebrow }: ShareCardInput): Promise<Blob> {
   const canvas = document.createElement('canvas')
   canvas.width = CARD_WIDTH
   canvas.height = CARD_HEIGHT
@@ -112,7 +114,7 @@ export async function renderWeekCard({ week, photos, handle }: ShareCardInput): 
   // --- masthead ---------------------------------------------------------
   ctx.fillStyle = INK_MUTED
   ctx.font = `500 20px ${BODY}`
-  letterspaced(ctx, 'MY WEEK', MARGIN, MARGIN + 24, 5)
+  letterspaced(ctx, eyebrow ?? 'MY WEEK', MARGIN, MARGIN + 24, 5)
 
   ctx.fillStyle = INK
   ctx.font = `550 84px ${DISPLAY}`
@@ -145,6 +147,7 @@ export async function renderWeekCard({ week, photos, handle }: ShareCardInput): 
   const footRuleY = CARD_HEIGHT - MARGIN - 56
 
   const colours = week.colours.slice(0, 3).map((c) => c.colour)
+  const garments = week.garments.slice(0, 3)
   const repeated = week.repeats.reduce((total, repeat) => total + repeat.times, 0)
 
   const shown = photos.slice(0, MAX_PHOTOS)
@@ -161,7 +164,8 @@ export async function renderWeekCard({ week, photos, handle }: ShareCardInput): 
    * the photographs simply take whatever is left above it — which is also the
    * right way round editorially: the margin belongs to the picture.
    */
-  const blocks = (colours.length > 0 ? 1 : 0) + (repeated > 0 ? 1 : 0)
+  const blocks =
+    (colours.length > 0 ? 1 : 0) + (garments.length > 0 ? 1 : 0) + (repeated > 0 ? 1 : 0)
   const captionTop =
     blocks === 0
       ? footRuleY - BREATH
@@ -206,6 +210,22 @@ export async function renderWeekCard({ week, photos, handle }: ShareCardInput): 
     ctx.fillStyle = INK
     ctx.font = `550 40px ${DISPLAY}`
     ctx.fillText(colours.join(', '), MARGIN, y + CAPTION_VALUE)
+    y += CAPTION_BLOCK
+  }
+
+  if (garments.length > 0) {
+    ctx.fillStyle = INK_MUTED
+    ctx.font = `500 18px ${BODY}`
+    letterspaced(ctx, 'ON THE HANGER', MARGIN, y, 4)
+
+    ctx.fillStyle = INK
+    ctx.font = `550 40px ${DISPLAY}`
+    // Counts, not conclusions: the same licence the whole recap runs on.
+    ctx.fillText(
+      garments.map((g) => (g.days > 1 ? `${g.name} ×${g.days}` : g.name)).join(', '),
+      MARGIN,
+      y + CAPTION_VALUE,
+    )
     y += CAPTION_BLOCK
   }
 

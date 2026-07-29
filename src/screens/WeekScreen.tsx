@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { copy } from '../lib/copy'
-import { buildWeekWrapped, MIN_DAYS_FOR_WRAP } from '../lib/weekWrapped'
+import { buildWeekWrapped, buildYearWrapped, MIN_DAYS_FOR_WRAP } from '../lib/weekWrapped'
 import { renderWeekCard } from '../lib/shareCard'
 import { shareImage } from '../lib/share'
 import { chipLabel } from '../lib/chips'
@@ -36,15 +36,17 @@ export function WeekScreen({
   today: string
 }) {
   const week = useMemo(() => buildWeekWrapped(entries, today), [entries, today])
+  const year = useMemo(() => buildYearWrapped(entries, today), [entries, today])
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
 
-  const share = async () => {
+  /** Renders and hands over a card — the week's by default, the year's on request. */
+  const share = async (wrap = week, eyebrow?: string, stem = 'daily-fashion') => {
     setBusy(true)
     setNote(null)
     try {
       const blobs = await Promise.all(
-        week.photoIds.slice(0, CARD_PHOTOS).map((id) => getPhoto(id)),
+        wrap.photoIds.slice(0, CARD_PHOTOS).map((id) => getPhoto(id)),
       )
       const bitmaps = await Promise.all(
         blobs
@@ -52,13 +54,13 @@ export function WeekScreen({
           .map((blob) => createImageBitmap(blob)),
       )
 
-      const card = await renderWeekCard({ week, photos: bitmaps })
+      const card = await renderWeekCard({ week: wrap, photos: bitmaps, eyebrow })
       // Decoded bitmaps hold real memory; a week of 1400px frames is not free.
       bitmaps.forEach((bitmap) => bitmap.close())
 
       const outcome = await shareImage({
         blob: card,
-        filename: `daily-fashion-${week.to}.jpg`,
+        filename: `${stem}-${wrap.to}.jpg`,
         title: copy.week.shareCaption,
       })
 
@@ -118,6 +120,16 @@ export function WeekScreen({
               <p className="note">
                 {copy.week.worn(week.colours.slice(0, 3).map((c) => c.colour).join(', '))}
               </p>
+              {week.garments.length > 0 ? (
+                <p className="note">
+                  {copy.week.garmentsWorn(
+                    week.garments
+                      .slice(0, 3)
+                      .map((g) => (g.days > 1 ? `${g.name} on ${g.days} days` : g.name))
+                      .join(', '),
+                  )}
+                </p>
+              ) : null}
               <p className="note">
                 {week.repeats.length === 0
                   ? copy.week.noRepeats
@@ -161,7 +173,7 @@ export function WeekScreen({
                 type="button"
                 className="btn btn--ghost btn--block"
                 disabled={busy}
-                onClick={() => void share()}
+                onClick={() => void share(week)}
               >
                 {busy ? copy.week.sharePreparing : copy.week.shareGo}
               </button>
@@ -170,6 +182,28 @@ export function WeekScreen({
           )}
 
           {note ? <p className="note note--centred">{note}</p> : null}
+
+          {/*
+            * The year, once sixty days have actually happened. Same recount,
+            * same licence — bigger numbers, not bolder claims — with photos
+            * sampled evenly across the window so it does not degenerate into
+            * last week's card under a grander title.
+            */}
+          {year.enough ? (
+            <>
+              <hr className="rule" />
+              <h2 className="summary-heading">{copy.week.yearTitle}</h2>
+              <p className="note">{copy.week.yearBody(year.daysLogged)}</p>
+              <button
+                type="button"
+                className="btn btn--ghost btn--block"
+                disabled={busy}
+                onClick={() => void share(year, 'MY YEAR', 'daily-fashion-year')}
+              >
+                {busy ? copy.week.sharePreparing : copy.week.yearGo}
+              </button>
+            </>
+          ) : null}
 
           {/*
             * The community. A plain link, deliberately: an anchor cannot be

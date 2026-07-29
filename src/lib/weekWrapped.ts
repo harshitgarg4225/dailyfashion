@@ -40,6 +40,11 @@ export interface WornColour {
   days: number
 }
 
+export interface WornGarment {
+  name: string
+  days: number
+}
+
 export interface RepeatedOutfit {
   outfitId: string
   times: number
@@ -58,6 +63,13 @@ export interface WeekWrapped {
   written: number
   /** Colours worn, most days first. Photographed days only. */
   colours: WornColour[]
+  /**
+   * Garment words worn, most days first. Counts, not conclusions — "cardigan,
+   * 3 days" is a fact at any n, which is this screen's entire licence. Both
+   * the model's words and the user's own count here; a correction simply
+   * changes which word gets the count.
+   */
+  garments: WornGarment[]
   /** Outfits worn more than once this week, most worn first. */
   repeats: RepeatedOutfit[]
   /** How many days carried each event, most frequent first. Zero counts dropped. */
@@ -78,15 +90,65 @@ function inWindow(entry: Entry, from: DateKey, to: DateKey): boolean {
  *   being a thing they can miss.
  */
 export function buildWeekWrapped(entries: readonly Entry[], today: DateKey): WeekWrapped {
-  const from = addDays(today, -(WEEK_DAYS - 1))
+  return buildWrapped(entries, addDays(today, -(WEEK_DAYS - 1)), today, MIN_DAYS_FOR_WRAP)
+}
+
+/** The window for the year card. Rolling, for the same reason the week is. */
+export const YEAR_DAYS = 365
+
+/**
+ * Days logged before a year card exists at all.
+ *
+ * Sixty is two months of actual use. Below it a "year" card is a week card
+ * with a grander title, and the title would be the only thing it added.
+ */
+export const MIN_DAYS_FOR_YEAR = 60
+
+/**
+ * The same recount over a rolling year — identical licence, identical shape.
+ *
+ * Everything on it is still a count of a thing that happened; a year of days
+ * earns bigger numbers, not bolder claims. The photographs are sampled evenly
+ * across the window rather than taken from the top, because a year card made
+ * of last week's six photos is a week card wearing a year's title.
+ */
+export function buildYearWrapped(entries: readonly Entry[], today: DateKey): WeekWrapped {
+  const wrapped = buildWrapped(
+    entries,
+    addDays(today, -(YEAR_DAYS - 1)),
+    today,
+    MIN_DAYS_FOR_YEAR,
+  )
+  return { ...wrapped, photoIds: spreadSample(wrapped.photoIds, 6) }
+}
+
+/** Up to `count` items, evenly spaced across the list, order preserved. */
+export function spreadSample<T>(list: readonly T[], count: number): T[] {
+  if (list.length <= count) return [...list]
+  const step = list.length / count
+  return Array.from({ length: count }, (_, index) => list[Math.floor(index * step)]!)
+}
+
+function buildWrapped(
+  entries: readonly Entry[],
+  from: DateKey,
+  to: DateKey,
+  minDays: number,
+): WeekWrapped {
   const week = entries
-    .filter((entry) => inWindow(entry, from, today))
+    .filter((entry) => inWindow(entry, from, to))
     .sort((a, b) => (a.date < b.date ? 1 : -1))
 
   const byColour = new Map<ColorFamily, number>()
   for (const entry of week) {
     if (!entry.signature) continue
     byColour.set(entry.signature.color, (byColour.get(entry.signature.color) ?? 0) + 1)
+  }
+
+  const byGarment = new Map<string, number>()
+  for (const entry of week) {
+    if (!entry.garment) continue
+    byGarment.set(entry.garment.name, (byGarment.get(entry.garment.name) ?? 0) + 1)
   }
 
   const byOutfit = new Map<string, Entry[]>()
@@ -107,7 +169,7 @@ export function buildWeekWrapped(entries: readonly Entry[], today: DateKey): Wee
 
   return {
     from,
-    to: today,
+    to,
     daysLogged: week.length,
     eveningsAnswered: week.filter((entry) => entry.felt_score !== null).length,
     photographed: week.filter((entry) => entry.photo_id !== null).length,
@@ -115,6 +177,9 @@ export function buildWeekWrapped(entries: readonly Entry[], today: DateKey): Wee
     colours: [...byColour]
       .map(([colour, days]) => ({ colour, days }))
       .sort((a, b) => b.days - a.days || a.colour.localeCompare(b.colour)),
+    garments: [...byGarment]
+      .map(([name, days]) => ({ name, days }))
+      .sort((a, b) => b.days - a.days || a.name.localeCompare(b.name)),
     repeats: [...byOutfit]
       .filter(([, group]) => group.length > 1)
       .map(([outfitId, group]) => ({
@@ -131,6 +196,6 @@ export function buildWeekWrapped(entries: readonly Entry[], today: DateKey): Wee
     photoIds: week
       .map((entry) => entry.photo_id)
       .filter((id): id is string => id !== null),
-    enough: week.length >= MIN_DAYS_FOR_WRAP,
+    enough: week.length >= minDays,
   }
 }

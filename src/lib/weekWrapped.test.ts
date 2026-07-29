@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { buildWeekWrapped, MIN_DAYS_FOR_WRAP, WEEK_DAYS } from './weekWrapped'
+import {
+  buildWeekWrapped,
+  buildYearWrapped,
+  MIN_DAYS_FOR_WRAP,
+  MIN_DAYS_FOR_YEAR,
+  spreadSample,
+  WEEK_DAYS,
+  YEAR_DAYS,
+} from './weekWrapped'
+import { addDays } from './dates'
 import { makeEntry, resetFactory } from '../test/factory'
 
 /**
@@ -154,5 +163,59 @@ describe('what the week refuses to do', () => {
     expect(week.repeats).toEqual([])
     expect(week.photoIds).toEqual([])
     expect(week.enough).toBe(false)
+  })
+})
+
+describe('garments in the recount', () => {
+  it('counts days per garment word, most first', () => {
+    const entries = [
+      { ...makeEntry({ date: '2026-07-29' }), garment: { name: 'cardigan', source: 'model' as const, confidence: 0.4 } },
+      { ...makeEntry({ date: '2026-07-28' }), garment: { name: 'cardigan', source: 'user' as const, confidence: null } },
+      { ...makeEntry({ date: '2026-07-27' }), garment: { name: 'jeans', source: 'model' as const, confidence: 0.3 } },
+      makeEntry({ date: '2026-07-26' }),
+    ]
+    const week = buildWeekWrapped(entries, '2026-07-29')
+    expect(week.garments).toEqual([
+      { name: 'cardigan', days: 2 },
+      { name: 'jeans', days: 1 },
+    ])
+  })
+})
+
+describe('the year recount', () => {
+  it('is silent below sixty days', () => {
+    const entries = Array.from({ length: MIN_DAYS_FOR_YEAR - 1 }, (_, i) =>
+      makeEntry({ date: addDays('2026-07-29', -i) }),
+    )
+    expect(buildYearWrapped(entries, '2026-07-29').enough).toBe(false)
+  })
+
+  it('speaks at sixty, and samples photos across the whole span', () => {
+    // Sixty days spread across ten months, oldest photos included.
+    const entries = Array.from({ length: MIN_DAYS_FOR_YEAR }, (_, i) => ({
+      ...makeEntry({ date: addDays('2026-07-29', -i * 5) }),
+      photo_id: `photo_${i}`,
+    }))
+    const year = buildYearWrapped(entries, '2026-07-29')
+    expect(year.enough).toBe(true)
+    expect(year.photoIds).toHaveLength(6)
+    // Evenly spread: the sample must reach past the newest week.
+    expect(year.photoIds).toContain('photo_0')
+    expect(Number(year.photoIds.at(-1)!.split('_')[1])).toBeGreaterThan(40)
+  })
+
+  it('ignores days older than the rolling year', () => {
+    const entries = [
+      makeEntry({ date: '2026-07-29' }),
+      makeEntry({ date: addDays('2026-07-29', -(YEAR_DAYS + 10)) }),
+    ]
+    expect(buildYearWrapped(entries, '2026-07-29').daysLogged).toBe(1)
+  })
+})
+
+describe('spreadSample', () => {
+  it('returns short lists whole and long lists evenly', () => {
+    expect(spreadSample([1, 2, 3], 6)).toEqual([1, 2, 3])
+    expect(spreadSample([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 3)).toEqual([1, 5, 9])
   })
 })
