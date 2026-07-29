@@ -187,7 +187,7 @@ test.describe('writing a day', () => {
 
     await expect(page.getByText(/1 day logged/)).toBeVisible()
     // A written day gets the same footprint as a photographed one.
-    await expect(page.locator('.grid-cell--written')).toHaveCount(1)
+    await expect(page.locator('.cell-frame--written')).toHaveCount(1)
     await expect(page.getByText(/warmer than it looked/i)).toBeVisible()
   })
 

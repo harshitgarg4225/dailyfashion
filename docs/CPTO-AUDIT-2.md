@@ -6,8 +6,8 @@ gets value. The first audit (CPTO-AUDIT.md) took the product from spec to
 shipped; this one takes it from shipped to worth keeping.
 
 **How to read the status column.** SHIPPED means built, tested and on the
-deployed branch. QUEUED means selected into the top 30 but not yet built —
-each carries a note on shape and cost so it can be picked up cold. The long
+deployed branch. As of the second pass, all thirty are SHIPPED — the shape
+notes that guided the queued builds are kept for the record. The long
 list below the table is everything considered, kept so future triage starts
 from evidence rather than memory.
 
@@ -44,20 +44,20 @@ three goals, in priority order:
 | 14 | Service-worker cache versioning bumped with the redesign so no one is stranded on the old shell | Correctness | SHIPPED |
 | 15 | Supply chain to zero known vulnerabilities (happy-dom, vite, vitest majors) | Security | SHIPPED |
 | 16 | e2e coverage for the community links and the no-upload guarantee | Quality | SHIPPED |
-| 17 | Garment name on the journal grid cell (a word under the thumbnail makes the grid scannable) | UX | QUEUED — LogScreen cell + one CSS block |
-| 18 | Thumbnail store: save a ~200px thumb beside the full JPEG; grid decodes thumbs only | Scale | QUEUED — biggest perf win for year-long logs; needs a photos-store migration + refingerprint-style backfill |
-| 19 | Journal virtualization above ~200 entries | Scale | QUEUED — pairs with 18; windowed rendering in LogScreen |
-| 20 | Export-health nudge: quiet line when the log has grown 30+ days past the last export | Durability | QUEUED — `last_export_at` in settings, one line in Settings/Progress |
-| 21 | Undo for day removal (6-second soft delete) instead of confirm-only | UX | QUEUED — hold row + photo in memory, flash with action button |
-| 22 | Week card gains the week's garment words (facts about clothes, true at any n) | Growth | QUEUED — shareCard caption block; ban-list-safe by construction |
-| 23 | Outfit detail view: all wears of a cluster on one screen with felt context | Value | QUEUED — new screen off the journal; data already denormalized |
-| 24 | Month view for the journal once the grid passes ~60 entries | UX | QUEUED |
-| 25 | Year wrap (the week card's machinery over 12 months) | Growth | QUEUED — seasonal moment; reuse weekWrapped aggregation |
-| 26 | Encrypted export option (password → WebCrypto AES-GCM over the zip) | Security | QUEUED — needs careful copy so the password is understood as unrecoverable |
-| 27 | iOS screenshot privacy: blur the app switcher snapshot (UIVisualEffectView on resign-active) | Security | QUEUED — small AppDelegate change, mirrors #12 |
-| 28 | Camera-roll import de-duplication (same EXIF timestamp = same day offer) | UX | QUEUED — guards the seeding flow against double-picks |
-| 29 | Tag autocomplete surfacing garment vocabulary (model words as suggestions in the tag field) | Function | QUEUED — itemSuggestions already exists; merge sources |
-| 30 | Insight cards cite garment names where confidence was user-confirmed ("the black cardigan: 4 of 5 good days") | Value | QUEUED — insight engine change; gate on `source: 'user'` only |
+| 17 | Garment name on the journal grid cell (a word under the thumbnail makes the grid scannable) | UX | SHIPPED |
+| 18 | Thumbnail store: ~320px rendition beside each JPEG (DB v2), grids decode thumbs, launch-time backfill | Scale | SHIPPED |
+| 19 | Journal renders in 120-cell slices, extended by a scroll sentinel | Scale | SHIPPED |
+| 20 | Export-health nudge: quiet line at 30+ logged days with no export, or a month since the last | Durability | SHIPPED |
+| 21 | Undo for day removal — six-second window, exact restore of row, photo, thumb and tag links | UX | SHIPPED |
+| 22 | Week card and screen count the week's garment words (facts about clothes, true at any n) | Growth | SHIPPED |
+| 23 | Outfit history in place: the cluster's other wears as a dated strip on the day view (dates only, felt stays private) | Value | SHIPPED |
+| 24 | Month headers break the journal grid past 30 entries | UX | SHIPPED |
+| 25 | Year wrap: the same recount over a rolling year at 60+ logged days, photos sampled across the span | Growth | SHIPPED |
+| 26 | Sealed export: optional passphrase, AES-GCM over the zip, import detects and asks; unrecoverable and says so | Security | SHIPPED |
+| 27 | iOS app-switcher blur on resign-active, lifted on active — the counterpart of #12 | Security | SHIPPED |
+| 28 | Seed de-duplication: one seed per EXIF date, and no seed over a day an import restored | UX | SHIPPED |
+| 29 | Tag suggestions include the log's garment vocabulary, user corrections first | Function | SHIPPED |
+| 30 | Insight cards can be captioned by a garment name — only the user's own word, on 2+ wears; never the model's | Value | SHIPPED |
 
 ## The long list
 
