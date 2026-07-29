@@ -249,6 +249,7 @@ export const copy = {
     yearBody: (days: number) =>
       `${days} days logged across the last twelve months. The card samples photos from the whole span.`,
     yearGo: 'Make the year image',
+    themeLabel: 'This week\u2019s theme',
   },
 
   log: {
@@ -303,6 +304,11 @@ export const copy = {
 
   // J6: a shortlist of what already worked. Not advice, not generated text.
   shortlist: {
+    // The pick's own evidence: counts, never a conclusion.
+    record: (wears: number, good: number) =>
+      good === 0
+        ? `Worn ${wears} times.`
+        : `Worn ${wears} times — ${good} went well.`,
     title: 'Today',
     headerWeather: 'You felt best in these on days like today.',
     headerGeneral: 'You felt best in these lately.',
@@ -314,6 +320,11 @@ export const copy = {
 
   // J7: observation, evidence, question. Always shows n.
   insights: {
+    provisionalLabel: 'Early',
+    provisionalIntro:
+      'One observation is starting to form. The numbers are small, so hold it lightly.',
+    provisionalFooter:
+      'At fourteen answered evenings this either firms up or is withdrawn. Early observations are wrong more often than settled ones.',
     title: 'What your log knows',
     empty: 'Nothing worth saying yet. Keep logging and this fills in.',
     // The honest version of "not enough data" — no false suspense.
@@ -394,6 +405,8 @@ export const copy = {
     reminderMuted: 'Reminders are off. Turn them back on any time.',
     blur: 'Blur photos in the grid',
     blurHint: 'Photos stay blurred until you tap one.',
+    exportShared: 'Handed to your share sheet. A cloud drive is the safest home for it.',
+    exportSaved: 'Saved to this device. Move it somewhere that outlives the phone.',
     sealLabel: 'Passphrase (optional)',
     sealHint:
       'Leave empty for a plain zip. With a passphrase, the file is sealed on this device and cannot be opened without it — by anyone, including us. There is no way to recover it.',

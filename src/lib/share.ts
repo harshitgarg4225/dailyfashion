@@ -93,3 +93,25 @@ export async function shareImage(image: ShareImage): Promise<ShareOutcome> {
     return 'saved'
   }
 }
+
+/**
+ * The same hand-off, for the backup archive.
+ *
+ * This is the migration story for a local-only log: the share sheet reaches
+ * Drive, iCloud Files, email-to-self — every place a backup can outlive the
+ * phone — without the app acquiring a server or seeing where the file went.
+ * Sealed archives especially belong here; that is what the passphrase is for.
+ *
+ * Same fallback ladder as the card: dismissal is not failure, and anything
+ * else still ends with the archive on the device as a download.
+ */
+export async function shareArchive(blob: Blob, filename: string): Promise<ShareOutcome> {
+  const payload: ShareImage = { blob, filename, title: filename }
+  try {
+    return isNative() ? await shareNative(payload) : await shareWeb(payload)
+  } catch (error) {
+    if (isDismissal(error)) return 'dismissed'
+    triggerDownload(blob, filename)
+    return 'saved'
+  }
+}

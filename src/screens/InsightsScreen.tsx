@@ -94,6 +94,26 @@ export function InsightsScreen({
         <p className="note">{copy.insights.thin(gate.ratedEntries, gate.needed)}</p>
 
         {/*
+          * The provisional card: one early observation in the seven-to-
+          * thirteen window, wearing its earliness louder than its finding.
+          * Same arithmetic and confound checks as a full card, smaller sample
+          * — and it will either firm up at fourteen or be withdrawn.
+          */}
+        {insights.length > 0 && insights[0] ? (
+          <div className="preview">
+            <span className="eyebrow preview-label">{copy.insights.provisionalLabel}</span>
+            <p className="note">{copy.insights.provisionalIntro}</p>
+            <article className="card" aria-label={copy.insights.provisionalLabel}>
+              <h2>{insights[0].observation}</h2>
+              <p className="evidence">{insights[0].evidence}</p>
+              <p className="question">{insights[0].question}</p>
+              <span className="sample">{copy.insights.sample(insights[0].n)}</span>
+            </article>
+            <p className="note">{copy.insights.provisionalFooter}</p>
+          </div>
+        ) : null}
+
+        {/*
           * A worked example, so the wait has a visible point.
           *
           * The countdown said how long, never what for — a new user was asked

@@ -74,12 +74,34 @@ describe('aggregation', () => {
     ).toBeNull()
   })
 
-  it('picks the highest-summed garment when several clear the floor', () => {
+  it('names several garments when each clears the floor on its own', () => {
+    // An outfit is usually more than one garment; both were genuinely seen.
     const guess = aggregateGarment([
       { className: 'cardigan', probability: 0.3 },
-      { className: 'jersey, T-shirt, tee shirt', probability: 0.2 },
+      { className: 'jean, blue jean, denim', probability: 0.2 },
+    ])
+    expect(guess?.name).toBe('cardigan + jeans')
+    // The line is only as sure as its least sure word.
+    expect(guess?.confidence).toBeCloseTo(0.2)
+  })
+
+  it('refuses to let weak hunches add up to a confident line', () => {
+    // Each below the floor; together they must not become "cardigan + jeans".
+    const guess = aggregateGarment([
+      { className: 'cardigan', probability: 0.3 },
+      { className: 'jean, blue jean, denim', probability: 0.1 },
     ])
     expect(guess?.name).toBe('cardigan')
+  })
+
+  it('caps the line at three garments', () => {
+    const guess = aggregateGarment([
+      { className: 'cardigan', probability: 0.3 },
+      { className: 'jean, blue jean, denim', probability: 0.28 },
+      { className: 'jersey, T-shirt, tee shirt', probability: 0.26 },
+      { className: 'trench coat', probability: 0.24 },
+    ])
+    expect(guess?.name.split(' + ')).toHaveLength(3)
   })
 
   it('returns null for empty input', () => {

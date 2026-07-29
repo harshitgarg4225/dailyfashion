@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { Settings } from '../types'
 import { copy } from '../lib/copy'
 import { Sheet, Switch } from '../app/controls'
-import { buildExport, importArchive, triggerDownload } from '../lib/exportData'
+import { buildExport, importArchive } from '../lib/exportData'
+import { shareArchive } from '../lib/share'
 import { isSealedArchive, sealArchive, unsealArchive } from '../lib/cryptoExport'
 import { saveLock, wipeEverything } from '../db/db'
 import {
@@ -166,15 +167,23 @@ export function SettingsScreen({
     try {
       const result = await buildExport((done, total) => setExportProgress({ done, total }))
       const passphrase = sealPass.trim()
-      if (passphrase) {
-        const sealed = await sealArchive(result.blob, passphrase)
-        triggerDownload(sealed, result.filename.replace(/\.zip$/, '.sealed'))
-      } else {
-        triggerDownload(result.blob, result.filename)
+      const [archive, filename] = passphrase
+        ? [await sealArchive(result.blob, passphrase), result.filename.replace(/\.zip$/, '.sealed')]
+        : [result.blob, result.filename]
+
+      /*
+       * The share sheet, not a bare download: it reaches Drive, iCloud Files
+       * and email-to-self — the places a backup can outlive the phone — with
+       * the app never seeing where the file went. Declining the sheet or a
+       * platform that refuses archives both fall back to the download.
+       */
+      const outcome = await shareArchive(archive, filename)
+      // A dismissed sheet exported nothing: no success message, and the
+      // export-health clock must not be reset by a backup that never landed.
+      if (outcome !== 'dismissed') {
+        setStatus(outcome === 'shared' ? copy.settings.exportShared : copy.settings.exportSaved)
+        onChange({ last_export_at: Date.now() })
       }
-      // The export-health nudge keys off this: a log that has grown far past
-      // its last export is one browser eviction away from being only a memory.
-      onChange({ last_export_at: Date.now() })
     } finally {
       setSealPass('')
       setExporting(false)

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { copy } from '../lib/copy'
 import { buildWeekWrapped, buildYearWrapped, MIN_DAYS_FOR_WRAP } from '../lib/weekWrapped'
+import { themeForWeek } from '../lib/theme'
 import { renderWeekCard } from '../lib/shareCard'
 import { shareImage } from '../lib/share'
 import { chipLabel } from '../lib/chips'
@@ -37,6 +38,7 @@ export function WeekScreen({
 }) {
   const week = useMemo(() => buildWeekWrapped(entries, today), [entries, today])
   const year = useMemo(() => buildYearWrapped(entries, today), [entries, today])
+  const theme = themeForWeek(today)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
 
@@ -216,10 +218,19 @@ export function WeekScreen({
               <hr className="rule" />
               <h2 className="summary-heading">{copy.week.communityTitle}</h2>
               <p className="note">{copy.week.communityBody}</p>
+              {/*
+                * The ritual. Everyone's card this week answers the same small
+                * prompt — computed locally from the ISO week, so every copy of
+                * the app agrees with no server deciding anything.
+                */}
+              <p className="note">
+                <span className="eyebrow">{copy.week.themeLabel}</span>
+                {theme.title} — {theme.prompt}
+              </p>
               <div className="stack">
                 <a
                   className="btn btn--ghost btn--block"
-                  href={COMMUNITY_SUBMIT_URL}
+                  href={`${COMMUNITY_SUBMIT_URL}&title=${encodeURIComponent(`${theme.title}: my week`)}`}
                   target="_blank"
                   rel="noreferrer noopener"
                 >

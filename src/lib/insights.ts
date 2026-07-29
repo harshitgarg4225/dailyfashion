@@ -29,6 +29,19 @@ import { agoLabel, daysBetween, type DateKey } from './dates'
 /** Total rated entries before any comparison is allowed to surface. */
 export const MIN_TOTAL_ENTRIES = 14
 
+/**
+ * The provisional tier: one early observation, honestly labelled.
+ *
+ * Days four to thirteen are the retention valley — the log is working but
+ * saying nothing, which teaches people it never will. The compromise is not
+ * to lower the bar quietly; it is ONE card, from seven answered evenings and
+ * three wears, that says on its face it is early and will either firm up or
+ * be withdrawn. Same arithmetic, same confound checks, same delta — only the
+ * sample is smaller, and the card says so louder than anything else on it.
+ */
+export const PROVISIONAL_MIN_ENTRIES = 7
+export const PROVISIONAL_MIN_WEARS = 3
+
 /** Wears of a single outfit/item/colour before it can be compared. */
 export const MIN_WEARS_PER_SUBJECT = 5
 
@@ -93,10 +106,14 @@ export interface Insight {
   subject: InsightSubject
   /** Higher surfaces first. */
   priority: number
+  /** Early finding from the provisional tier — shown with its own warning. */
+  provisional?: boolean
 }
 
 export interface InsightGate {
   unlocked: boolean
+  /** True in the seven-to-thirteen window, when one early card may show. */
+  provisional: boolean
   ratedEntries: number
   needed: number
   /** True when observations are paused because the log has been heavy (J8). */
@@ -611,12 +628,18 @@ export function generateInsights(input: GenerateInput): InsightResult {
 
   const gate: InsightGate = {
     unlocked: scored.length >= MIN_TOTAL_ENTRIES,
+    provisional:
+      scored.length >= PROVISIONAL_MIN_ENTRIES && scored.length < MIN_TOTAL_ENTRIES,
     ratedEntries: scored.length,
     needed: MIN_TOTAL_ENTRIES,
     softened: input.softened === true,
   }
 
-  if (!gate.unlocked || gate.softened) return { gate, insights: [] }
+  if ((!gate.unlocked && !gate.provisional) || gate.softened) return { gate, insights: [] }
+
+  // The provisional window relaxes the sample floors — never the delta or
+  // the confound checks — and surfaces at most one card, marked as early.
+  const minWears = gate.unlocked ? MIN_WEARS_PER_SUBJECT : PROVISIONAL_MIN_WEARS
 
   const baseline = baselineOf(entries)
   const dismissedAt = new Map((input.dismissed ?? []).map((d) => [d.id, d.n]))
@@ -630,14 +653,14 @@ export function generateInsights(input: GenerateInput): InsightResult {
 
   for (const group of groups) {
     const agg = aggregate(group.entries, today)
-    if (agg.n < MIN_WEARS_PER_SUBJECT) continue
+    if (agg.n < minWears) continue
     if (isConfounded(agg, baseline)) continue
 
     // A "baseline" that includes the subject drags toward it and shrinks every
     // delta. Compare against the rest of the log instead.
     const others = entries.filter((e) => !group.entries.some((g) => g.id === e.id))
     const otherScored = rated(others)
-    if (otherScored.length < MIN_WEARS_PER_SUBJECT) continue
+    if (otherScored.length < minWears) continue
     const otherMean = mean(otherScored.map((e) => e.felt_score!))
     const otherForgot = rateOf(otherScored, 'forgot_wearing_it')
 
@@ -669,17 +692,24 @@ export function generateInsights(input: GenerateInput): InsightResult {
   const colourCard = colourGap(colourGroups, colourAggregates, scored.length)
   if (colourCard) insights.push(colourCard)
 
-  return {
-    gate,
-    insights: insights
-      .filter((card) => {
-        const at = dismissedAt.get(card.id)
-        if (at === undefined) return true
-        // Only return once there is meaningfully more evidence than last time.
-        return card.n >= at + RESURFACE_AFTER_WEARS
-      })
-      .sort((a, b) => b.priority - a.priority),
+  const surfaced = insights
+    .filter((card) => {
+      const at = dismissedAt.get(card.id)
+      if (at === undefined) return true
+      // Only return once there is meaningfully more evidence than last time.
+      return card.n >= at + RESURFACE_AFTER_WEARS
+    })
+    .sort((a, b) => b.priority - a.priority)
+
+  if (!gate.unlocked) {
+    // Provisional: the single best card, wearing its earliness openly.
+    return {
+      gate,
+      insights: surfaced.slice(0, 1).map((card) => ({ ...card, provisional: true })),
+    }
   }
+
+  return { gate, insights: surfaced }
 }
 
 /**

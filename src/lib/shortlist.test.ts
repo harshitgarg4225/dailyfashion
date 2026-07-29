@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { buildShortlist, SHORTLIST_MIN_ENTRIES, SHORTLIST_SIZE } from './shortlist'
+import { buildShortlist, SHORTLIST_MIN_ENTRIES, SHORTLIST_SIZE, trackRecord } from './shortlist'
 import { makeEntries, makeEntry, resetFactory } from '../test/factory'
 
 const TODAY = '2025-06-02' // a Monday
@@ -121,5 +121,27 @@ describe('what gets surfaced', () => {
 
     expect(picks).toHaveLength(1)
     expect(picks[0]!.felt_score).toBe(5)
+  })
+})
+
+describe('the track record', () => {
+  it('counts wears and good days for a clustered pick', () => {
+    const entries = [
+      makeEntry({ outfitId: 'outfit_1', felt: 5 }),
+      makeEntry({ outfitId: 'outfit_1', felt: 4 }),
+      makeEntry({ outfitId: 'outfit_1', felt: 2 }),
+      makeEntry({ outfitId: 'outfit_1', felt: null }),
+      makeEntry({ outfitId: 'outfit_2', felt: 5 }),
+    ]
+    expect(trackRecord(entries[0]!, entries)).toEqual({ wears: 4, goodDays: 2 })
+  })
+
+  it('offers no record for a single day', () => {
+    // One day is a memory, not a record; a "record" of one dresses anecdote
+    // as evidence.
+    const single = [makeEntry({ outfitId: 'outfit_9', felt: 5 })]
+    expect(trackRecord(single[0]!, single)).toBeNull()
+    const unclustered = [makeEntry({ felt: 5 })]
+    expect(trackRecord(unclustered[0]!, unclustered)).toBeNull()
   })
 })

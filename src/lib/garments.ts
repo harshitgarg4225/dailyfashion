@@ -96,11 +96,23 @@ export interface GarmentGuess {
 }
 
 /**
- * Collapses raw classifier output into at most one garment name.
+ * An outfit is usually more than one garment, so up to this many named
+ * pieces can share the line — "cardigan + jeans". Three is the ceiling
+ * because a fourth word stops being a name and starts being an inventory.
+ */
+export const MAX_NAMED_GARMENTS = 3
+
+/**
+ * Collapses raw classifier output into at most one *outfit* name — which may
+ * be several garments joined, each individually above the floor.
  *
  * Returns null when nothing mapped clears the floor — which is the correct
  * answer for a written day, a photo of a wall, or an outfit the model simply
  * does not recognise. Null is silence, and silence is always safe.
+ *
+ * The floor applies per garment, not to the sum: "cardigan + jeans" must mean
+ * the model saw a cardigan *and* saw jeans, not that two weak hunches were
+ * allowed to add up to one confident-looking line.
  */
 export function aggregateGarment(predictions: GarmentPrediction[]): GarmentGuess | null {
   const byName = new Map<string, number>()
@@ -111,13 +123,17 @@ export function aggregateGarment(predictions: GarmentPrediction[]): GarmentGuess
     byName.set(name, (byName.get(name) ?? 0) + prediction.probability)
   }
 
-  let best: GarmentGuess | null = null
-  for (const [name, confidence] of byName) {
-    if (!best || confidence > best.confidence) best = { name, confidence }
-  }
+  const confident = [...byName]
+    .filter(([, confidence]) => confidence >= NAME_CONFIDENCE)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, MAX_NAMED_GARMENTS)
 
-  if (!best || best.confidence < NAME_CONFIDENCE) return null
-  return best
+  if (confident.length === 0) return null
+  return {
+    name: confident.map(([name]) => name).join(' + '),
+    // The line is only as sure as its least sure word.
+    confidence: confident[confident.length - 1]![1],
+  }
 }
 
 /**

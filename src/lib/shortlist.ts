@@ -110,3 +110,29 @@ export function buildShortlist(
     picks: deduped,
   }
 }
+
+export interface TrackRecord {
+  /** Times this outfit cluster has been worn, this entry included. */
+  wears: number
+  /** Of the rated wears, how many were felt 4 or 5. */
+  goodDays: number
+}
+
+/**
+ * The pick's evidence, computed rather than asserted.
+ *
+ * This is what turns the morning screen from "the app suggests" into "your
+ * own record says": worn four times, three went well. Counts only — the same
+ * licence as the week recap — and null for an unclustered entry, because a
+ * single day is a memory, not a record, and a "record" of one would dress
+ * anecdote as evidence.
+ */
+export function trackRecord(entry: Entry, entries: readonly Entry[]): TrackRecord | null {
+  if (!entry.outfit_id) return null
+  const wears = entries.filter((e) => e.outfit_id === entry.outfit_id)
+  if (wears.length < 2) return null
+  return {
+    wears: wears.length,
+    goodDays: wears.filter((e) => e.felt_score !== null && e.felt_score >= 4).length,
+  }
+}

@@ -1,7 +1,7 @@
 import type { Entry } from '../types'
 import { copy } from '../lib/copy'
 import { agoLabel, daysBetween, mediumLabel, type DateKey } from '../lib/dates'
-import { buildShortlist, type ShortlistContext } from '../lib/shortlist'
+import { buildShortlist, type ShortlistContext, trackRecord } from '../lib/shortlist'
 import { TEMP_BANDS } from '../lib/context'
 import type { TempBand } from '../types'
 import { Photo } from '../app/Photo'
@@ -95,7 +95,17 @@ export function ShortlistScreen({
             >
               <Photo photoId={entry.photo_id} alt="" thumb />
               <span className="strip-meta">
-                <strong>{mediumLabel(entry.date)}</strong>
+                <strong>
+                  {entry.garment ? entry.garment.name : mediumLabel(entry.date)}
+                </strong>
+                {(() => {
+                  const record = trackRecord(entry, entries)
+                  return record ? (
+                    <span className="note">
+                      {copy.shortlist.record(record.wears, record.goodDays)}
+                    </span>
+                  ) : null
+                })()}
                 <span className="note">
                   {agoLabel(daysBetween(entry.date, context.today as DateKey))} ·{' '}
                   {copy.shortlist.wearAgain}

@@ -3,6 +3,7 @@ import {
   generateInsights,
   MIN_TOTAL_ENTRIES,
   MIN_WEARS_PER_SUBJECT,
+  PROVISIONAL_MIN_ENTRIES,
   shouldOfferSoftening,
   loopCompletion,
 } from './insights'
@@ -26,8 +27,24 @@ function run(entries: Entry[], extra: { items?: Item[]; entryItems?: EntryItem[]
 beforeEach(resetFactory)
 
 describe('thresholds', () => {
-  it('shows nothing at all below the total-entry threshold', () => {
-    // A clear, strong signal — but on too little data to be trusted.
+  it('shows nothing at all below the provisional floor', () => {
+    // A clear, strong signal — but on too little data even to hedge about.
+    const entries = [
+      ...makeEntries(2, { felt: 2 }),
+      ...makeEntries(PROVISIONAL_MIN_ENTRIES - 4, { felt: 5, outfitId: 'outfit_a' }),
+    ]
+
+    const result = run(entries)
+
+    expect(result.gate.unlocked).toBe(false)
+    expect(result.gate.provisional).toBe(false)
+    expect(result.insights).toEqual([])
+  })
+
+  it('offers at most one early card in the provisional window, marked as such', () => {
+    // The same strong signal, in the seven-to-thirteen window: one card,
+    // provisional flag set, gate still locked. Never more than one — the
+    // window exists to prove the machine works, not to open the tap early.
     const entries = [
       ...makeEntries(MIN_TOTAL_ENTRIES - 6, { felt: 2 }),
       ...makeEntries(5, { felt: 5, outfitId: 'outfit_a' }),
@@ -36,7 +53,9 @@ describe('thresholds', () => {
     const result = run(entries)
 
     expect(result.gate.unlocked).toBe(false)
-    expect(result.insights).toEqual([])
+    expect(result.gate.provisional).toBe(true)
+    expect(result.insights).toHaveLength(1)
+    expect(result.insights[0]!.provisional).toBe(true)
   })
 
   it('reports honest progress toward the unlock', () => {
