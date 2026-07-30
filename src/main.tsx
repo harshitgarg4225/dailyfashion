@@ -25,6 +25,18 @@ createRoot(container).render(
   </StrictMode>,
 )
 
+/*
+ * Mark this browser as one the app lives in. The landing page at `/` reads
+ * this and forwards straight to /app, so a returning user never sees the
+ * brochure twice — including anyone who installed the PWA back when the app
+ * itself answered at the root.
+ */
+try {
+  localStorage.setItem('df-app-user', '1')
+} catch {
+  // Storage can be blocked; the landing page's own button still works.
+}
+
 /**
  * Register the offline shell.
  *

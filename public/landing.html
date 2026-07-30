@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!--
+      The front door of dailyfashion.co.
+
+      Same contract as every other page on this origin: no third-party request,
+      no framework, no font CDN, no analytics script. The interactivity is a
+      few kilobytes of hand-written JavaScript served from this host, and the
+      whole page works — minus the moving parts — with scripts disabled.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               connect-src 'self';
+               img-src 'self' blob: data:;
+               style-src 'self';
+               font-src 'self';
+               script-src 'self';
+               form-action 'none';
+               base-uri 'self'"
+    />
+
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#ffffff" />
+
+    <title>Daily Fashion — what you wore, how it felt, what it’s worth</title>
+    <meta
+      name="description"
+      content="A private daily log of what you wore and how it felt. Cost per wear, a shareable week, and a lifting log — with photos that never leave your phone."
+    />
+    <meta property="og:title" content="Daily Fashion" />
+    <meta
+      property="og:description"
+      content="What you wore. How it felt. What that’s worth. A private log that does the math."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icon-512.png" />
+
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <link rel="stylesheet" href="/landing.css" />
+    <script src="/landing.js" defer></script>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="wordmark" href="/?stay=1">Daily Fashion</a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#idea">The idea</a>
+        <a href="#worth">The math</a>
+        <a href="#training">Training</a>
+        <a href="#privacy">Privacy</a>
+      </nav>
+      <a class="btn btn--primary" data-cta="app" href="/app">Open the app</a>
+    </header>
+
+    <main>
+      <!-- ============================== HERO ============================== -->
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow reveal">A private log, on your phone</p>
+          <h1>
+            <span class="hero-line reveal">What you wore.</span>
+            <span class="hero-line reveal">How it felt.</span>
+            <span class="hero-line hero-line--em reveal">What that’s worth.</span>
+          </h1>
+          <p class="lede reveal">
+            One photo a day. One question at night. The log does the rest — names your garments,
+            counts every wear, works out cost per wear, and turns seven days into an image worth
+            posting.
+          </p>
+          <div class="cta-row reveal">
+            <a class="btn btn--primary btn--big" data-cta="app" href="/app">Open the app</a>
+            <a class="btn btn--ghost btn--big" data-cta="android" href="/download">Get it for Android</a>
+          </div>
+          <p class="microproof reveal">
+            Free. No account. Your photos never leave your phone — and we can prove it.
+          </p>
+        </div>
+
+        <!-- A month of days, drawn live. Tap a day and it answers. -->
+        <div class="hero-log reveal" aria-hidden="true">
+          <div class="hero-grid" id="hero-grid"></div>
+          <p class="hero-grid-caption">A month, at a glance. Tap a day.</p>
+        </div>
+      </section>
+
+      <!-- ============================ MARQUEE ============================ -->
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee-track" id="marquee-track"></div>
+      </div>
+
+      <!-- ============================ THE IDEA =========================== -->
+      <section class="section" id="idea">
+        <p class="eyebrow reveal">The idea</p>
+        <h2 class="reveal">Three moments a day.<br />That’s the whole app.</h2>
+
+        <div class="steps">
+          <article class="step reveal">
+            <span class="step-num">01</span>
+            <h3>Morning — one photo</h3>
+            <p>
+              Point the camera at the mirror. One tap. The app names what you’re wearing by
+              itself, on the phone — “wool coat + white tee” — and files the day.
+            </p>
+          </article>
+
+          <article class="step reveal">
+            <span class="step-num">02</span>
+            <h3>Night — one question</h3>
+            <p>How did it feel? Try it — this is the entire evening:</p>
+            <div class="felt-demo" role="group" aria-label="How did today’s outfit feel, one to five">
+              <button type="button" class="felt-btn" data-felt="1">1</button>
+              <button type="button" class="felt-btn" data-felt="2">2</button>
+              <button type="button" class="felt-btn" data-felt="3">3</button>
+              <button type="button" class="felt-btn" data-felt="4">4</button>
+              <button type="button" class="felt-btn" data-felt="5">5</button>
+            </div>
+            <p class="felt-answer" id="felt-answer" aria-live="polite">
+              Two taps a day. That’s the entire cost of using it.
+            </p>
+          </article>
+
+          <article class="step reveal">
+            <span class="step-num">03</span>
+            <h3>Later — the log answers back</h3>
+            <p>
+              After a week it starts noticing: which outfits you repeat, which ones you avoid,
+              what each garment actually costs you per wear. Observations with receipts — every
+              claim cites the days it came from.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================ THE MATH =========================== -->
+      <section class="section section--rule" id="worth">
+        <p class="eyebrow reveal">The math</p>
+        <h2 class="reveal">
+          A $90 jacket worn twice cost $45 a day.<br />
+          Worn forty times, it cost $2.25.
+        </h2>
+        <p class="lede reveal">
+          Cost per wear is the most honest number in your wardrobe, and nobody knows theirs.
+          Set a price once; the log counts the wears. Try the math:
+        </p>
+
+        <div class="calc reveal">
+          <div class="calc-controls">
+            <label class="calc-field">
+              <span class="calc-label">What it cost</span>
+              <input id="calc-price" type="number" min="1" max="99999" value="90" inputmode="decimal" />
+            </label>
+            <label class="calc-field calc-field--wide">
+              <span class="calc-label">Times worn — <span id="calc-wears-n">12</span></span>
+              <input id="calc-wears" type="range" min="1" max="100" value="12" />
+            </label>
+          </div>
+          <p class="calc-result">
+            <span class="calc-big" id="calc-big">$7.50</span>
+            <span class="calc-unit">a wear</span>
+          </p>
+          <p class="calc-line" id="calc-line" aria-live="polite">
+            Twelve wears in. Every one from here is free money.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============================ THE WEEK =========================== -->
+      <section class="section section--rule" id="week">
+        <p class="eyebrow reveal">The week</p>
+        <h2 class="reveal">Seven days become one image.</h2>
+        <p class="lede reveal">
+          Every Sunday the log builds a card from your week — your days, your best outfit, what
+          was on the hanger. Rendered on your phone, saved by your hand. Post it to Instagram,
+          to the community on Reddit, or to nobody.
+        </p>
+
+        <div class="week-demo reveal">
+          <div class="week-toggle" role="group" aria-label="Card size">
+            <button type="button" class="btn btn--ghost is-on" id="size-post">4:5 — the post</button>
+            <button type="button" class="btn btn--ghost" id="size-story">9:16 — the story</button>
+          </div>
+
+          <figure class="card" id="week-card">
+            <figcaption class="card-eyebrow">My week · Daily Fashion</figcaption>
+            <div class="card-grid">
+              <span class="card-cell">Mon<b>4</b></span>
+              <span class="card-cell">Tue<b>3</b></span>
+              <span class="card-cell">Wed<b>5</b></span>
+              <span class="card-cell">Thu<b>4</b></span>
+              <span class="card-cell">Fri<b>5</b></span>
+              <span class="card-cell">Sat<b>2</b></span>
+              <span class="card-cell">Sun<b>4</b></span>
+            </div>
+            <p class="card-note">On the hanger: wool coat · white tee · leather boots</p>
+            <p class="card-big">Five days felt like a 4 or better.</p>
+          </figure>
+        </div>
+      </section>
+
+      <!-- =========================== TRAINING ============================ -->
+      <section class="section section--rule" id="training">
+        <p class="eyebrow reveal">For the gym</p>
+        <h2 class="reveal">The same honesty, under the bar.</h2>
+        <p class="lede reveal">
+          A lifting log built on the same idea: load, reps, sets — and last session’s numbers
+          beside the empty field, so every entry is a comparison with a previous you. No
+          programme, no coaching line, no subscription to a plan.
+        </p>
+
+        <div class="gym-demo reveal" id="gym-demo">
+          <div class="gym-row" data-line="bench press|60 × 8 × 3">
+            <span class="gym-name"></span>
+            <span class="gym-set"></span>
+          </div>
+          <p class="gym-note" data-note="Last time: 57.5 × 8 × 3 — Monday. Best: 60, across 9 days."></p>
+          <p class="gym-best" data-note="A new best for bench press."></p>
+        </div>
+      </section>
+
+      <!-- ============================ PRIVACY ============================ -->
+      <section class="section section--ink" id="privacy">
+        <p class="eyebrow reveal">Privacy</p>
+        <h2 class="reveal">Your photos have nowhere to go.</h2>
+        <p class="lede reveal">
+          Not a promise — a property. The app is only allowed to talk to the host it came from:
+          the browser refuses every other destination before a request leaves your phone, and our
+          server refuses anything shaped like a photo, a note, or how a day felt. Our test suite
+          fails the build if either of those ever stops being true.
+        </p>
+        <p class="lede reveal">
+          Usage counts are shared only if you switch them on, and the switch starts off.
+        </p>
+        <a class="link-plain reveal" href="/privacy">Read the whole policy — it’s one page</a>
+      </section>
+
+      <!-- ============================ WHO FOR ============================ -->
+      <section class="section" id="who">
+        <p class="eyebrow reveal">Who it’s for</p>
+        <div class="who">
+          <article class="who-card reveal">
+            <h3>The outfit repeater</h3>
+            <p>You own good things. The log proves which ones, and makes wearing them again a
+              number that goes up instead of a habit to hide.</p>
+          </article>
+          <article class="who-card reveal">
+            <h3>The gym goer</h3>
+            <p>Numbers beat memory. Yesterday’s load is waiting next to today’s empty
+              field, and a new best says so.</p>
+          </article>
+          <article class="who-card reveal">
+            <h3>The one who shares</h3>
+            <p>A week of your actual life, as one clean image, in post size or story size —
+              made on the phone, posted on your terms.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================ FINAL CTA ========================== -->
+      <section class="section section--rule section--end" id="start">
+        <h2 class="reveal">Day one starts with one photo.</h2>
+        <div class="cta-row reveal">
+          <a class="btn btn--primary btn--big" data-cta="app" href="/app">Open the app</a>
+          <a class="btn btn--ghost btn--big" data-cta="android" href="/download">Get it for Android</a>
+        </div>
+        <p class="microproof reveal">
+          On iPhone: open the app in Safari, then Share → Add to Home Screen.
+        </p>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span>Daily Fashion</span>
+      <nav aria-label="Footer">
+        <a href="/app">Open the app</a>
+        <a href="/download">Android</a>
+        <a href="/privacy">Privacy</a>
+      </nav>
+    </footer>
+  </body>
+</html>

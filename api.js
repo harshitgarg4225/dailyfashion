@@ -29,6 +29,11 @@ const KNOWN_EVENTS = new Set([
   'export',
   'ads_view',
   'workout',
+  // The landing page's anonymous counters: a constant client id, no cookie,
+  // no per-visitor anything. They answer "is the front door being opened"
+  // and nothing more personal than that.
+  'landing_view',
+  'landing_cta',
 ])
 
 const AGE_BANDS = new Set(['under_18', '18_24', '25_34', '35_44', '45_54', '55_plus'])

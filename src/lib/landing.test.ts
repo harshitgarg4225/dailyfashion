@@ -46,7 +46,7 @@ describe('the download page', () => {
     // The APK for people who want an app, the origin itself for everyone else.
     // Losing either link silently halves the ways anyone can reach the product.
     expect(HTML).toContain('daily-fashion.apk')
-    expect(HTML).toMatch(/href="\/"/)
+    expect(HTML).toMatch(/href="\/app"/)
   })
 
   it('makes no third-party request of its own', () => {
@@ -68,5 +68,41 @@ describe('the download page', () => {
   it('carries no script at all', () => {
     expect(HTML).not.toMatch(/<script/i)
     expect(HTML).toMatch(/script-src 'none'/)
+  })
+})
+
+/**
+ * The front page of dailyfashion.co — now the most-read copy the product has.
+ * It is held to the same ban list and the same no-third-party standard, with
+ * one difference from the download page: it is allowed exactly one script,
+ * its own, served from this origin.
+ */
+const LANDING = readFileSync(new URL('../../public/landing.html', import.meta.url), 'utf8')
+
+describe('the landing page', () => {
+  it('holds to the same ban list as the app', () => {
+    expect(findBanned(visibleText(LANDING))).toEqual([])
+  })
+
+  it('leads into the app, the APK, and the policy', () => {
+    expect(LANDING).toMatch(/href="\/app"/)
+    expect(LANDING).toMatch(/href="\/download"/)
+    expect(LANDING).toMatch(/href="\/privacy"/)
+  })
+
+  it('loads nothing from off this origin', () => {
+    const subresources = [...LANDING.matchAll(/<(?:link|img|script)[^>]*\b(?:src|href)="([^"]+)"/g)]
+      .map((m) => m[1]!)
+      .filter((url) => /^(https?:)?\/\//.test(url))
+    expect(subresources).toEqual([])
+  })
+
+  it('runs only its own script, under a same-origin-only policy', () => {
+    const scripts = [...LANDING.matchAll(/<script[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1]!)
+    expect(scripts).toEqual(['/landing.js'])
+    // No inline script blocks — everything executable is a named file.
+    expect(LANDING).not.toMatch(/<script(?![^>]*\bsrc=)/i)
+    expect(LANDING).toMatch(/script-src 'self'/)
+    expect(LANDING).toMatch(/connect-src 'self'/)
   })
 })

@@ -2,7 +2,7 @@
   "name": "Daily Fashion",
   "short_name": "Daily Fashion",
   "description": "A private log of what you wore and how it went.",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

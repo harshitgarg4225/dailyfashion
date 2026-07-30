@@ -16,6 +16,9 @@ import { test, expect, type Page } from '@playwright/test'
 
 const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
 
+/** The app itself. The root of the origin is the brochure that sells it. */
+const APP = `${BASE}/app`
+
 /** Records every request the page attempts, so we can assert on them later. */
 async function watchRequests(page: Page): Promise<string[]> {
   const external: string[] = []
@@ -82,7 +85,7 @@ test.describe('the daily loop', () => {
   test('onboards, captures a photo, and rates it', async ({ page }) => {
     const external = await watchRequests(page)
 
-    await page.goto(BASE)
+    await page.goto(APP)
     await completeOnboarding(page)
 
     // J1: the app lands on the camera, so the shutter is the next tap.
@@ -119,7 +122,7 @@ test.describe('the daily loop', () => {
   })
 
   test('gates the insight engine on thin data', async ({ page }) => {
-    await page.goto(BASE)
+    await page.goto(APP)
     await completeOnboarding(page)
     await dismissOverlays(page)
 
@@ -131,7 +134,7 @@ test.describe('the daily loop', () => {
   })
 
   test('hides the shortlist until the log can fill it', async ({ page }) => {
-    await page.goto(BASE)
+    await page.goto(APP)
     await completeOnboarding(page)
     await dismissOverlays(page)
 
@@ -142,7 +145,7 @@ test.describe('the daily loop', () => {
 
 test.describe('editing the log', () => {
   test('backdates a day and removes it again', async ({ page }) => {
-    await page.goto(BASE)
+    await page.goto(APP)
     await completeOnboarding(page)
     await dismissOverlays(page)
 
@@ -174,7 +177,7 @@ test.describe('editing the log', () => {
 
 test.describe('writing a day', () => {
   test('records a day in words, with no photograph', async ({ page }) => {
-    await page.goto(BASE)
+    await page.goto(APP)
     await completeOnboarding(page)
     await dismissOverlays(page)
 
@@ -192,7 +195,7 @@ test.describe('writing a day', () => {
   })
 
   test('shows what the log is building toward', async ({ page }) => {
-    await page.goto(BASE)
+    await page.goto(APP)
     await completeOnboarding(page)
     await dismissOverlays(page)
 
@@ -205,7 +208,7 @@ test.describe('writing a day', () => {
 
 test.describe('the sponsor slot', () => {
   test('renders nothing at all while the slot is unsold', async ({ page }) => {
-    await page.goto(BASE)
+    await page.goto(APP)
     await completeOnboarding(page)
     await dismissOverlays(page)
 
@@ -224,7 +227,7 @@ test.describe('privacy is a property, not a promise', () => {
     const external = await watchRequests(page)
     const uploads = await watchUploads(page)
 
-    await page.goto(BASE)
+    await page.goto(APP)
     await completeOnboarding(page)
 
     const shutter = page.getByRole('button', { name: 'Capture' })
@@ -262,7 +265,7 @@ test.describe('privacy is a property, not a promise', () => {
   })
 
   test('blocks a cross-origin fetch at the browser level', async ({ page }) => {
-    await page.goto(BASE)
+    await page.goto(APP)
 
     // Proves the CSP is enforced rather than merely declared. This is the test
     // that would catch a relaxation from 'self' to something wider.
@@ -363,11 +366,58 @@ test.describe('the download page', () => {
   })
 })
 
+test.describe('the landing page', () => {
+  test('the root serves the brochure, and its CTA leads into the app', async ({ page }) => {
+    const external = await watchRequests(page)
+
+    await page.goto(BASE)
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/what you wore/i)
+
+    // The brochure keeps the origin's promise before the app ever loads.
+    expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
+
+    await page.getByRole('link', { name: /open the app/i }).first().click()
+    await expect(
+      page.getByRole('heading', { name: /your photos stay on this phone/i }),
+    ).toBeVisible()
+  })
+
+  test('its moving parts move', async ({ page }) => {
+    await page.goto(BASE)
+
+    // The felt-scale demo answers the tap, like the app would.
+    await page.locator('.felt-btn[data-felt="5"]').click()
+    await expect(page.locator('#felt-answer')).toContainText(/a 5/i)
+
+    // The calculator does live arithmetic.
+    await page.locator('#calc-wears').fill('40')
+    await expect(page.locator('#calc-big')).toHaveText('$2.25')
+
+    // The week card changes shape between post and story.
+    await page.locator('#size-story').click()
+    await expect(page.locator('#week-card')).toHaveClass(/is-story/)
+  })
+
+  test('forwards a returning user straight to their log', async ({ page }) => {
+    // A visit to the app stamps the browser…
+    await page.goto(APP)
+    await expect(
+      page.getByRole('heading', { name: /your photos stay on this phone/i }),
+    ).toBeVisible()
+
+    // …so the front door skips the brochure from then on.
+    await page.goto(BASE)
+    await expect(
+      page.getByRole('heading', { name: /your photos stay on this phone/i }),
+    ).toBeVisible()
+  })
+})
+
 test.describe('the week', () => {
   test('renders a share card and hands it over without a network request', async ({ page }) => {
     const external = await watchRequests(page)
 
-    await page.goto(BASE)
+    await page.goto(APP)
     await completeOnboarding(page)
 
     // Three days, so the recap clears its own threshold.

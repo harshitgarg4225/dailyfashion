@@ -117,7 +117,14 @@ const server = createServer(async (req, res) => {
     return send(res, 200, 'ok', { 'Content-Type': 'text/plain; charset=utf-8' })
   }
 
-  const pathname = url.pathname === '/' ? '/index.html' : url.pathname
+  /*
+   * The front door is the brochure; the app lives at /app. The split lets
+   * dailyfashion.co explain itself to a stranger while the SPA fallback below
+   * still hands the shell to /app and to every deep link inside it. Returning
+   * visitors never read the brochure twice — the landing script forwards
+   * anyone the app has marked as its own.
+   */
+  const pathname = url.pathname === '/' ? '/landing.html' : url.pathname
   let found = await tryFile(pathname)
 
   /*
@@ -136,13 +143,12 @@ const server = createServer(async (req, res) => {
   if (!found) return send(res, 404, 'Not found', { 'Content-Type': 'text/plain; charset=utf-8' })
 
   const ext = extname(found.filePath)
-  const isShell = found.filePath.endsWith('index.html')
   const isWorker = found.filePath.endsWith('sw.js')
 
-  // Hashed build assets are immutable; the shell and the worker must not be,
-  // or a deploy never reaches anyone who already installed the app.
+  // Hashed build assets are immutable; every page and the worker must not be,
+  // or a deploy never reaches anyone who already loaded the site.
   const cacheControl =
-    isShell || isWorker
+    ext === '.html' || isWorker
       ? 'no-cache'
       : found.filePath.includes('/assets/')
         ? 'public, max-age=31536000, immutable'

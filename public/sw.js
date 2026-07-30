@@ -28,8 +28,10 @@
  * theoretical failure: it shipped, and it hid two whole features from the first
  * person to open the app.
  */
-const CACHE = 'daily-fashion-v6'
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
+const CACHE = 'daily-fashion-v7'
+// '/' is the brochure now, not the shell; the app answers at /app and the
+// navigation fallback below serves index.html for it offline.
+const SHELL = ['/index.html', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -144,8 +146,8 @@ self.addEventListener('notificationclick', (event) => {
   // and close without the user ever seeing a screen.
   const rating = action && action.startsWith('felt-') ? action.slice('felt-'.length) : null
   const target = rating
-    ? `/?rate=${encodeURIComponent(rating)}${entryId ? `&entry=${encodeURIComponent(entryId)}` : ''}`
-    : `/?screen=tonight${entryId ? `&entry=${encodeURIComponent(entryId)}` : ''}`
+    ? `/app?rate=${encodeURIComponent(rating)}${entryId ? `&entry=${encodeURIComponent(entryId)}` : ''}`
+    : `/app?screen=tonight${entryId ? `&entry=${encodeURIComponent(entryId)}` : ''}`
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
