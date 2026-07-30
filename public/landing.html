@@ -213,12 +213,43 @@
         </p>
 
         <div class="gym-demo reveal" id="gym-demo">
-          <div class="gym-row" data-line="bench press|60 × 8 × 3">
-            <span class="gym-name"></span>
-            <span class="gym-set"></span>
+          <!-- The Training screen itself, at postcard size. Logging works. -->
+          <div class="gym-frame">
+            <p class="gym-frame-eyebrow">Training · Today</p>
+
+            <div class="gym-chips" aria-hidden="true">
+              <span class="gym-chip is-on">Chest</span>
+              <span class="gym-chip">Back</span>
+              <span class="gym-chip">Legs</span>
+              <span class="gym-chip">Arms</span>
+            </div>
+
+            <p class="gym-exercise">bench press</p>
+            <p class="gym-note">Last time: 57.5 × 8 × 3 — Monday. Best: 57.5, across 9 days.</p>
+
+            <div class="gym-cells" aria-hidden="true">
+              <span class="gym-cell"><b>60</b>Load</span>
+              <span class="gym-cell"><b>8</b>Reps</span>
+              <span class="gym-cell"><b>3</b>Sets</span>
+            </div>
+
+            <button type="button" class="gym-log" id="gym-log">Log it</button>
+
+            <div class="gym-rows" id="gym-rows">
+              <div class="gym-row">
+                <span>incline press</span>
+                <span class="gym-set">40 × 10 × 3</span>
+              </div>
+            </div>
+
+            <div class="gym-total">
+              <span>Total work</span>
+              <b id="gym-total">1200</b>
+            </div>
+
+            <p class="gym-best" id="gym-best" aria-live="polite"></p>
           </div>
-          <p class="gym-note" data-note="Last time: 57.5 × 8 × 3 — Monday. Best: 60, across 9 days."></p>
-          <p class="gym-best" data-note="A new best for bench press."></p>
+          <p class="gym-caption">Tap “Log it”. That is the entire workflow.</p>
         </div>
       </section>
 

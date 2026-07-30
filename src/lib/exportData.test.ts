@@ -9,8 +9,11 @@ import { buildExport, importArchive } from './exportData'
 import { readZip } from './zip'
 import {
   allEntries,
+  allEntryItems,
+  allItems,
   putEntry,
   putPhoto,
+  tagEntry,
   wipeEverything,
   __resetDbForTests,
 } from '../db/db'
@@ -135,5 +138,27 @@ describe('import', () => {
   it('rejects an archive that is not one of ours', async () => {
     const notOurs = new Blob([new Uint8Array([1, 2, 3, 4])])
     await expect(importArchive(notOurs)).rejects.toThrow()
+  })
+
+  it('brings the tags back, without duplicating them on a second restore', async () => {
+    // Tags are the user's own vocabulary; a restore that drops them silently
+    // breaks search and every tag insight on the restored days.
+    const [entry] = await seed(1)
+    await tagEntry(entry!.id, 'green jacket')
+    const archive = await buildExport()
+
+    await wipeEverything()
+    __resetDbForTests()
+    await importArchive(archive.blob)
+
+    const items = await allItems()
+    expect(items.map((i) => i.label)).toEqual(['green jacket'])
+    const links = await allEntryItems()
+    expect(links).toHaveLength(1)
+    expect(links[0]!.entry_id).toBe(entry!.id)
+
+    // The links store autoincrements — a second restore must not double them.
+    await importArchive(archive.blob)
+    expect(await allEntryItems()).toHaveLength(1)
   })
 })

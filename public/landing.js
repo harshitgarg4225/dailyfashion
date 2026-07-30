@@ -241,58 +241,33 @@ if (card && sizePost && sizeStory) {
 
 /* ---------------------------------------------------------- training demo -- */
 
-/* Types a line into an element, one character at a time. */
-function typeInto(el, text, done) {
-  var i = 0
-  el.classList.add('is-typing')
-  var timer = setInterval(function () {
-    el.textContent = text.slice(0, ++i)
-    if (i >= text.length) {
-      clearInterval(timer)
-      el.classList.remove('is-typing')
-      if (done) done()
-    }
-  }, 28)
-}
+/*
+ * The Training mock is the feature, working: one tap logs the set, total
+ * work recomputes (load × reps × sets, added up), and beating the shown
+ * best earns the same quiet line the app gives.
+ */
+var gymLog = document.getElementById('gym-log')
+if (gymLog) {
+  gymLog.addEventListener('click', function () {
+    var rows = document.getElementById('gym-rows')
+    var total = document.getElementById('gym-total')
+    var best = document.getElementById('gym-best')
 
-var gymDemo = document.getElementById('gym-demo')
-if (gymDemo) {
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  var row = gymDemo.querySelector('.gym-row')
-  var nameEl = gymDemo.querySelector('.gym-name')
-  var setEl = gymDemo.querySelector('.gym-set')
-  var noteEl = gymDemo.querySelector('.gym-note')
-  var bestEl = gymDemo.querySelector('.gym-best')
-  var parts = (row.getAttribute('data-line') || '|').split('|')
+    var row = document.createElement('div')
+    row.className = 'gym-row is-new'
+    var name = document.createElement('span')
+    name.textContent = 'bench press'
+    var set = document.createElement('span')
+    set.className = 'gym-set'
+    set.textContent = '60 × 8 × 3'
+    row.appendChild(name)
+    row.appendChild(set)
+    rows.appendChild(row)
 
-  var play = function () {
-    if (reduced) {
-      nameEl.textContent = parts[0]
-      setEl.textContent = parts[1]
-      noteEl.textContent = noteEl.getAttribute('data-note')
-      bestEl.textContent = bestEl.getAttribute('data-note')
-      return
-    }
-    typeInto(nameEl, parts[0], function () {
-      setEl.textContent = parts[1]
-      setTimeout(function () {
-        typeInto(noteEl, noteEl.getAttribute('data-note'), function () {
-          setTimeout(function () {
-            typeInto(bestEl, bestEl.getAttribute('data-note'))
-          }, 350)
-        })
-      }, 300)
-    })
-  }
+    if (total) total.textContent = String(1200 + 60 * 8 * 3)
+    if (best) best.textContent = 'A new best for bench press.'
 
-  var gymIo = new IntersectionObserver(
-    function (hits) {
-      if (hits.some(function (hit) { return hit.isIntersecting })) {
-        gymIo.disconnect()
-        play()
-      }
-    },
-    { threshold: 0.4 },
-  )
-  gymIo.observe(gymDemo)
+    gymLog.disabled = true
+    gymLog.textContent = 'Logged'
+  })
 }

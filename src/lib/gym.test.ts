@@ -4,10 +4,13 @@ import {
   exerciseStats,
   formatSet,
   knownExercises,
+  loadTrend,
   normaliseExercise,
+  personalBests,
   previousSession,
   sessionsByDay,
   sessionVolume,
+  trainingWeeks,
   type WorkoutSet,
 } from './gym'
 
@@ -93,5 +96,48 @@ describe('the catalog and the analysis', () => {
     const days = sessionsByDay(rows)
     expect(days.map((d) => d.date)).toEqual(['2026-07-25', '2026-07-20'])
     expect(days[0]!.rows).toHaveLength(2)
+  })
+
+  it('draws the trend as the top single per day, oldest first', () => {
+    const rows = [
+      row({ date: '2026-07-25', load: 57.5 }),
+      row({ date: '2026-07-20', load: 55 }),
+      row({ date: '2026-07-20', load: 50 }),
+      row({ date: '2026-07-28', load: 60 }),
+      row({ date: '2026-07-22', exercise: 'squat', load: 100 }),
+    ]
+    expect(loadTrend(rows, 'Bench Press')).toEqual([
+      { date: '2026-07-20', top: 55 },
+      { date: '2026-07-25', top: 57.5 },
+      { date: '2026-07-28', top: 60 },
+    ])
+  })
+
+  it('compares rolling seven-day windows, not calendar weeks', () => {
+    const rows = [
+      // This week: two days.
+      row({ date: '2026-07-29', load: 60, reps: 8, sets: 3 }),
+      row({ date: '2026-07-27', load: 50, reps: 10, sets: 2 }),
+      // Last week: one day.
+      row({ date: '2026-07-20', load: 40, reps: 10, sets: 3 }),
+      // Older than a fortnight: outside both windows.
+      row({ date: '2026-07-10', load: 100, reps: 5, sets: 5 }),
+    ]
+    const { thisWeek, lastWeek } = trainingWeeks(rows, '2026-07-30')
+    expect(thisWeek).toEqual({ sessions: 2, volume: 60 * 8 * 3 + 50 * 10 * 2 })
+    expect(lastWeek).toEqual({ sessions: 1, volume: 40 * 10 * 3 })
+  })
+
+  it('keeps the records board honest: first day a best was hit, newest record first', () => {
+    const rows = [
+      row({ date: '2026-07-10', load: 60, created_at: 1 }),
+      // Matching the best later must not re-stamp the record's date.
+      row({ date: '2026-07-25', load: 60, created_at: 2 }),
+      row({ date: '2026-07-20', exercise: 'squat', load: 100, created_at: 3 }),
+    ]
+    expect(personalBests(rows)).toEqual([
+      { exercise: 'squat', best: 100, date: '2026-07-20' },
+      { exercise: 'bench press', best: 60, date: '2026-07-10' },
+    ])
   })
 })

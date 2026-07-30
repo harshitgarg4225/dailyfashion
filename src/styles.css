@@ -1702,6 +1702,29 @@ form.garment-line {
   margin-top: var(--s3);
 }
 
+/* The per-exercise trend: a shape, not a chart. */
+.gym-trend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.gym-spark {
+  width: 100%;
+  max-width: 220px;
+  height: 36px;
+}
+
+.gym-spark polyline {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.gym-spark circle {
+  fill: var(--ink);
+}
+
 .gym-daynav .btn {
   min-height: 40px;
   padding: 0 var(--s4);

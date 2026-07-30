@@ -187,6 +187,20 @@ export const copy = {
     volumeLabel: 'Total work',
     volumeHint: 'Load × reps × sets, added up.',
     historyTitle: 'Days',
+    // The analysis a daily logger actually reads: trajectory, this week
+    // against last, and the records board. Counts and maxima, no coaching.
+    progressLine: (first: number, latest: number, days: number) =>
+      first === latest
+        ? `Holding at ${latest}, across ${days} days.`
+        : `From ${first} to ${latest}, across ${days} days.`,
+    weekTitle: 'This week',
+    weekSessions: (n: number) => (n === 1 ? '1 day trained' : `${n} days trained`),
+    weekWork: 'Total work',
+    weekVsLast: (pct: number) =>
+      pct >= 0 ? `Up ${pct}% on last week.` : `Down ${Math.abs(pct)}% on last week.`,
+    weekFirst: 'Your first tracked week. Next week gets a comparison.',
+    bestsTitle: 'Bests',
+    bestLine: (best: number, when: string) => `${best} — ${when}`,
     why: 'Your numbers, in your units, on this device. The app has no programme to sell you.',
   },
 
@@ -514,8 +528,9 @@ export const copy = {
         ? 'Everything in that file was already here.'
         : `Restored ${added} day${added === 1 ? '' : 's'}${skipped > 0 ? `, ${skipped} already here` : ''}.`,
     importFailed: 'That file could not be read. It needs to be a zip exported by this app.',
-    export: 'Export everything',
-    exportHint: 'A zip with your photos and a spreadsheet of your log.',
+    export: 'Back up everything',
+    exportHint:
+      'One file with your photos, your days and your training log. Send it to Google Drive or iCloud from the share sheet — “Restore from an export” below reads it back any time.',
     exporting: 'Preparing your export…',
     exportProgress: (done: number, total: number) => `Packing ${done} of ${total}…`,
     wipe: 'Delete everything',
@@ -546,8 +561,8 @@ export const copy = {
     // S2: the one moment the privacy promise legitimately ends.
     exportWarnTitle: 'This file leaves the app',
     exportWarnBody:
-      'The zip is saved to your downloads, outside this app. Some phones and computers back that folder up to a cloud drive automatically. Everything inside is readable by anything that can open the file.',
-    exportWarnGo: 'Save it anyway',
+      'The file is handed to your share sheet — a cloud drive like Google Drive or iCloud is the safest home for it, and this app never sees where it went. Everything inside is readable by anything that can open the file, unless you seal it with a passphrase below.',
+    exportWarnGo: 'Make the backup',
     notificationsBlocked:
       'Your browser is blocking notifications for this site, so the reminder cannot be shown.',
     reminderCaveat:

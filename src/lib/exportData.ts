@@ -8,6 +8,7 @@ import {
   putEntry,
   putPhoto,
   recomputeOutfit,
+  restoreTags,
 } from '../db/db'
 import { chipLabel } from './chips'
 import { parseDateKey } from './dates'
@@ -275,6 +276,13 @@ export async function importArchive(blob: Blob): Promise<ImportResult> {
   }
 
   for (const outfitId of touchedOutfits) await recomputeOutfit(outfitId)
+
+  /*
+   * Tags come back too. The manifest has always carried items and their links;
+   * dropping them on restore silently unlearned the user's whole vocabulary —
+   * search and the tag insights both stopped working on restored days.
+   */
+  await restoreTags(manifest.items ?? [], manifest.entryItems ?? [])
 
   // The training log, merged by id like entries are — importing the same
   // archive twice stays harmless.

@@ -626,11 +626,131 @@ h3 {
 
 /* ------------------------------------------------------------- training -- */
 
+/*
+ * The Training screen at postcard size, and it actually works: the visitor
+ * taps "Log it", the set lands in the day list, total work recomputes, and
+ * the new-best line appears — the whole loop of the feature in one tap.
+ */
 .gym-demo {
   margin-top: clamp(24px, 4vh, 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.gym-frame {
+  width: min(400px, 100%);
   border: 1px solid var(--ink);
-  max-width: 560px;
-  padding: clamp(18px, 3vw, 32px);
+  background: var(--paper);
+  padding: clamp(18px, 3vw, 28px);
+  box-shadow: 12px 12px 0 0 var(--line);
+}
+
+.gym-frame-eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 14px;
+}
+
+.gym-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.gym-chip {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+}
+
+.gym-chip.is-on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.gym-exercise {
+  font-size: 18px;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.gym-note {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.gym-cells {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.gym-cell {
+  border: 1px solid var(--line);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.gym-cell b {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.gym-log {
+  display: block;
+  width: 100%;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 13px 0;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.gym-log:hover:enabled {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.gym-log:disabled {
+  background: var(--paper);
+  color: var(--ink-muted);
+  border-color: var(--line);
+  cursor: default;
+}
+
+.gym-rows {
+  margin-top: 14px;
 }
 
 .gym-row {
@@ -638,42 +758,64 @@ h3 {
   justify-content: space-between;
   align-items: baseline;
   gap: 16px;
-  padding-bottom: 12px;
+  padding: 9px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
-  min-height: 1.6em;
+}
+
+.gym-row.is-new {
+  animation: gym-land 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes gym-land {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .gym-set {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  color: var(--ink-soft);
+  font-weight: 400;
 }
 
-.gym-note {
-  margin-top: 12px;
-  font-size: 14px;
+.gym-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 10px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--ink-muted);
-  min-height: 1.5em;
+}
+
+.gym-total b {
+  font-size: 20px;
+  letter-spacing: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .gym-best {
-  margin-top: 6px;
+  margin-top: 10px;
   font-size: 14px;
   font-weight: 600;
   min-height: 1.5em;
 }
 
-/* The typing caret, while a line is being written. */
-.is-typing::after {
-  content: '▍';
-  animation: caret 0.9s steps(1) infinite;
-}
-
-@keyframes caret {
-  50% {
-    opacity: 0;
-  }
+.gym-caption {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 
 /* ---------------------------------------------------------------- who -- */

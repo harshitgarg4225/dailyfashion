@@ -396,6 +396,13 @@ test.describe('the landing page', () => {
     // The week card changes shape between post and story.
     await page.locator('#size-story').click()
     await expect(page.locator('#week-card')).toHaveClass(/is-story/)
+
+    // The Training mock logs a real set: row lands, total work recomputes
+    // (1200 + 60×8×3), and the new-best line appears.
+    await page.locator('#gym-log').click()
+    await expect(page.locator('#gym-rows .gym-row')).toHaveCount(2)
+    await expect(page.locator('#gym-total')).toHaveText('2640')
+    await expect(page.locator('#gym-best')).toContainText(/new best/i)
   })
 
   test('forwards a returning user straight to their log', async ({ page }) => {

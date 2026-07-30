@@ -1,4 +1,4 @@
-import type { DateKey } from './dates'
+import { addDays, type DateKey } from './dates'
 
 /**
  * The training log: sets, in the plainest possible schema.
@@ -140,6 +140,78 @@ export function exerciseStats(rows: readonly WorkoutSet[], exercise: string): Ex
 /** Total work in a list of rows: Σ load × reps × sets. One honest number per day. */
 export function sessionVolume(rows: readonly WorkoutSet[]): number {
   return rows.reduce((sum, row) => sum + row.load * row.reps * row.sets, 0)
+}
+
+/**
+ * Top load per training day for one exercise, oldest first — the trend a
+ * lifter actually wants to see. Days, not sets: the heaviest single of a
+ * session is the honest summary of it, and per-set noise is not a story.
+ */
+export function loadTrend(
+  rows: readonly WorkoutSet[],
+  exercise: string,
+): Array<{ date: DateKey; top: number }> {
+  const name = normaliseExercise(exercise)
+  const byDay = new Map<DateKey, number>()
+  for (const row of rows) {
+    if (row.exercise !== name) continue
+    const current = byDay.get(row.date)
+    if (current === undefined || row.load > current) byDay.set(row.date, row.load)
+  }
+  return [...byDay.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([date, top]) => ({ date, top }))
+}
+
+/**
+ * Rolling seven-day windows, not calendar weeks. "This week against last"
+ * should mean the same thing on a Tuesday as on a Sunday, and a rolling
+ * window is the only version of that sentence with no fine print.
+ */
+export interface TrainingWeek {
+  sessions: number
+  volume: number
+}
+
+export function trainingWeeks(
+  rows: readonly WorkoutSet[],
+  today: DateKey,
+): { thisWeek: TrainingWeek; lastWeek: TrainingWeek } {
+  const weekAgo = addDays(today, -7)
+  const fortnightAgo = addDays(today, -14)
+
+  const summarise = (bucket: readonly WorkoutSet[]): TrainingWeek => ({
+    sessions: new Set(bucket.map((row) => row.date)).size,
+    volume: sessionVolume(bucket),
+  })
+
+  return {
+    thisWeek: summarise(rows.filter((row) => row.date > weekAgo && row.date <= today)),
+    lastWeek: summarise(rows.filter((row) => row.date > fortnightAgo && row.date <= weekAgo)),
+  }
+}
+
+/**
+ * Current best per exercise, most recently earned first — the records board.
+ * The date is the day the best was first hit, so a matched-but-not-beaten
+ * lift does not quietly re-stamp an old record as new.
+ */
+export function personalBests(
+  rows: readonly WorkoutSet[],
+): Array<{ exercise: string; best: number; date: DateKey }> {
+  const bests = new Map<string, { best: number; date: DateKey }>()
+  const chronological = [...rows].sort((a, b) =>
+    a.date < b.date ? -1 : a.date > b.date ? 1 : a.created_at - b.created_at,
+  )
+  for (const row of chronological) {
+    const current = bests.get(row.exercise)
+    if (!current || row.load > current.best) {
+      bests.set(row.exercise, { best: row.load, date: row.date })
+    }
+  }
+  return [...bests.entries()]
+    .map(([exercise, record]) => ({ exercise, ...record }))
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
 /** Days that have sets, newest first, each with its rows — the history list. */

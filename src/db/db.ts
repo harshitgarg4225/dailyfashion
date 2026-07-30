@@ -439,6 +439,36 @@ export async function tagEntry(entryId: string, rawLabel: string): Promise<Item 
   return item
 }
 
+/**
+ * Restores tags from a backup archive, merge-safe.
+ *
+ * Items land keyed by id and links by their own key, so restoring the same
+ * archive twice changes nothing. Without this, a restore brought the days
+ * back but silently dropped every tag — the vocabulary the search field and
+ * the insight engine both vote with.
+ */
+export async function restoreTags(items: Item[], links: EntryItem[]): Promise<void> {
+  if (items.length === 0 && links.length === 0) return
+
+  // The links store autoincrements, so a bare put would duplicate every link
+  // on a second restore of the same archive. Dedupe by pair instead — items
+  // are keyed by id and need no such care.
+  const seen = new Set((await allEntryItems()).map((l) => `${l.entry_id} ${l.item_id}`))
+
+  const db = await openDb()
+  const transaction = tx(db, [STORES.items, STORES.entryItems], 'readwrite')
+  const itemStore = transaction.objectStore(STORES.items)
+  const linkStore = transaction.objectStore(STORES.entryItems)
+  for (const item of items) itemStore.put(item)
+  for (const link of links) {
+    const key = `${link.entry_id} ${link.item_id}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    linkStore.put({ entry_id: link.entry_id, item_id: link.item_id })
+  }
+  await done(transaction)
+}
+
 /** Autocomplete source for the tag field — past labels only, never a catalog. */
 export async function itemSuggestions(prefix: string, limit = 6): Promise<Item[]> {
   const needle = prefix.trim().toLowerCase()

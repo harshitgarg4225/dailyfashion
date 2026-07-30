@@ -6,10 +6,13 @@ import {
   exerciseStats,
   formatSet,
   knownExercises,
+  loadTrend,
   normaliseExercise,
+  personalBests,
   previousSession,
   sessionsByDay,
   sessionVolume,
+  trainingWeeks,
   type WorkoutSet,
 } from '../lib/gym'
 import { allWorkouts, deleteWorkout, newId, putWorkout } from '../db/db'
@@ -30,6 +33,32 @@ import { track } from '../lib/telemetry'
  *    did not get logged at the rack, and the history below shows every
  *    training day with its sets and its one honest number — total work.
  */
+/**
+ * The trend line for one exercise: top load per training day, drawn plainly.
+ * An SVG polyline instead of a chart library, because the question it answers
+ * — "is this number going up?" — needs a shape, not axes.
+ */
+function LoadSpark({ points }: { points: Array<{ date: DateKey; top: number }> }) {
+  const width = 220
+  const height = 36
+  const pad = 3
+  const tops = points.map((p) => p.top)
+  const min = Math.min(...tops)
+  const span = Math.max(...tops) - min || 1
+  const step = points.length > 1 ? (width - pad * 2) / (points.length - 1) : 0
+  const coords = points.map((p, i) => ({
+    x: pad + i * step,
+    y: height - pad - ((p.top - min) / span) * (height - pad * 2),
+  }))
+  const last = coords[coords.length - 1]!
+  return (
+    <svg className="gym-spark" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+      <polyline points={coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ')} />
+      <circle cx={last.x.toFixed(1)} cy={last.y.toFixed(1)} r="2.5" />
+    </svg>
+  )
+}
+
 export function GymScreen({ today }: { today: DateKey }) {
   const [rows, setRows] = useState<WorkoutSet[]>([])
   const [date, setDate] = useState<DateKey>(today)
@@ -57,6 +86,12 @@ export function GymScreen({ today }: { today: DateKey }) {
     () => (exercise.trim() ? exerciseStats(rows, exercise) : null),
     [rows, exercise],
   )
+  const trend = useMemo(
+    () => (exercise.trim() ? loadTrend(rows, exercise) : []),
+    [rows, exercise],
+  )
+  const weeks = useMemo(() => trainingWeeks(rows, today), [rows, today])
+  const bests = useMemo(() => personalBests(rows), [rows])
 
   const add = async () => {
     const name = normaliseExercise(exercise)
@@ -189,6 +224,17 @@ export function GymScreen({ today }: { today: DateKey }) {
           <p className="note">{copy.gym.record(stats.best, stats.sessions)}</p>
         ) : null}
 
+        {/* The trajectory, the moment there are two days to draw it from:
+            the trend of the top single per session, and where it started. */}
+        {trend.length >= 2 ? (
+          <div className="gym-trend">
+            <LoadSpark points={trend} />
+            <p className="note">
+              {copy.gym.progressLine(trend[0]!.top, trend[trend.length - 1]!.top, trend.length)}
+            </p>
+          </div>
+        ) : null}
+
         <div className="gym-numbers">
           <label className="field">
             <span className="field-label">{copy.gym.load}</span>
@@ -262,6 +308,49 @@ export function GymScreen({ today }: { today: DateKey }) {
           </div>
         </div>
       )}
+
+      {/* This week against last: rolling seven-day windows, plain numbers. */}
+      {weeks.thisWeek.sessions > 0 ? (
+        <>
+          <hr className="rule" />
+          <h2 className="summary-heading">{copy.gym.weekTitle}</h2>
+          <div className="panel">
+            <div className="row">
+              <span className="row-text">{copy.gym.weekSessions(weeks.thisWeek.sessions)}</span>
+              <span className="sub">{weeks.thisWeek.volume}</span>
+            </div>
+          </div>
+          <p className="note">
+            {weeks.lastWeek.volume > 0
+              ? copy.gym.weekVsLast(
+                  Math.round(
+                    ((weeks.thisWeek.volume - weeks.lastWeek.volume) / weeks.lastWeek.volume) * 100,
+                  ),
+                )
+              : copy.gym.weekFirst}
+          </p>
+        </>
+      ) : null}
+
+      {/* The records board: current best per exercise, newest record first.
+          Tapping one loads that exercise, numbers-to-beat and all. */}
+      {bests.length >= 2 ? (
+        <>
+          <hr className="rule" />
+          <h2 className="summary-heading">{copy.gym.bestsTitle}</h2>
+          {bests.slice(0, 8).map((record) => (
+            <button
+              key={record.exercise}
+              type="button"
+              className="row row--full"
+              onClick={() => setExercise(record.exercise)}
+            >
+              <span className="row-text">{record.exercise}</span>
+              <span className="sub">{copy.gym.bestLine(record.best, mediumLabel(record.date))}</span>
+            </button>
+          ))}
+        </>
+      ) : null}
 
       {/* Every training day, with its sets and its one honest number. */}
       {history.length > 1 ? (
