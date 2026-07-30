@@ -1057,6 +1057,8 @@ button:focus-visible {
   left: 50%;
   transform: translateX(-50%);
   bottom: calc(var(--safe-bottom) + 112px);
+  /* Narration floats; it must never swallow a tap meant for the page. */
+  pointer-events: none;
   background: var(--ink);
   color: var(--paper);
   padding: var(--s3) var(--s5);
@@ -1177,6 +1179,11 @@ input[type='time'] {
   display: flex;
   align-items: center;
   gap: var(--s4);
+}
+
+/* A toast with an undo is a control, and controls take taps. */
+.toast--action {
+  pointer-events: auto;
 }
 
 .toast-action {

@@ -135,7 +135,9 @@ export function Toast({
   action?: { label: string; onAction: () => void } | undefined
 }) {
   return (
-    <div className="toast" role="status">
+    // A plain toast is narration and must never intercept a tap aimed at what
+    // is underneath it; one carrying an undo is a control and must.
+    <div className={action ? 'toast toast--action' : 'toast'} role="status">
       <span>{message}</span>
       {action ? (
         <button type="button" className="toast-action" onClick={action.onAction}>

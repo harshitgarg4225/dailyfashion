@@ -27,7 +27,7 @@ interface Ad {
   url: string
 }
 
-export function OffersScreen() {
+export function OffersScreen({ onBack }: { onBack?: (() => void) | undefined }) {
   const [ads, setAds] = useState<Ad[] | null>(null)
 
   useEffect(() => {
@@ -77,6 +77,13 @@ export function OffersScreen() {
       )}
 
       <p className="note">{copy.offers.how}</p>
+
+      {/* The page is a destination off the tab bar, so it names its own exit. */}
+      {onBack ? (
+        <button type="button" className="btn btn--quiet btn--block" onClick={onBack}>
+          {copy.offers.back}
+        </button>
+      ) : null}
     </div>
   )
 }

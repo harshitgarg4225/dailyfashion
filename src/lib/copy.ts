@@ -217,6 +217,7 @@ export const copy = {
     empty: 'Nothing here right now.',
     open: 'Have a look',
     how: 'These are placed by us, shown from our own server, and nothing about you goes to anyone when you read this page.',
+    back: 'Back to Progress',
   },
 
   summary: {

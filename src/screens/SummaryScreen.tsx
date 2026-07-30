@@ -142,9 +142,11 @@ export function SummaryScreen({
         slot="summary"
         alreadyShownThisSession={sponsorShown}
       />
-          {onOpenOffers ? (
+      {onOpenOffers ? (
         <>
-          <button type="button" className="btn btn--quiet btn--block" onClick={onOpenOffers}>
+          {/* A door has to look like one. A bare quiet label here read as a
+              caption, and nobody pushes on a caption. */}
+          <button type="button" className="btn btn--ghost btn--block" onClick={onOpenOffers}>
             {copy.offers.title}
           </button>
           <p className="note note--centred">{copy.offers.sub}</p>

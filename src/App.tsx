@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChipId, Entry, FeltScore, ImageSignature, Settings, TempBand } from './types'
 import { useLog } from './app/useLog'
 import { Sheet, Toast } from './app/controls'
@@ -149,20 +149,45 @@ export default function App() {
 
   const todayTempBand = entriesToday.find((e) => e.context.temp_band)?.context.temp_band ?? tappedTemp
 
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const flash = useCallback(
     (message: string, action?: { label: string; onAction: () => void }) => {
+      // A second flash must own the clock, or the first one's timer clears it
+      // mid-sentence.
+      if (toastTimer.current) clearTimeout(toastTimer.current)
       setToast(action ? { message, action } : { message })
       // Longer when there is something to undo — a two-second window to notice
       // a mis-tap and react to it is not a window at all.
-      setTimeout(() => setToast(null), action ? 6000 : 1800)
+      toastTimer.current = setTimeout(() => setToast(null), action ? 6000 : 1800)
     },
     [],
   )
+
+  /*
+   * A toast narrates the screen it was born on. The moment the user moves —
+   * a tab, the camera, opening a day — it is stale, and worse than stale it
+   * floats over whatever they are now trying to tap. Navigation dismisses it.
+   */
+  const navigate = useCallback((next: Screen) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setToast(null)
+    setScreen(next)
+  }, [])
 
   // The lock is read once per launch, before anything from the log is painted.
   useEffect(() => {
     void getLock().then((record) => setLock(record))
   }, [])
+
+  /*
+   * Every screen starts at its own top. Without this, scrolling to the bottom
+   * of one tab silently scrolls every other tab too — arrive on Training from
+   * the foot of the Week page and the first thing shown is the middle of a
+   * form, with the title somewhere above the viewport.
+   */
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [screen])
 
   // --- launch routing (J1) ---------------------------------------------
 
@@ -748,7 +773,7 @@ export default function App() {
         return <GymScreen today={today} />
 
       case 'offers':
-        return <OffersScreen />
+        return <OffersScreen onBack={() => navigate('summary')} />
 
       case 'shortlist':
         return (
@@ -827,7 +852,7 @@ export default function App() {
             today={today}
             sponsorShown={sponsorShown}
             onSponsorShown={() => setSponsorShown(true)}
-            onOpenOffers={() => setScreen('offers')}
+            onOpenOffers={() => navigate('offers')}
           />
         )
 
@@ -842,10 +867,10 @@ export default function App() {
             entryItems={log.entryItems}
             onOpen={(entry) => {
               setOpenEntry(entry)
-              setScreen('tonight')
+              navigate('tonight')
             }}
             onAddPast={() => setDatePicker(true)}
-            onWrite={() => setScreen('write')}
+            onWrite={() => navigate('write')}
             sponsorShown={sponsorShown}
             onSponsorShown={() => setSponsorShown(true)}
             installNudgeDismissed={installNudgeDismissed}
@@ -864,7 +889,7 @@ export default function App() {
           <button
             type="button"
             className="capture-bar"
-            onClick={() => setScreen('camera')}
+            onClick={() => navigate('camera')}
           >
             {TAB_LABELS.camera}
           </button>
@@ -877,7 +902,7 @@ export default function App() {
                 aria-current={screen === tab ? 'page' : undefined}
                 onClick={() => {
                   setOpenEntry(null)
-                  setScreen(tab)
+                  navigate(tab)
                 }}
               >
                 {TAB_LABELS[tab]}
