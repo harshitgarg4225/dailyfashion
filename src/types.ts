@@ -232,4 +232,6 @@ export interface Settings {
   share_usage: boolean
   /** Pseudonymous id minted at first consent. Null until then. */
   client_id: string | null
+  /** When the last style snapshot was sent. Weekly rhythm, consent-gated. */
+  last_style_sent: number | null
 }

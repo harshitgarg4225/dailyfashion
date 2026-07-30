@@ -5,6 +5,7 @@ import { addDays, daysBetween, mediumLabel, type DateKey } from '../lib/dates'
 import { Photo } from '../app/Photo'
 import { isInstalled, isIos } from '../lib/storage'
 import { SponsorSlot } from '../app/SponsorSlot'
+import { OffersStrip } from '../app/OffersStrip'
 import { shouldShowSponsor } from '../lib/sponsor'
 import { searchEntries } from '../lib/search'
 import type { EntryItem, Item } from '../types'
@@ -59,6 +60,7 @@ export function LogScreen({
   onOpen,
   onAddPast,
   onWrite,
+  onOpenOffers,
   installNudgeDismissed,
   onDismissInstallNudge,
   sponsorShown,
@@ -72,6 +74,7 @@ export function LogScreen({
   onOpen: (entry: Entry) => void
   onAddPast: () => void
   onWrite: () => void
+  onOpenOffers?: (() => void) | undefined
   installNudgeDismissed: boolean
   onDismissInstallNudge: () => void
   sponsorShown: boolean
@@ -327,6 +330,9 @@ export function LogScreen({
         * few days they remember. J9 says backdating is always available.
         */}
       <div className="spacer" />
+      {/* Offers live where the eyes are — labelled, below the user's own
+          photographs, and absent entirely while unsold. */}
+      <OffersStrip placement="journal" onMore={onOpenOffers} />
       <SponsorSlot
         entries={entries}
         today={today}

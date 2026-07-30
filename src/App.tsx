@@ -24,6 +24,11 @@ import { shouldOfferSoftening } from './lib/insights'
 import { SHORTLIST_MIN_ENTRIES } from './lib/shortlist'
 import { MIN_DAYS_FOR_WRAP } from './lib/weekWrapped'
 import {
+  styleSnapshot,
+  STYLE_SNAPSHOT_INTERVAL_MS,
+  STYLE_SNAPSHOT_MIN_ENTRIES,
+} from './lib/styleProfile'
+import {
   allEntryItems,
   clonePhoto,
   deleteEntry,
@@ -150,6 +155,8 @@ export default function App() {
   const todayTempBand = entriesToday.find((e) => e.context.temp_band)?.context.temp_band ?? tappedTemp
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Whether the in-flight capture is the log's first ever entry. */
+  const firstCaptureRef = useRef(false)
   const flash = useCallback(
     (message: string, action?: { label: string; onAction: () => void }) => {
       // A second flash must own the clock, or the first one's timer clears it
@@ -225,6 +232,21 @@ export default function App() {
     // A no-op unless the user opted into usage sharing in Settings.
     void track('app_open')
   }, [log.loading, log.settings.onboarded])
+
+  /*
+   * The weekly style snapshot: garment words and colours as counts, for
+   * consented users only. Weekly on purpose — a live feed of someone's
+   * wardrobe would be surveillance; a Sunday-paper summary is analytics.
+   */
+  useEffect(() => {
+    if (log.loading || !log.settings.share_usage) return
+    if (log.entries.length < STYLE_SNAPSHOT_MIN_ENTRIES) return
+    const last = log.settings.last_style_sent
+    if (last !== null && Date.now() - last < STYLE_SNAPSHOT_INTERVAL_MS) return
+    void track('style', { ...styleSnapshot(log.entries) })
+    void updateSettings({ last_style_sent: Date.now() })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [log.loading, log.settings.share_usage, log.settings.last_style_sent, log.entries.length])
 
   /*
    * Bring older photographs onto the current fingerprint format.
@@ -413,28 +435,32 @@ export default function App() {
 
   const onCaptured = useCallback(
     async (blob: Blob, signature: ImageSignature, thumb: Blob) => {
-      // Read before the save so "first ever" means what it says.
-      const firstEver = log.entries.length === 0
+      /*
+       * No flash here: the follow-up sheet opens over the log saying "your
+       * photo is already saved", and a toast underneath it is clutter. The
+       * flash fires when the sheet closes — with "Day one." for the first
+       * capture, read before the save so first-ever means what it says.
+       */
+      firstCaptureRef.current = log.entries.length === 0
       await saveEntry(blob, signature, { thumb, ...(pendingDate ? { date: pendingDate } : {}) })
       setPendingDate(null)
-      flash(firstEver ? copy.camera.savedFirst : copy.camera.saved)
       setScreen('log')
     },
-    [flash, log.entries.length, pendingDate, saveEntry],
+    [log.entries.length, pendingDate, saveEntry],
   )
 
   const onPickFile = useCallback(
     async (file: File) => {
       const prepared = await preparePhoto(file)
+      firstCaptureRef.current = log.entries.length === 0
       await saveEntry(prepared.blob, prepared.signature, {
         thumb: prepared.thumb,
         ...(pendingDate ? { date: pendingDate } : {}),
       })
       setPendingDate(null)
-      flash(copy.camera.saved)
       setScreen('log')
     },
-    [flash, pendingDate, saveEntry],
+    [log.entries.length, pendingDate, saveEntry],
   )
 
   /**
@@ -625,8 +651,12 @@ export default function App() {
       if (result.tag) await tagEntry(entryId, result.tag)
 
       await log.refresh()
+
+      // The saved moment, delivered now that nothing is on top of it.
+      flash(firstCaptureRef.current ? copy.camera.savedFirst : copy.camera.saved)
+      firstCaptureRef.current = false
     },
-    [log],
+    [flash, log],
   )
 
   /*
@@ -871,6 +901,7 @@ export default function App() {
             }}
             onAddPast={() => setDatePicker(true)}
             onWrite={() => navigate('write')}
+            onOpenOffers={() => navigate('offers')}
             sponsorShown={sponsorShown}
             onSponsorShown={() => setSponsorShown(true)}
             installNudgeDismissed={installNudgeDismissed}

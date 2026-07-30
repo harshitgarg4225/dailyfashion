@@ -67,6 +67,7 @@ export const DEFAULT_SETTINGS: Settings = {
   last_export_at: null,
   share_usage: false,
   client_id: null,
+  last_style_sent: null,
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null

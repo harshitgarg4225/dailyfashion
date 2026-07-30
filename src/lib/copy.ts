@@ -86,7 +86,7 @@ export const copy = {
     seedAsk: 'How did this day feel?',
 
     consentHint:
-      'Counts only — "a photo was taken today". Never the photo. Change it any time in Settings.',
+      'Counts and garment words only — "a photo was taken today", "wool coat, 12 days". Never the photo. Change it any time in Settings.',
     begin: 'Start logging',
     step: (index: number, total: number) => `Step ${index} of ${total}`,
     nextPrivacy: 'How it works',
@@ -227,11 +227,12 @@ export const copy = {
    */
   offers: {
     title: 'Offers',
-    sub: 'Things from sponsors, on one page, only when you open it.',
+    sub: 'Things from sponsors — labelled always, and never woven into your photos.',
     empty: 'Nothing here right now.',
     open: 'Have a look',
     how: 'These are placed by us, shown from our own server, and nothing about you goes to anyone when you read this page.',
     back: 'Back to Progress',
+    more: (count: number) => `All ${count} offers`,
   },
 
   summary: {
@@ -493,7 +494,7 @@ export const copy = {
     privacyLink: 'How your data is handled',
     shareUsage: 'Share usage counts with us',
     shareUsageHint:
-      'Off unless you turn it on. When on, the app tells us things like "a photo was taken today" — never the photo, never your notes, never how a day felt.',
+      'Off unless you turn it on. When on, the app tells us things like "a photo was taken today", and once a week the words for what you wear most — "wool coat, 12 days" — never the photo, never your notes, never how a day felt.',
     profileIntro:
       'If you want to, tell us who this is for. Every field is optional, it is sent once when you save, and none of it touches your log.',
     profileAge: 'Age',

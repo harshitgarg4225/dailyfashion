@@ -62,6 +62,7 @@ const EMPTY: LogState = {
     last_export_at: null,
     share_usage: false,
     client_id: null,
+    last_style_sent: null,
     last_reminder_for: null,
   },
   dismissed: [],

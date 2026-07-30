@@ -29,6 +29,10 @@ const KNOWN_EVENTS = new Set([
   'export',
   'ads_view',
   'workout',
+  // The style snapshot: words-and-counts for what a consented user wears
+  // most ("wool coat, 12 days") and dominant colours. Derived analytics —
+  // never a photo, never a note, never a felt score.
+  'style',
   // The landing page's anonymous counters: a constant client id, no cookie,
   // no per-visitor anything. They answer "is the front door being opened"
   // and nothing more personal than that.

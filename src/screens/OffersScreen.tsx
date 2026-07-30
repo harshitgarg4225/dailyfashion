@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { copy } from '../lib/copy'
 import { track } from '../lib/telemetry'
+import { fetchAds, type Ad } from '../app/OffersStrip'
 
 /**
  * Offers: the one page that shows ads, and says so in its first word.
@@ -20,28 +21,16 @@ import { track } from '../lib/telemetry'
  * and the screen honestly says there is nothing to show.
  */
 
-interface Ad {
-  id: number
-  title: string
-  body: string
-  url: string
-}
-
 export function OffersScreen({ onBack }: { onBack?: (() => void) | undefined }) {
   const [ads, setAds] = useState<Ad[] | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    void fetch('/api/ads')
-      .then((response) => (response.ok ? response.json() : { ads: [] }))
-      .then((data: { ads: Ad[] }) => {
-        if (!cancelled) setAds(Array.isArray(data.ads) ? data.ads : [])
-      })
-      .catch(() => {
-        if (!cancelled) setAds([])
-      })
+    void fetchAds().then((rows) => {
+      if (!cancelled) setAds(rows)
+    })
     // Viewing the page is itself a consented event — and the only one here.
-    void track('ads_view')
+    void track('ads_view', { placement: 'page' })
     return () => {
       cancelled = true
     }

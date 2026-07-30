@@ -1702,6 +1702,40 @@ form.garment-line {
   margin-top: var(--s3);
 }
 
+/* --- offers, on the journal -------------------------------------------- */
+
+/*
+ * A sponsor card in the journal keeps the same posture as everything else
+ * on the page: hairline border, the label first, and visually quieter than
+ * the photographs above it. Absent entirely while unsold.
+ */
+.offers-strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-bottom: var(--s5);
+}
+
+.offers-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  border: 1px solid var(--line);
+  padding: var(--s4) var(--s5);
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.2s ease;
+}
+
+.offers-card:hover {
+  border-color: var(--ink);
+}
+
+.offers-card strong {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 /* The per-exercise trend: a shape, not a chart. */
 .gym-trend {
   display: flex;

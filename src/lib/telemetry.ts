@@ -28,6 +28,13 @@ export type UsageEvent =
   | 'export'
   | 'ads_view'
   | 'workout'
+  /**
+   * The style snapshot: the words for what someone wears most, as counts —
+   * "wool coat, 12 days" — plus dominant colours. Derived analytics only;
+   * no photo, no note, no felt score can reach this event, and like every
+   * event here it is sent only after the switch in Settings is on.
+   */
+  | 'style'
 
 export interface UsageProfile {
   age_band: string | null
@@ -74,11 +81,11 @@ function post(path: string, payload: unknown): void {
 }
 
 /** Reports one event, if and only if the user has opted in. Never throws. */
-export async function track(event: UsageEvent): Promise<void> {
+export async function track(event: UsageEvent, props: Record<string, unknown> = {}): Promise<void> {
   try {
     const settings = await getSettings()
     if (!settings.share_usage || !settings.client_id) return
-    post('/api/events', { client_id: settings.client_id, event, props: {} })
+    post('/api/events', { client_id: settings.client_id, event, props })
   } catch {
     // Analytics must never cost the user anything.
   }
