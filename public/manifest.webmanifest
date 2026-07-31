@@ -1,7 +1,7 @@
 {
   "name": "Daily Fashion",
   "short_name": "Daily Fashion",
-  "description": "A private log of what you wore and how it went.",
+  "description": "The outfit repeater’s club — a private log of what you wore and what it’s worth.",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",

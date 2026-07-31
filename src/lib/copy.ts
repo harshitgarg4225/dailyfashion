@@ -51,7 +51,7 @@ export const BANNED_WORDS = [
 export const copy = {
   app: {
     name: 'Daily Fashion',
-    tagline: 'A log of what you wore and how it went.',
+    tagline: 'The outfit repeater’s club — a private log of what you wore and what it’s worth.',
   },
 
   onboarding: {
@@ -75,7 +75,7 @@ export const copy = {
 
     whatTitle: 'Two questions a day',
     whatBody:
-      'In the morning, take one photo of what you are wearing. In the evening, answer two quick questions: how the day felt, and whether anything happened. That is the whole thing.',
+      'In the morning, take one photo of what you are wearing. In the evening, answer two quick questions: how the day felt, and whether anything happened. That is the whole thing. Wearing things again is the point — the log is what makes it count.',
 
     // J5: seeds the log so the app is useful on day one.
     seedTitle: 'Start with three days you already liked',
@@ -307,9 +307,9 @@ export const copy = {
     // On a phone, the OS share sheet is the direct road to both apps.
     shareHint:
       'On your phone, the share sheet posts it straight to Instagram or Reddit.',
-    communityTitle: 'The community',
+    communityTitle: 'The repeaters’ club',
     communityBody:
-      'A quiet corner of Reddit where people post their week cards. It is only reachable from here — make your image first, then take it over.',
+      'A quiet corner of Reddit where the club posts their week cards — same coat, third week running, worn with pride. It is only reachable from here: make your image first, then take it over.',
     communityGo: 'Post it in the community',
     communityJoin: 'Have a look first',
     // Counts, never conclusions — same licence as the rest of the recap.
@@ -334,7 +334,8 @@ export const copy = {
     loggedAgain: 'Added to today.',
     wearCounted: (n: number) => {
       const suffix = n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'
-      return `Logged — its ${n}${suffix} wear.`
+      // The tenth wear is the membership card.
+      return n === 10 ? `Logged — its 10th wear. Club behaviour.` : `Logged — its ${n}${suffix} wear.`
     },
     installTitle: 'Keep this on your home screen',
     installBodyIos:

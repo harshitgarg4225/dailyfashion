@@ -149,13 +149,13 @@ if (grid) {
 var track = document.getElementById('marquee-track')
 if (track) {
   var phrases = [
-    ['wool coat', '14 wears', '$6.40 a wear'],
-    ['white tee', '31 wears', '$0.58 a wear'],
-    ['leather boots', '22 wears', '$9.10 a wear'],
-    ['grey knit', '9 wears', '$8.90 a wear'],
-    ['denim jacket', '27 wears', '$2.60 a wear'],
-    ['black dress', '6 wears', '$21.70 a wear'],
-    ['canvas trainers', '48 wears', '$1.35 a wear'],
+    ['wool coat', 'worn 14×', '$6.40 a wear'],
+    ['white tee', 'worn 31×', '$0.58 a wear'],
+    ['leather boots', 'worn 22×', '$9.10 a wear'],
+    ['grey knit', 'worn 9×', '$8.90 a wear'],
+    ['denim jacket', 'worn 27×', '$2.60 a wear'],
+    ['black dress', 'worn 6×', '$21.70 a wear'],
+    ['canvas trainers', 'worn 48×', '$1.35 a wear'],
   ]
   var html = phrases
     .map(function (p) {
