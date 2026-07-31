@@ -41,6 +41,7 @@ export function CameraScreen({
   const [countdown, setCountdown] = useState<number | null>(null)
   const [denied, setDenied] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [blink, setBlink] = useState(false)
   /**
    * The stream needs a moment before it has real dimensions. J1 drops people
    * straight here to tap immediately, so a shutter that looks live but is not
@@ -97,6 +98,11 @@ export function CameraScreen({
       setReady(false)
       return
     }
+
+    // The photographic ritual: a blink of white at the instant of capture.
+    // Acknowledgement, not decoration — the frame was taken *now*.
+    setBlink(true)
+    setTimeout(() => setBlink(false), 200)
 
     setBusy(true)
     haptic('confirm')
@@ -174,6 +180,8 @@ export function CameraScreen({
           if (event.currentTarget.videoWidth > 0) setReady(true)
         }}
       />
+
+      <div className={blink ? 'camera-blink is-on' : 'camera-blink'} aria-hidden="true" />
 
       <button type="button" className="camera-close" onClick={onExit} aria-label={copy.common.close}>
         Close

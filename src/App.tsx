@@ -155,8 +155,8 @@ export default function App() {
   const todayTempBand = entriesToday.find((e) => e.context.temp_band)?.context.temp_band ?? tappedTemp
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  /** Whether the in-flight capture is the log's first ever entry. */
-  const firstCaptureRef = useRef(false)
+  /** Entry count before the in-flight capture — the milestone arithmetic. */
+  const captureCountRef = useRef(-1)
   const flash = useCallback(
     (message: string, action?: { label: string; onAction: () => void }) => {
       // A second flash must own the clock, or the first one's timer clears it
@@ -441,7 +441,7 @@ export default function App() {
        * flash fires when the sheet closes — with "Day one." for the first
        * capture, read before the save so first-ever means what it says.
        */
-      firstCaptureRef.current = log.entries.length === 0
+      captureCountRef.current = log.entries.length
       await saveEntry(blob, signature, { thumb, ...(pendingDate ? { date: pendingDate } : {}) })
       setPendingDate(null)
       setScreen('log')
@@ -452,7 +452,7 @@ export default function App() {
   const onPickFile = useCallback(
     async (file: File) => {
       const prepared = await preparePhoto(file)
-      firstCaptureRef.current = log.entries.length === 0
+      captureCountRef.current = log.entries.length
       await saveEntry(prepared.blob, prepared.signature, {
         thumb: prepared.thumb,
         ...(pendingDate ? { date: pendingDate } : {}),
@@ -652,9 +652,23 @@ export default function App() {
 
       await log.refresh()
 
-      // The saved moment, delivered now that nothing is on top of it.
-      flash(firstCaptureRef.current ? copy.camera.savedFirst : copy.camera.saved)
-      firstCaptureRef.current = false
+      /*
+       * The saved moment, delivered now that nothing is on top of it — and
+       * the habit's quiet milestones with it. Day one, day seven, day
+       * thirty: the three days a daily practice becomes real, each marked
+       * with a sentence rather than a ceremony.
+       */
+      const nth = captureCountRef.current >= 0 ? captureCountRef.current + 1 : 0
+      captureCountRef.current = -1
+      flash(
+        nth === 1
+          ? copy.camera.savedFirst
+          : nth === 7
+            ? copy.camera.savedWeek
+            : nth === 30
+              ? copy.camera.savedMonth
+              : copy.camera.saved,
+      )
     },
     [flash, log],
   )

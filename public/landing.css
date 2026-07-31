@@ -52,6 +52,12 @@ body {
   overflow-x: hidden;
 }
 
+/* Even highlighted text stays in the house palette. */
+::selection {
+  background: var(--ink);
+  color: var(--paper);
+}
+
 /* ------------------------------------------------------------------ nav -- */
 
 .nav {
@@ -341,6 +347,11 @@ h3 {
 .marquee-track .sep {
   margin: 0 18px;
   color: var(--ink-faint);
+}
+
+/* Rest under the reader's cursor, so the numbers can actually be read. */
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
 }
 
 @keyframes marquee {

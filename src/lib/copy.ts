@@ -101,6 +101,8 @@ export const copy = {
     flip: 'Flip camera',
     saved: 'Saved.',
     savedFirst: 'Saved. Day one.',
+    savedWeek: 'Saved. Seven days in.',
+    savedMonth: 'Saved. Thirty days.',
     denied: 'Camera access is off. You can turn it on in your browser settings, or add a photo from your library instead.',
     pickInstead: 'Add from library',
     alreadyToday: 'You already logged today.',
@@ -492,6 +494,7 @@ export const copy = {
     exportNudgeStale:
       'It has been a while since the last export. A fresh one keeps your history safe from a cleared browser.',
     privacyLink: 'How your data is handled',
+    aboutLink: 'dailyfashion.co',
     shareUsage: 'Share usage counts with us',
     shareUsageHint:
       'Off unless you turn it on. When on, the app tells us things like "a photo was taken today", and once a week the words for what you wear most — "wool coat, 12 days" — never the photo, never your notes, never how a day felt.',

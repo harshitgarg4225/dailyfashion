@@ -183,6 +183,20 @@ p {
   max-width: 680px;
   width: 100%;
   margin: 0 auto;
+  /* Every screen arrives, rather than snapping into place. One gesture,
+     shared app-wide, is what "finished" feels like. */
+  animation: screen-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .screen-head {
@@ -450,7 +464,9 @@ p {
   outline-offset: 5px;
   background-clip: padding-box;
   flex: none;
-  transition: opacity 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.12s ease;
 }
 
 .shutter:disabled {
@@ -458,7 +474,34 @@ p {
 }
 
 .shutter:active:not(:disabled) {
-  opacity: 0.75;
+  opacity: 0.85;
+  transform: scale(0.92);
+}
+
+/*
+ * The blink: a breath of white over the viewfinder at the instant of capture.
+ * The oldest camera ritual there is, and the only decoration this screen gets.
+ */
+.camera-blink {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.camera-blink.is-on {
+  animation: camera-blink 0.2s ease-out;
+}
+
+@keyframes camera-blink {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .camera-side {
@@ -1059,6 +1102,7 @@ button:focus-visible {
   bottom: calc(var(--safe-bottom) + 112px);
   /* Narration floats; it must never swallow a tap meant for the page. */
   pointer-events: none;
+  animation: toast-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
   background: var(--ink);
   color: var(--paper);
   padding: var(--s3) var(--s5);
@@ -1067,6 +1111,46 @@ button:focus-visible {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   z-index: 60;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/*
+ * Press states: the interface pushes back. A one-pixel dip on buttons and a
+ * slight settle on tappable cells — felt more than seen, everywhere the
+ * finger lands.
+ */
+.btn:active:not(:disabled),
+.tab:active,
+.row--full:active {
+  transform: translateY(1px);
+}
+
+.grid-cell:active .cell-frame {
+  transform: scale(0.97);
+}
+
+.cell-frame {
+  transition: transform 0.12s ease;
+}
+
+.felt-option:active {
+  transform: translateY(1px);
+}
+
+/* Even highlighted text stays in the house palette. */
+::selection {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 @media (prefers-reduced-motion: reduce) {

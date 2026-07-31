@@ -683,6 +683,10 @@ export function SettingsScreen({
 
       <p className="eyebrow settings-footer">
         <a href="/privacy">{copy.settings.privacyLink}</a>
+        {' · '}
+        {/* The way back out front. ?stay=1 keeps the brochure from bouncing
+            a marked returning user straight back into the app. */}
+        <a href="/?stay=1">{copy.settings.aboutLink}</a>
       </p>
     </div>
   )
