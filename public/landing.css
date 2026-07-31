@@ -465,6 +465,58 @@ h3 {
   min-height: 3em;
 }
 
+/* --------------------------------------------------------------- ledger -- */
+
+/*
+ * The do → get ledger: what a day costs on the left, what it pays on the
+ * right. Set like an invoice on purpose — this product's whole argument is
+ * that the accounting favours you.
+ */
+.ledger {
+  margin-top: clamp(28px, 5vh, 56px);
+  max-width: 860px;
+}
+
+.ledger-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: clamp(16px, 3vw, 48px);
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.ledger-row:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 640px) {
+  .ledger-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+.ledger-do {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding-top: 3px;
+}
+
+.ledger-get {
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.ledger-close {
+  margin-top: clamp(20px, 4vh, 36px);
+  font-size: clamp(18px, 2.6vw, 24px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  max-width: 22em;
+}
+
 /* ----------------------------------------------------------- calculator -- */
 
 .calc {
