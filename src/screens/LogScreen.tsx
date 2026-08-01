@@ -177,7 +177,7 @@ export function LogScreen({
   return (
     <div className="screen">
       <div className="screen-head">
-        <span className="eyebrow">{copy.app.name}</span>
+        <a className="eyebrow eyebrow-home" href="/?stay=1">{copy.app.name}</a>
         <h1>{copy.log.title}</h1>
         <span className="sub">{copy.log.entryCount(entries.length)}</span>
       </div>

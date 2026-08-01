@@ -640,10 +640,14 @@ export default function App() {
       setFollowUp(null)
 
       const entry = log.entries.find((e) => e.id === entryId)
-      if (entry && result.tempBand !== entry.context.temp_band) {
+      if (entry && (result.tempBand !== entry.context.temp_band || result.felt !== null)) {
         await putEntry({
           ...entry,
           context: { ...entry.context, temp_band: result.tempBand },
+          // An early answer to the evening question, if one was given.
+          ...(result.felt !== null
+            ? { felt_score: result.felt, rated_at: Date.now() }
+            : {}),
         })
       }
 
@@ -841,6 +845,15 @@ export default function App() {
               today,
               softened: log.settings.softened_at !== null,
               dismissed: log.dismissed,
+            }}
+            unanswered={unrated.length}
+            onAnswerNow={() => {
+              // Oldest first: the day most at risk of being forgotten.
+              const oldest = unrated[unrated.length - 1]
+              if (oldest) {
+                setOpenEntry(oldest)
+                navigate('tonight')
+              }
             }}
             entriesById={entriesById}
             onDismiss={(id, n) => void dismissInsight(id, n).then(() => log.refresh())}

@@ -165,13 +165,13 @@ export function SettingsScreen({
     void storageUsage().then((usage) => setUsed(usage ? formatBytes(usage.usedBytes) : null))
   }, [])
 
-  const runExport = async () => {
+  const runExport = async (pass = '') => {
     setConfirmExport(false)
     setExporting(true)
     setExportProgress(null)
     try {
       const result = await buildExport((done, total) => setExportProgress({ done, total }))
-      const passphrase = sealPass.trim()
+      const passphrase = pass.trim()
       const [archive, filename] = passphrase
         ? [await sealArchive(result.blob, passphrase), result.filename.replace(/\.zip$/, '.sealed')]
         : [result.blob, result.filename]
@@ -490,17 +490,35 @@ export function SettingsScreen({
             {copy.settings.export}
             <small>{copy.settings.exportHint}</small>
           </span>
+          {/*
+            * One tap, straight to the share sheet, where Drive and iCloud
+            * live. The interstitial made a backup feel like a procedure;
+            * the passphrase path below keeps the sheet for those who want it.
+            */}
           <button
             type="button"
             className="btn btn--ghost"
             disabled={exporting}
-            onClick={() => setConfirmExport(true)}
+            onClick={() => void runExport()}
           >
             {exporting
               ? exportProgress
                 ? copy.settings.exportProgress(exportProgress.done, exportProgress.total)
                 : copy.settings.exporting
               : copy.settings.export}
+          </button>
+        </div>
+        <div className="row">
+          <span className="row-text">
+            <small>{copy.settings.sealRowHint}</small>
+          </span>
+          <button
+            type="button"
+            className="btn btn--quiet"
+            disabled={exporting}
+            onClick={() => setConfirmExport(true)}
+          >
+            {copy.settings.sealAction}
           </button>
         </div>
 
@@ -631,7 +649,7 @@ export function SettingsScreen({
                 onChange={(event) => setSealPass(event.target.value)}
               />
             </label>
-            <button type="button" className="btn btn--primary btn--block" onClick={runExport}>
+            <button type="button" className="btn btn--primary btn--block" onClick={() => void runExport(sealPass)}>
               {copy.settings.exportWarnGo}
             </button>
             <button

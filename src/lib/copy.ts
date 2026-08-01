@@ -375,6 +375,8 @@ export const copy = {
     body: 'All optional. Your photo is already saved.',
     tempPrompt: 'What was it like out?',
     tempHint: 'This stops the log blaming a jacket for the weather.',
+    feltPrompt: 'Already know how it feels?',
+    feltHint: 'Answer now or tonight — you can change it either way.',
     done: 'Done',
   },
 
@@ -433,6 +435,7 @@ export const copy = {
     previewIntro: 'Once there is enough, observations look like this.',
     previewObservation:
       'The green jacket sits at the top of your log, and you almost never reach for it.',
+    thinSub: 'It only says what it can back up. Right now it is still listening.',
     previewEvidence:
       '4.6 average across 7 days, against 3.4 for everything else. Last worn a month ago.',
     previewQuestion: 'Worth putting on this week?',
@@ -483,6 +486,8 @@ export const copy = {
     blurHint: 'Photos stay blurred until you tap one.',
     exportShared: 'Handed to your share sheet. A cloud drive is the safest home for it.',
     exportSaved: 'Saved to this device. Move it somewhere that outlives the phone.',
+    sealAction: 'Seal with a passphrase',
+    sealRowHint: 'The same backup, encrypted first. Only your passphrase opens it.',
     sealLabel: 'Passphrase (optional)',
     sealHint:
       'Leave empty for a plain zip. With a passphrase, the file is sealed on this device and cannot be opened without it — by anyone, including us. There is no way to recover it.',

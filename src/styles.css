@@ -1153,6 +1153,16 @@ button:focus-visible {
   color: var(--paper);
 }
 
+/* The wordmark is the way back out front. */
+.eyebrow-home {
+  color: inherit;
+  text-decoration: none;
+}
+
+.eyebrow-home:hover {
+  color: var(--ink);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import type { Entry, TempBand } from '../types'
+import type { Entry, FeltScore, TempBand } from '../types'
 import { copy } from '../lib/copy'
 import { TEMP_BANDS } from '../lib/context'
 import { shortLabel } from '../lib/dates'
-import { Sheet } from '../app/controls'
+import { FeltScale, Sheet } from '../app/controls'
 import { Photo } from '../app/Photo'
 
 /**
@@ -27,6 +27,8 @@ export interface FollowUpResult {
   tempBand: TempBand | null
   linkTo: string | null
   tag: string | null
+  /** An early answer to the evening question, for anyone who already knows. */
+  felt: FeltScore | null
 }
 
 export function CaptureFollowUp({
@@ -42,12 +44,14 @@ export function CaptureFollowUp({
   const [tempBand, setTempBand] = useState<TempBand | null>(null)
   const [linked, setLinked] = useState<boolean | null>(null)
   const [tag, setTag] = useState('')
+  const [felt, setFelt] = useState<FeltScore | null>(null)
 
   const finish = () =>
     onDone({
       tempBand,
       linkTo: linked && match ? match.id : null,
       tag: tag.trim().length > 0 ? tag : null,
+      felt,
     })
 
   return (
@@ -116,6 +120,19 @@ export function CaptureFollowUp({
           </datalist>
         </div>
       ) : null}
+
+      {/*
+        * The evening question, offered early for anyone who already knows.
+        * J2 still holds — the reflection belongs to the night — but "I love
+        * this outfit" is sometimes true at 8am, and making that person come
+        * back later to say so is ceremony for its own sake. Skippable, and
+        * changeable tonight either way.
+        */}
+      <div className="field">
+        <span className="field-label">{copy.followUp.feltPrompt}</span>
+        <span className="field-hint">{copy.followUp.feltHint}</span>
+        <FeltScale value={felt} onChange={(score) => setFelt(felt === score ? null : score)} />
+      </div>
 
       <button type="button" className="btn btn--primary btn--block" onClick={finish}>
         {copy.followUp.done}

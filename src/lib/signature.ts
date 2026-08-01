@@ -456,19 +456,53 @@ export function classifyColor(r: number, g: number, b: number): ColorFamily {
  * frame, and letting those vote would tell us the user wears a lot of
  * magnolia. The middle band is overwhelmingly torso.
  */
+/**
+ * True for pixels that look like skin under indoor light — the classic
+ * warm-tone rule. Used only to keep faces and hands from voting on what
+ * colour someone's *clothes* are; nothing about the person is stored.
+ */
+function looksLikeSkin(r: number, g: number, b: number): boolean {
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  return r > 95 && g > 40 && b > 20 && r > g && r > b && max - min > 15 && Math.abs(r - g) > 15
+}
+
 function dominantColor(data: Uint8ClampedArray, w: number, region: Bounds): ColorFamily {
-  const { x0, x1, y0, y1 } = region
+  const { x0, x1, y1 } = region
+  /*
+   * Clothes, not faces. The subject box starts at the head, and on a mirror
+   * selfie the face and the warm wall behind it can outvote a grey tee —
+   * which is how a log full of blue shirts gets told it reaches for orange.
+   * Colour is read from the lower two-thirds of the subject, skin excluded.
+   */
+  const y0 = region.y0 + Math.floor((region.y1 - region.y0) * 0.35)
 
   const counts = new Map<ColorFamily, number>()
   // Sample rather than read every pixel; the answer is a bucket, not a mean.
   const step = Math.max(1, Math.floor(Math.min(x1 - x0, y1 - y0) / 48))
 
+  let counted = 0
   for (let y = y0; y < y1; y += step) {
     for (let x = x0; x < x1; x += step) {
       const i = (y * w + x) * 4
       if (data[i + 3]! < 8) continue
+      if (looksLikeSkin(data[i]!, data[i + 1]!, data[i + 2]!)) continue
       const family = classifyColor(data[i]!, data[i + 1]!, data[i + 2]!)
       counts.set(family, (counts.get(family) ?? 0) + 1)
+      counted += 1
+    }
+  }
+
+  // A frame that is nearly all face or hands has nothing to say about
+  // clothing colour; fall back to the whole subject rather than guess.
+  if (counted < 24) {
+    for (let y = region.y0; y < y1; y += step) {
+      for (let x = x0; x < x1; x += step) {
+        const i = (y * w + x) * 4
+        if (data[i + 3]! < 8) continue
+        const family = classifyColor(data[i]!, data[i + 1]!, data[i + 2]!)
+        counts.set(family, (counts.get(family) ?? 0) + 1)
+      }
     }
   }
 
@@ -531,7 +565,9 @@ function bandHistograms(data: Uint8ClampedArray, w: number, h: number, region: B
  * meaningless one. `similarity` refuses across versions rather than producing a
  * confident number from incompatible inputs.
  */
-export const SIGNATURE_VERSION = 2
+// v3: dominant colour reads the lower subject with skin excluded, so faces
+// and warm walls stop outvoting the clothes. Bumping re-runs old photos.
+export const SIGNATURE_VERSION = 3
 
 export function computeSignature(image: RawImage): ImageSignature {
   // Everything below describes the person, not the middle of the photograph.

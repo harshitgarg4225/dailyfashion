@@ -29,11 +29,16 @@ export function InsightsScreen({
   entriesById,
   onDismiss,
   onResume,
+  unanswered = 0,
+  onAnswerNow,
 }: {
   input: GenerateInput
   entriesById: Map<string, Entry>
   onDismiss: (id: string, n: number) => void
   onResume: () => void
+  /** Days still waiting for an evening answer — the fastest way forward. */
+  unanswered?: number
+  onAnswerNow?: (() => void) | undefined
 }) {
   const { gate, insights } = useMemo(() => generateInsights(input), [input])
   const [index, setIndex] = useState(0)
@@ -58,7 +63,7 @@ export function InsightsScreen({
     return (
       <div className="screen">
         <div className="screen-head">
-          <span className="eyebrow">{copy.app.name}</span>
+          <a className="eyebrow eyebrow-home" href="/?stay=1">{copy.app.name}</a>
           <h1>{copy.insights.title}</h1>
         </div>
         <p className="empty">{copy.insights.softened}</p>
@@ -77,8 +82,9 @@ export function InsightsScreen({
     return (
       <div className="screen">
         <div className="screen-head">
-          <span className="eyebrow">{copy.app.name}</span>
+          <a className="eyebrow eyebrow-home" href="/?stay=1">{copy.app.name}</a>
           <h1>{copy.insights.title}</h1>
+          <span className="sub">{copy.insights.thinSub}</span>
         </div>
 
         {/*
@@ -92,6 +98,13 @@ export function InsightsScreen({
 
         <p className="progress-label">{copy.insights.countdown(remaining)}</p>
         <p className="note">{copy.insights.thin(gate.ratedEntries, gate.needed)}</p>
+
+        {/* The fastest way to move that bar is sitting in the journal. */}
+        {unanswered > 0 && onAnswerNow ? (
+          <button type="button" className="btn btn--ghost btn--block" onClick={onAnswerNow}>
+            {copy.log.answerNow(unanswered)}
+          </button>
+        ) : null}
 
         {/*
           * The provisional card: one early observation in the seven-to-

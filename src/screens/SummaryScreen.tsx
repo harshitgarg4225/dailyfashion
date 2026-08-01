@@ -54,7 +54,7 @@ export function SummaryScreen({
     return (
       <div className="screen">
         <div className="screen-head">
-          <span className="eyebrow">{copy.app.name}</span>
+          <a className="eyebrow eyebrow-home" href="/?stay=1">{copy.app.name}</a>
           <h1>{copy.summary.title}</h1>
         </div>
         <p className="empty">{copy.summary.empty}</p>
@@ -62,7 +62,17 @@ export function SummaryScreen({
     )
   }
 
-  const topColour = summary.colours[0]
+  /*
+   * The colour claim waits for real evidence: at least four photographed
+   * days, with the leading colour on at least half of them. "You reach for
+   * orange most — 2 days of it" read as a verdict from a coin toss, and one
+   * wrong early claim costs more trust than a week of silence.
+   */
+  const colourDays = summary.colours.reduce((sum, c) => sum + c.days, 0)
+  const topColour =
+    colourDays >= 4 && summary.colours[0] && summary.colours[0].days * 2 >= colourDays
+      ? summary.colours[0]
+      : undefined
   const mostComplimented = [...summary.colours]
     .filter((entry) => entry.complimentedDays > 0)
     .sort((a, b) => b.complimentedDays / b.days - a.complimentedDays / a.days)[0]
@@ -70,7 +80,7 @@ export function SummaryScreen({
   return (
     <div className="screen">
       <div className="screen-head">
-        <span className="eyebrow">{copy.app.name}</span>
+        <a className="eyebrow eyebrow-home" href="/?stay=1">{copy.app.name}</a>
         <h1>{copy.summary.title}</h1>
         {summary.firstEntry ? (
           <span className="sub">{copy.summary.since(mediumLabel(summary.firstEntry))}</span>
