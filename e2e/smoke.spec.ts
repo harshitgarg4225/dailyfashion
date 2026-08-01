@@ -371,7 +371,7 @@ test.describe('the landing page', () => {
     const external = await watchRequests(page)
 
     await page.goto(BASE)
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(/wear it/i)
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/feeling good/i)
 
     // The brochure keeps the origin's promise before the app ever loads.
     expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])

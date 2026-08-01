@@ -1,7 +1,7 @@
 {
   "name": "Daily Fashion",
   "short_name": "Daily Fashion",
-  "description": "The outfit repeater’s club — a private log of what you wore and what it’s worth.",
+  "description": "Sharing is the option. Feeling good is the point. A private log of what you wore, what you did, and how it felt.",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",

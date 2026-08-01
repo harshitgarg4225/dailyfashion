@@ -51,7 +51,7 @@ export const BANNED_WORDS = [
 export const copy = {
   app: {
     name: 'Daily Fashion',
-    tagline: 'The outfit repeater’s club — a private log of what you wore and what it’s worth.',
+    tagline: 'Sharing is the option. Feeling good is the point.',
   },
 
   onboarding: {
@@ -75,7 +75,7 @@ export const copy = {
 
     whatTitle: 'Two questions a day',
     whatBody:
-      'In the morning, take one photo of what you are wearing. In the evening, answer two quick questions: how the day felt, and whether anything happened. That is the whole thing. Wearing things again is the point — the log is what makes it count.',
+      'In the morning, take one photo of what you are wearing. In the evening, answer two quick questions: how the day felt, and whether anything happened. That is the whole thing. Sharing is always the option, never the price — feeling good in what you wear is the point.',
 
     // J5: seeds the log so the app is useful on day one.
     seedTitle: 'Start with three days you already liked',
