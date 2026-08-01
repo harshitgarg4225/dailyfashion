@@ -465,6 +465,55 @@ h3 {
   min-height: 3em;
 }
 
+/* -------------------------------------------------------- illustrations -- */
+
+/*
+ * Line drawings, drawn in-house: one-and-a-half-pixel ink strokes, no fill,
+ * same hand as the hairline rules. They inherit currentColor, so the same
+ * hanger reads ink-on-paper here and paper-on-ink in the privacy section.
+ */
+.ill {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+}
+
+.ill--step {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 14px;
+}
+
+.ill--hanger {
+  width: 110px;
+  height: 66px;
+  margin-bottom: 18px;
+  color: var(--ink-muted);
+}
+
+.ill--bar {
+  width: 130px;
+  height: 38px;
+  margin-bottom: 18px;
+  color: var(--ink-muted);
+}
+
+.ill--phone {
+  width: 44px;
+  height: 66px;
+  margin-bottom: 18px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ill--who {
+  width: 26px;
+  height: 26px;
+  margin-bottom: 12px;
+}
+
 /* --------------------------------------------------------------- ledger -- */
 
 /*
