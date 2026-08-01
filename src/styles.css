@@ -12,10 +12,11 @@
  *  2. **Rules, not surfaces.** Hierarchy comes from 1px lines and white space
  *     rather than filled cards and shadows. Nothing floats.
  *
- *  3. **Photographs are the only colour.** The chrome is strictly
- *     monochrome — there is no accent colour at all, only ink — so the one
- *     saturated thing on any screen is the user's own photograph, presented
- *     on a quiet grey block like a print on a wall.
+ *  3. **Photographs carry the colour; the chrome earns two.** The base is
+ *     monochrome, with exactly two accents used narrowly: royal blue where
+ *     the interface works (selection, progress, the active tab) and rose
+ *     where it feels (a waiting day, a new best). Anything more and the
+ *     photographs stop being the saturated thing on screen.
  *
  *  4. **Buttons invert, never tint.** A pressed or hovered control swaps ink
  *     and paper; nothing ever goes translucent or pastel.
@@ -37,8 +38,14 @@
   --ink-muted: #6e6e6e;
   --ink-faint: #b9b9b9;
 
-  /* Monochrome on purpose: the accent is ink. Kept as a token so any future
-     retreat from that position is one line. */
+  /*
+   * The retreat from monochrome, made deliberately and kept narrow.
+   * Royal blue is the working accent — selection, progress, the active
+   * tab. Rose marks the human moments — a day waiting for its answer,
+   * a new best. Everything else stays paper and ink.
+   */
+  --royal: #2743d6;
+  --rose: #d6246e;
   --brown: #111111;
 
   --line: #e5e5e5;
@@ -276,8 +283,8 @@ p {
 }
 
 .tab[aria-current='page'] {
-  color: var(--ink);
-  border-top-color: var(--ink);
+  color: var(--royal);
+  border-top-color: var(--royal);
 }
 
 /**
@@ -616,8 +623,8 @@ p {
 
 .felt-option:active,
 .felt-option[aria-pressed='true'] {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--royal);
+  border-color: var(--royal);
   color: var(--paper);
   position: relative;
   z-index: 1;
@@ -864,6 +871,7 @@ p {
   text-transform: uppercase;
 }
 
+/* Rose: this day is still waiting for its evening answer. */
 .cell-frame .unrated-dot {
   position: absolute;
   right: var(--s2);
@@ -871,7 +879,7 @@ p {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--brown);
+  background: var(--rose);
 }
 
 /* --- shortlist --------------------------------------------------------- */
@@ -1005,8 +1013,8 @@ button:focus-visible {
 }
 
 .switch[aria-checked='true'] {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--royal);
+  border-color: var(--royal);
 }
 
 .switch::after {
@@ -1153,6 +1161,12 @@ button:focus-visible {
   color: var(--paper);
 }
 
+/* A note that carries good news. */
+.note--accent {
+  color: var(--rose);
+  font-weight: 600;
+}
+
 /* The wordmark is the way back out front. */
 .eyebrow-home {
   color: inherit;
@@ -1207,7 +1221,7 @@ input[type='time'] {
 .progress-fill {
   display: block;
   height: 100%;
-  background: var(--ink);
+  background: var(--royal);
   transform-origin: left center;
   transition: transform 0.6s ease;
 }
@@ -1845,12 +1859,12 @@ form.garment-line {
 
 .gym-spark polyline {
   fill: none;
-  stroke: var(--ink);
+  stroke: var(--royal);
   stroke-width: 1.5;
 }
 
 .gym-spark circle {
-  fill: var(--ink);
+  fill: var(--rose);
 }
 
 .gym-daynav .btn {

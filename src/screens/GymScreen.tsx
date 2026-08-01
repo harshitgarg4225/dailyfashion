@@ -276,7 +276,7 @@ export function GymScreen({ today }: { today: DateKey }) {
 
         {/* The delight beat: earned by the numbers, stated once, no confetti. */}
         {bestNote ? (
-          <p className="note" role="status">
+          <p className="note note--accent" role="status">
             {bestNote}
           </p>
         ) : null}

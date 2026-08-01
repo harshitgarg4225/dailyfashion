@@ -28,6 +28,10 @@
   --ink-faint: #b9b9b9;
   --line: #e5e5e5;
 
+  /* The two colours allowed in the door: royal blue works, rose feels. */
+  --royal: #2743d6;
+  --rose: #d6246e;
+
   --font: 'Instrument Sans Landing', 'Helvetica Neue', Arial, sans-serif;
   --pad: clamp(20px, 5vw, 64px);
   --measure: 34em;
@@ -54,7 +58,7 @@ body {
 
 /* Even highlighted text stays in the house palette. */
 ::selection {
-  background: var(--ink);
+  background: var(--royal);
   color: var(--paper);
 }
 
@@ -190,7 +194,7 @@ h1 {
 }
 
 .hero-line--em.is-in {
-  color: var(--ink);
+  color: var(--royal);
 }
 
 h2 {
@@ -346,7 +350,12 @@ h3 {
 
 .marquee-track .sep {
   margin: 0 18px;
-  color: var(--ink-faint);
+  color: var(--rose);
+}
+
+/* The heart on the privacy phone beats rose, even on ink. */
+.ill-rose {
+  stroke: var(--rose);
 }
 
 /* Rest under the reader's cursor, so the numbers can actually be read. */
@@ -455,7 +464,8 @@ h3 {
 }
 
 .felt-btn.is-on {
-  background: var(--ink);
+  background: var(--royal);
+  border-color: var(--royal);
   color: var(--paper);
 }
 
@@ -551,6 +561,7 @@ h3 {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   padding-top: 3px;
+  color: var(--royal);
 }
 
 .ledger-get {
@@ -639,6 +650,7 @@ h3 {
   letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  color: var(--royal);
 }
 
 .calc-unit {
@@ -921,6 +933,7 @@ h3 {
   font-size: 14px;
   font-weight: 600;
   min-height: 1.5em;
+  color: var(--rose);
 }
 
 .gym-caption {
@@ -954,7 +967,7 @@ h3 {
 }
 
 .who-card:hover {
-  border-color: var(--ink);
+  border-color: var(--royal);
   transform: translateY(-3px);
 }
 
