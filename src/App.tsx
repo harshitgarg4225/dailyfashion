@@ -857,6 +857,9 @@ export default function App() {
             entriesById={entriesById}
             onDismiss={(id, n) => void dismissInsight(id, n).then(() => log.refresh())}
             onResume={() => void updateSettings({ softened_at: null })}
+            sponsorShown={sponsorShown}
+            onSponsorShown={() => setSponsorShown(true)}
+            onOpenOffers={() => navigate('offers')}
           />
         )
 

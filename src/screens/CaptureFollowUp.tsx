@@ -3,7 +3,7 @@ import type { Entry, FeltScore, TempBand } from '../types'
 import { copy } from '../lib/copy'
 import { TEMP_BANDS } from '../lib/context'
 import { shortLabel } from '../lib/dates'
-import { FeltScale, Sheet } from '../app/controls'
+import { Sheet } from '../app/controls'
 import { Photo } from '../app/Photo'
 
 /**
@@ -123,15 +123,27 @@ export function CaptureFollowUp({
 
       {/*
         * The evening question, offered early for anyone who already knows.
-        * J2 still holds — the reflection belongs to the night — but "I love
-        * this outfit" is sometimes true at 8am, and making that person come
-        * back later to say so is ceremony for its own sake. Skippable, and
-        * changeable tonight either way.
+        * Compact on purpose: five squares, not the five labelled rows Tonight
+        * uses. The full scale made this sheet scroll past its own Done
+        * button; a morning answer is a tap, not a ceremony, and the labels
+        * still speak through the accessible names.
         */}
       <div className="field">
         <span className="field-label">{copy.followUp.feltPrompt}</span>
         <span className="field-hint">{copy.followUp.feltHint}</span>
-        <FeltScale value={felt} onChange={(score) => setFelt(felt === score ? null : score)} />
+        <div className="felt-compact" role="group" aria-label={copy.followUp.feltPrompt}>
+          {([1, 2, 3, 4, 5] as const).map((score) => (
+            <button
+              key={score}
+              type="button"
+              aria-pressed={felt === score}
+              aria-label={copy.tonight.feltLabels[score]}
+              onClick={() => setFelt(felt === score ? null : score)}
+            >
+              {score}
+            </button>
+          ))}
+        </div>
       </div>
 
       <button type="button" className="btn btn--primary btn--block" onClick={finish}>

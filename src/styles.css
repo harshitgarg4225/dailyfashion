@@ -1161,6 +1161,36 @@ button:focus-visible {
   color: var(--paper);
 }
 
+/* The morning felt answer: five squares, one row, no ceremony. */
+.felt-compact {
+  display: flex;
+  gap: var(--s2);
+}
+
+.felt-compact button {
+  flex: 1;
+  aspect-ratio: 1;
+  max-width: 56px;
+  border: 1px solid var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.felt-compact button[aria-pressed='true'] {
+  background: var(--royal);
+  border-color: var(--royal);
+  color: var(--paper);
+}
+
+/* The day-nav arrows are buttons; they should look like they take a finger. */
+.gym-daynav .btn {
+  border: 1px solid var(--line);
+}
+
 /* Settings reads in chapters, not one long scroll. */
 .settings-section {
   margin: var(--s6) 0 var(--s3);

@@ -210,26 +210,8 @@ export function InsightsScreen({
           <span className="sub">{copy.insights.thinSub}</span>
         </div>
 
-        {/*
-          * P3a: the first fortnight has no payoff, so the only thing keeping
-          * someone logging is being able to see the payoff approaching. A bare
-          * count does not do that; a filling rule does.
-          */}
-        <div className="progress" role="img" aria-label={copy.insights.thin(gate.ratedEntries, gate.needed)}>
-          <span ref={progressRef} className="progress-fill" />
-        </div>
-
-        <p className="progress-label">{copy.insights.countdown(remaining)}</p>
-        <p className="note">{copy.insights.thin(gate.ratedEntries, gate.needed)}</p>
-
-        {/* The fastest way to move that bar is sitting in the journal. */}
-        {unanswered > 0 && onAnswerNow ? (
-          <button type="button" className="btn btn--ghost btn--block" onClick={onAnswerNow}>
-            {copy.log.answerNow(unanswered)}
-          </button>
-        ) : null}
-
-        <hr className="rule" />
+        {/* Value first: what is already yours sits above what is still owed.
+            The countdown is real, but nobody opens a door to read a debt. */}
         {figures}
 
         {/* Already true, no waiting period required. */}
@@ -274,6 +256,26 @@ export function InsightsScreen({
               </p>
             ) : null}
           </>
+        ) : null}
+
+        <hr className="rule" />
+        {/*
+          * P3a: the first fortnight has no payoff, so the only thing keeping
+          * someone logging is being able to see the payoff approaching. A bare
+          * count does not do that; a filling rule does.
+          */}
+        <div className="progress" role="img" aria-label={copy.insights.thin(gate.ratedEntries, gate.needed)}>
+          <span ref={progressRef} className="progress-fill" />
+        </div>
+
+        <p className="progress-label">{copy.insights.countdown(remaining)}</p>
+        <p className="note">{copy.insights.thin(gate.ratedEntries, gate.needed)}</p>
+
+        {/* The fastest way to move that bar is sitting in the journal. */}
+        {unanswered > 0 && onAnswerNow ? (
+          <button type="button" className="btn btn--ghost btn--block" onClick={onAnswerNow}>
+            {copy.log.answerNow(unanswered)}
+          </button>
         ) : null}
 
         {/*
