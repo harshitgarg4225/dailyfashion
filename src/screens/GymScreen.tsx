@@ -306,6 +306,15 @@ export function GymScreen({ today }: { today: DateKey }) {
             </span>
             <span className="sub">{sessionVolume(dayRows)}</span>
           </div>
+          {/* The Strava beat: today against your last session, one line. */}
+          {(() => {
+            const previous = history.find((day) => day.date < date)
+            if (!previous) return null
+            const prevVolume = sessionVolume(previous.rows)
+            if (prevVolume === 0) return null
+            const pct = Math.round(((sessionVolume(dayRows) - prevVolume) / prevVolume) * 100)
+            return <p className="note">{copy.gym.sessionVs(pct, mediumLabel(previous.date))}</p>
+          })()}
         </div>
       )}
 

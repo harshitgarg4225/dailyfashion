@@ -8,6 +8,7 @@ import { SponsorSlot } from '../app/SponsorSlot'
 import { OffersStrip } from '../app/OffersStrip'
 import { shouldShowSponsor } from '../lib/sponsor'
 import { searchEntries } from '../lib/search'
+import { lookback } from '../lib/lookback'
 import type { EntryItem, Item } from '../types'
 
 /**
@@ -167,6 +168,8 @@ export function LogScreen({
     if (sponsorVisible) onSponsorShown()
   }, [sponsorVisible, onSponsorShown])
 
+  const echo = useMemo(() => lookback(entries, today), [entries, today])
+
   const [query, setQuery] = useState('')
   const searchable = entries.length >= SEARCH_MIN_ENTRIES
   const results = useMemo(
@@ -301,6 +304,29 @@ export function LogScreen({
           </div>
 
           {cells.length > limit ? <div ref={sentinel} aria-hidden="true" /> : null}
+
+          {/* The log giving something back: what you wore exactly a week —
+              or a month — ago today. Tap to revisit the whole day. */}
+          {echo ? (
+            <button type="button" className="result" onClick={() => onOpen(echo.entry)}>
+              <span className="result-photo">
+                <Photo photoId={echo.entry.photo_id} alt="" className="result-image" thumb />
+              </span>
+              <span className="result-text">
+                <span className="eyebrow">
+                  {echo.span === 'week' ? copy.log.lookbackWeek : copy.log.lookbackMonth}
+                </span>
+                <strong>
+                  {[
+                    echo.entry.felt_score !== null ? copy.log.lookbackFelt(echo.entry.felt_score) : null,
+                    echo.entry.garment?.name ?? null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || mediumLabel(echo.entry.date)}
+                </strong>
+              </span>
+            </button>
+          ) : null}
 
           {ratedCount < entries.length ? (
             /*

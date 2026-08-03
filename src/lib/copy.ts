@@ -183,6 +183,10 @@ export const copy = {
     record: (best: number, sessions: number) =>
       sessions === 1 ? `Best so far: ${best}.` : `Best: ${best}, across ${sessions} days.`,
     newBest: (name: string) => `A new best for ${name}.`,
+    sessionVs: (pct: number, when: string) =>
+      pct >= 0
+        ? `Up ${pct}% on your last session (${when}).`
+        : `Down ${Math.abs(pct)}% on your last session (${when}) — showing up still counts.`,
     today: 'Today',
     previousDay: 'Previous day',
     nextDay: 'Next day',
@@ -337,6 +341,9 @@ export const copy = {
       // The tenth wear is the membership card.
       return n === 10 ? `Logged — its 10th wear. Club behaviour.` : `Logged — its ${n}${suffix} wear.`
     },
+    lookbackWeek: 'A week ago today',
+    lookbackMonth: 'A month ago today',
+    lookbackFelt: (felt: number) => `Felt like a ${felt}`,
     installTitle: 'Keep this on your home screen',
     installBodyIos:
       'Tap the share button, then “Add to Home Screen”. Browsers clear data for sites that are only open in a tab — on the home screen your log is far safer.',
@@ -436,6 +443,12 @@ export const copy = {
     previewObservation:
       'The green jacket sits at the top of your log, and you almost never reach for it.',
     thinSub: 'It only says what it can back up. Right now it is still listening.',
+    // The receipts: true from day two, no waiting period.
+    receiptsTitle: 'Meanwhile, in your log',
+    receiptsBestLabel: 'The day that felt best this week',
+    receiptsDays: (days: number) => (days === 1 ? '1 day' : `${days} days`),
+    receiptsTraining: (days: number, volume: number) =>
+      `${days === 1 ? '1 day trained' : `${days} days trained`} this week — ${volume} total work.`,
     previewEvidence:
       '4.6 average across 7 days, against 3.4 for everything else. Last worn a month ago.',
     previewQuestion: 'Worth putting on this week?',

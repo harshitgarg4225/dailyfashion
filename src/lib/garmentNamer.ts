@@ -1,6 +1,7 @@
 import { allEntries, getEntry, getPhoto, getSettings, putEntry } from '../db/db'
-import { aggregateGarment, type GarmentGuess } from './garments'
-import type { Entry } from '../types'
+import { aggregateGarmentAcross, describeGarment, type GarmentGuess } from './garments'
+import { estimateSubject } from './signature'
+import type { ColorFamily, Entry } from '../types'
 
 /**
  * The runtime half of garment naming: an on-device vision model, loaded
@@ -64,26 +65,67 @@ function loadClassifier(): Promise<Classifier | null> {
   return classifierPromise
 }
 
-/** Decode a stored JPEG down to the model's input size. */
-async function toInput(blob: Blob): Promise<ImageData | null> {
+/** Working size for subject estimation — cheap, and plenty for a bounding box. */
+const SCOUT_SIZE = 384
+
+/**
+ * Decode once, look three times.
+ *
+ * The full frame of a mirror selfie is mostly room; squeezed into the
+ * model's 224px input, the garment is a sixth of the pixels and its
+ * probability drowns — which is how a wool coat gets called a wall. The
+ * photograph is decoded once, the person is found with the same subject
+ * estimator the fingerprint uses, and the model is shown what matters:
+ * the person, their upper half, their lower half.
+ */
+async function toInputs(blob: Blob): Promise<ImageData[]> {
   try {
-    const bitmap = await createImageBitmap(blob, {
-      resizeWidth: INPUT_SIZE,
-      resizeHeight: INPUT_SIZE,
-    })
+    const bitmap = await createImageBitmap(blob)
     try {
-      const canvas = document.createElement('canvas')
-      canvas.width = INPUT_SIZE
-      canvas.height = INPUT_SIZE
-      const context = canvas.getContext('2d', { willReadFrequently: true })
-      if (!context) return null
-      context.drawImage(bitmap, 0, 0, INPUT_SIZE, INPUT_SIZE)
-      return context.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE)
+      // Scout pass: find the person at a small working size.
+      const scale = SCOUT_SIZE / Math.max(bitmap.width, bitmap.height)
+      const sw = Math.max(1, Math.round(bitmap.width * scale))
+      const sh = Math.max(1, Math.round(bitmap.height * scale))
+      const scout = document.createElement('canvas')
+      scout.width = sw
+      scout.height = sh
+      const scoutCtx = scout.getContext('2d', { willReadFrequently: true })
+      if (!scoutCtx) return []
+      scoutCtx.drawImage(bitmap, 0, 0, sw, sh)
+      const scoutData = scoutCtx.getImageData(0, 0, sw, sh)
+      const subject = estimateSubject(scoutData.data, sw, sh)
+
+      // Map subject bounds back to source pixels.
+      const sx = subject.x0 / scale
+      const sy = subject.y0 / scale
+      const sWidth = Math.max(1, (subject.x1 - subject.x0) / scale)
+      const sHeight = Math.max(1, (subject.y1 - subject.y0) / scale)
+
+      const crops: Array<[number, number, number, number]> = [
+        // The person.
+        [sx, sy, sWidth, sHeight],
+        // Upper half: tops, jackets, knitwear.
+        [sx, sy, sWidth, sHeight / 2],
+        // Lower half: jeans, skirts, shoes.
+        [sx, sy + sHeight / 2, sWidth, sHeight / 2],
+      ]
+
+      const inputs: ImageData[] = []
+      for (const [cx, cy, cw, ch] of crops) {
+        const canvas = document.createElement('canvas')
+        canvas.width = INPUT_SIZE
+        canvas.height = INPUT_SIZE
+        const context = canvas.getContext('2d', { willReadFrequently: true })
+        if (!context) continue
+        context.drawImage(bitmap, cx, cy, cw, ch, 0, 0, INPUT_SIZE, INPUT_SIZE)
+        inputs.push(context.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE))
+      }
+      return inputs
     } finally {
       bitmap.close()
     }
   } catch {
-    return null
+    return []
   }
 }
 
@@ -112,19 +154,23 @@ export async function readPhoto(blob: Blob): Promise<PhotoReading> {
   const classifier = await loadClassifier()
   if (!classifier) return { guess: null, embedding: null }
 
-  const input = await toInput(blob)
-  if (!input) return { guess: null, embedding: null }
+  const inputs = await toInputs(blob)
+  if (inputs.length === 0) return { guess: null, embedding: null }
 
   let guess: GarmentGuess | null = null
   try {
-    guess = aggregateGarment(await classifier.classify(input, TOP_K))
+    const crops: Array<Array<{ className: string; probability: number }>> = []
+    for (const input of inputs) crops.push(await classifier.classify(input, TOP_K))
+    guess = aggregateGarmentAcross(crops)
   } catch {
     guess = null
   }
 
+  // The embedding reads the person-crop: matching cares about the outfit,
+  // not the room behind it.
   let embedding: number[] | null = null
   try {
-    const tensor = classifier.infer(input, true)
+    const tensor = classifier.infer(inputs[0]!, true)
     try {
       embedding = compact((await tensor.data()) as Float32Array)
     } finally {
@@ -135,6 +181,17 @@ export async function readPhoto(blob: Blob): Promise<PhotoReading> {
   }
 
   return { guess, embedding }
+}
+
+/**
+ * "grey tee + jeans": the colour the fingerprint already knows, prefixed to
+ * the leading garment. Composed at write time so a naming miss never costs
+ * the colour and vice versa.
+ */
+function composeName(guess: GarmentGuess, colour: ColorFamily | null | undefined): string {
+  const [first, ...rest] = guess.name.split(' + ')
+  if (!first) return guess.name
+  return [describeGarment(first, colour ?? null), ...rest].join(' + ')
 }
 
 /** Classify one photograph. Null means "no name worth offering". */
@@ -172,7 +229,11 @@ export async function nameEntryPhoto(entryId: string, blob: Blob): Promise<Entry
     garment: keepUserName
       ? current.garment
       : settings.garment_naming && guess
-        ? { name: guess.name, source: 'model', confidence: guess.confidence }
+        ? {
+            name: composeName(guess, current.signature?.color),
+            source: 'model',
+            confidence: guess.confidence,
+          }
         : (current.garment ?? null),
   }
   await putEntry(updated)
@@ -235,7 +296,11 @@ export async function nameOldEntries(): Promise<{ named: number; skipped: number
               ? entry.garment
               : settings.garment_naming
                 ? guess
-                  ? { name: guess.name, source: 'model', confidence: guess.confidence }
+                  ? {
+                      name: composeName(guess, entry.signature?.color),
+                      source: 'model',
+                      confidence: guess.confidence,
+                    }
                   : null
                 : entry.garment,
         })

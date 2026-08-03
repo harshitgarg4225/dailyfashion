@@ -3,6 +3,10 @@ import { copy } from '../lib/copy'
 import { generateInsights, type GenerateInput } from '../lib/insights'
 import { Photo } from '../app/Photo'
 import { ExamplePatterns } from './ExamplePatterns'
+import { styleSnapshot } from '../lib/styleProfile'
+import { trainingWeeks, type WorkoutSet } from '../lib/gym'
+import { allWorkouts } from '../db/db'
+import { addDays, mediumLabel } from '../lib/dates'
 import type { Entry } from '../types'
 
 /**
@@ -45,6 +49,32 @@ export function InsightsScreen({
   const [showMethod, setShowMethod] = useState(false)
   const [showExample, setShowExample] = useState(false)
   const progressRef = useRef<HTMLSpanElement>(null)
+
+  /*
+   * The receipts: things that are already true, shown while the observation
+   * engine is still earning its fourteen evenings. The countdown alone made
+   * this screen a waiting room; a waiting room with your own week on the
+   * wall is a different room.
+   */
+  const [workouts, setWorkouts] = useState<WorkoutSet[]>([])
+  useEffect(() => {
+    void allWorkouts().then(setWorkouts)
+  }, [])
+
+  const receipts = useMemo(() => {
+    const weekAgo = addDays(input.today, -7)
+    const recent = input.entries.filter((e) => e.date > weekAgo && e.felt_score !== null)
+    const bestDay =
+      recent.length > 0
+        ? recent.reduce((best, e) => (e.felt_score! > best.felt_score! ? e : best))
+        : null
+
+    const wears = styleSnapshot(input.entries).garments.filter((g) => g.days >= 2)
+
+    const training = trainingWeeks(workouts, input.today).thisWeek
+
+    return { bestDay, wears: wears.slice(0, 3), training }
+  }, [input.entries, input.today, workouts])
 
   /*
    * Applied through the CSSOM rather than as a `style` attribute.
@@ -104,6 +134,50 @@ export function InsightsScreen({
           <button type="button" className="btn btn--ghost btn--block" onClick={onAnswerNow}>
             {copy.log.answerNow(unanswered)}
           </button>
+        ) : null}
+
+        {/* Already true, no waiting period required. */}
+        {receipts.bestDay || receipts.wears.length > 0 || receipts.training.sessions > 0 ? (
+          <>
+            <hr className="rule" />
+            <h2 className="summary-heading">{copy.insights.receiptsTitle}</h2>
+
+            {receipts.bestDay ? (
+              <div className="result" aria-label={copy.insights.receiptsBestLabel}>
+                <span className="result-photo">
+                  <Photo photoId={receipts.bestDay.photo_id} alt="" className="result-image" thumb />
+                </span>
+                <span className="result-text">
+                  <span className="eyebrow">{copy.insights.receiptsBestLabel}</span>
+                  <strong>
+                    {copy.log.lookbackFelt(receipts.bestDay.felt_score!)} —{' '}
+                    {mediumLabel(receipts.bestDay.date)}
+                    {receipts.bestDay.garment ? `. ${receipts.bestDay.garment.name}.` : '.'}
+                  </strong>
+                </span>
+              </div>
+            ) : null}
+
+            {receipts.wears.length > 0 ? (
+              <div className="panel">
+                {receipts.wears.map((wear) => (
+                  <div key={wear.name} className="row">
+                    <span className="row-text">{wear.name}</span>
+                    <span className="sub">{copy.insights.receiptsDays(wear.days)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {receipts.training.sessions > 0 ? (
+              <p className="note">
+                {copy.insights.receiptsTraining(
+                  receipts.training.sessions,
+                  receipts.training.volume,
+                )}
+              </p>
+            ) : null}
+          </>
         ) : null}
 
         {/*

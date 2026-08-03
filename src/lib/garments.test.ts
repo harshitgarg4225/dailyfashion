@@ -4,6 +4,7 @@ import {
   GARMENT_CLASSES,
   NAME_CONFIDENCE,
   aggregateGarment,
+  aggregateGarmentAcross,
   describeGarment,
 } from './garments'
 import { BANNED_WORDS } from './copy'
@@ -106,6 +107,36 @@ describe('aggregation', () => {
 
   it('returns null for empty input', () => {
     expect(aggregateGarment([])).toBeNull()
+  })
+})
+
+describe('multi-crop aggregation', () => {
+  it('takes a garment at its best showing across crops, not the sum', () => {
+    const guess = aggregateGarmentAcross([
+      // Full frame: everything drowned by the room.
+      [{ className: 'jean, blue jean, denim', probability: 0.06 }],
+      // Lower-half crop: the jeans fill the frame.
+      [{ className: 'jean, blue jean, denim', probability: 0.4 }],
+    ])
+    expect(guess?.name).toBe('jeans')
+    expect(guess?.confidence).toBeCloseTo(0.4)
+  })
+
+  it('lets different crops contribute different garments', () => {
+    const guess = aggregateGarmentAcross([
+      [{ className: 'cardigan', probability: 0.35 }],
+      [{ className: 'jean, blue jean, denim', probability: 0.3 }],
+    ])
+    expect(guess?.name).toBe('cardigan + jeans')
+  })
+
+  it('still refuses weak hunches, even across many crops', () => {
+    const guess = aggregateGarmentAcross([
+      [{ className: 'cardigan', probability: 0.05 }],
+      [{ className: 'cardigan', probability: 0.06 }],
+      [{ className: 'cardigan', probability: 0.07 }],
+    ])
+    expect(guess).toBeNull()
   })
 })
 

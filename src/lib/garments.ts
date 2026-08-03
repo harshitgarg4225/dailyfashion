@@ -115,15 +115,37 @@ export const MAX_NAMED_GARMENTS = 3
  * allowed to add up to one confident-looking line.
  */
 export function aggregateGarment(predictions: GarmentPrediction[]): GarmentGuess | null {
-  const byName = new Map<string, number>()
+  return aggregateGarmentAcross([predictions])
+}
 
-  for (const prediction of predictions) {
-    const name = GARMENT_CLASSES[prediction.className]
-    if (!name) continue
-    byName.set(name, (byName.get(name) ?? 0) + prediction.probability)
+/**
+ * The multi-crop version, and the reason naming stopped being terrible.
+ *
+ * A mirror selfie squeezed whole into the model's 224px input is mostly
+ * room: the garment is a sixth of the pixels and its probability drowns.
+ * The namer now classifies focused crops — the person, their upper half,
+ * their lower half — and a garment's confidence is its best showing in any
+ * crop. Within a crop, split ImageNet classes still sum (a skirt arrives as
+ * miniskirt + overskirt); across crops the maximum is taken, because seeing
+ * jeans clearly in the lower crop is not made truer by the full frame
+ * half-seeing them too.
+ */
+export function aggregateGarmentAcross(crops: GarmentPrediction[][]): GarmentGuess | null {
+  const best = new Map<string, number>()
+
+  for (const predictions of crops) {
+    const byName = new Map<string, number>()
+    for (const prediction of predictions) {
+      const name = GARMENT_CLASSES[prediction.className]
+      if (!name) continue
+      byName.set(name, (byName.get(name) ?? 0) + prediction.probability)
+    }
+    for (const [name, confidence] of byName) {
+      if (confidence > (best.get(name) ?? 0)) best.set(name, confidence)
+    }
   }
 
-  const confident = [...byName]
+  const confident = [...best]
     .filter(([, confidence]) => confidence >= NAME_CONFIDENCE)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, MAX_NAMED_GARMENTS)
