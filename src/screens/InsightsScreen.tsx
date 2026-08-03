@@ -4,6 +4,9 @@ import { generateInsights, type GenerateInput } from '../lib/insights'
 import { Photo } from '../app/Photo'
 import { ExamplePatterns } from './ExamplePatterns'
 import { styleSnapshot } from '../lib/styleProfile'
+import { buildSummary } from '../lib/summary'
+import { SponsorSlot } from '../app/SponsorSlot'
+import { shouldShowSponsor } from '../lib/sponsor'
 import { trainingWeeks, type WorkoutSet } from '../lib/gym'
 import { allWorkouts } from '../db/db'
 import { addDays, mediumLabel } from '../lib/dates'
@@ -35,6 +38,9 @@ export function InsightsScreen({
   onResume,
   unanswered = 0,
   onAnswerNow,
+  sponsorShown = false,
+  onSponsorShown,
+  onOpenOffers,
 }: {
   input: GenerateInput
   entriesById: Map<string, Entry>
@@ -43,6 +49,9 @@ export function InsightsScreen({
   /** Days still waiting for an evening answer — the fastest way forward. */
   unanswered?: number
   onAnswerNow?: (() => void) | undefined
+  sponsorShown?: boolean
+  onSponsorShown?: (() => void) | undefined
+  onOpenOffers?: (() => void) | undefined
 }) {
   const { gate, insights } = useMemo(() => generateInsights(input), [input])
   const [index, setIndex] = useState(0)
@@ -75,6 +84,90 @@ export function InsightsScreen({
 
     return { bestDay, wears: wears.slice(0, 3), training }
   }, [input.entries, input.today, workouts])
+
+  /*
+   * Progress folded in. "What the log knows about you" was split across two
+   * tabs — counts on one, observations on the other — which is one job in
+   * two rooms. The figures, the colour claim, the next milestone and the
+   * offers door all live here now, and the tab bar got a seat back.
+   */
+  const summary = useMemo(
+    () =>
+      buildSummary({
+        entries: input.entries,
+        outfitCount: input.outfits.length,
+        itemCount: input.items.length,
+        today: input.today,
+      }),
+    [input.entries, input.outfits.length, input.items.length, input.today],
+  )
+
+  const colourDays = summary.colours.reduce((sum, c) => sum + c.days, 0)
+  const topColour =
+    colourDays >= 4 && summary.colours[0] && summary.colours[0].days * 2 >= colourDays
+      ? summary.colours[0]
+      : undefined
+
+  const sponsorVisible = shouldShowSponsor({
+    entries: input.entries,
+    today: input.today,
+    slot: 'summary',
+    alreadyShownThisSession: sponsorShown,
+  })
+  useEffect(() => {
+    if (sponsorVisible && onSponsorShown) onSponsorShown()
+  }, [sponsorVisible, onSponsorShown])
+
+  const figures = (
+    <>
+      <h2 className="summary-heading">{copy.summary.title}</h2>
+      <dl className="figures">
+        <div className="figure">
+          <dt className="eyebrow">{copy.summary.daysLabel}</dt>
+          <dd>{summary.daysLogged}</dd>
+        </div>
+        <div className="figure">
+          <dt className="eyebrow">{copy.summary.eveningsLabel}</dt>
+          <dd>{summary.eveningsAnswered}</dd>
+        </div>
+        <div className="figure">
+          <dt className="eyebrow">{copy.summary.outfitsLabel}</dt>
+          <dd>{summary.outfitsRecognised}</dd>
+        </div>
+      </dl>
+      {topColour ? (
+        <p className="note">{copy.summary.mostWorn(topColour.colour, topColour.days)}</p>
+      ) : null}
+    </>
+  )
+
+  const footer = (
+    <>
+      {summary.nextMilestone ? (
+        <>
+          <hr className="rule" />
+          <h2 className="summary-heading">{copy.summary.nextTitle}</h2>
+          <p className="progress-label">
+            {copy.summary.nextBody(summary.nextMilestone.remaining, summary.nextMilestone.unlocks)}
+          </p>
+        </>
+      ) : null}
+      <SponsorSlot
+        entries={input.entries}
+        today={input.today}
+        slot="summary"
+        alreadyShownThisSession={sponsorShown}
+      />
+      {onOpenOffers ? (
+        <>
+          <button type="button" className="btn btn--ghost btn--block" onClick={onOpenOffers}>
+            {copy.offers.title}
+          </button>
+          <p className="note note--centred">{copy.offers.sub}</p>
+        </>
+      ) : null}
+    </>
+  )
 
   /*
    * Applied through the CSSOM rather than as a `style` attribute.
@@ -135,6 +228,9 @@ export function InsightsScreen({
             {copy.log.answerNow(unanswered)}
           </button>
         ) : null}
+
+        <hr className="rule" />
+        {figures}
 
         {/* Already true, no waiting period required. */}
         {receipts.bestDay || receipts.wears.length > 0 || receipts.training.sessions > 0 ? (
@@ -236,6 +332,8 @@ export function InsightsScreen({
             {copy.insights.exampleOpen}
           </button>
         </div>
+
+        {footer}
       </div>
     )
   }
@@ -313,6 +411,10 @@ export function InsightsScreen({
           )
         })()
       )}
+
+      <hr className="rule" />
+      {figures}
+      {footer}
     </div>
   )
 }

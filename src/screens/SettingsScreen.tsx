@@ -230,6 +230,7 @@ export function SettingsScreen({
         <h1>{copy.settings.title}</h1>
       </div>
 
+      <span className="eyebrow settings-section">{copy.settings.sectionDaily}</span>
       <div className="panel">
         <div className="row">
           <span className="row-text">
@@ -269,6 +270,7 @@ export function SettingsScreen({
         ) : null}
       </div>
 
+      <span className="eyebrow settings-section">{copy.settings.sectionDevice}</span>
       {/* J4's optional lock. Scope stated plainly rather than implied. */}
       <div className="panel">
         <div className="row">
@@ -484,6 +486,7 @@ export function SettingsScreen({
         </div>
       </div>
 
+      <span className="eyebrow settings-section">{copy.settings.sectionData}</span>
       <div className="panel">
         <div className="row">
           <span className="row-text">

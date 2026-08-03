@@ -237,7 +237,7 @@ export const copy = {
     empty: 'Nothing here right now.',
     open: 'Have a look',
     how: 'These are placed by us, shown from our own server, and nothing about you goes to anyone when you read this page.',
-    back: 'Back to Progress',
+    back: 'Back to Patterns',
     more: (count: number) => `All ${count} offers`,
   },
 
@@ -512,6 +512,9 @@ export const copy = {
       'Your log has grown and has never been backed up. An export takes a minute and lives wherever you put it.',
     exportNudgeStale:
       'It has been a while since the last export. A fresh one keeps your history safe from a cleared browser.',
+    sectionDaily: 'Each day',
+    sectionDevice: 'On this phone',
+    sectionData: 'Your data',
     privacyLink: 'How your data is handled',
     aboutLink: 'dailyfashion.co',
     shareUsage: 'Share usage counts with us',

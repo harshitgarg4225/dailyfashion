@@ -199,7 +199,7 @@ test.describe('writing a day', () => {
     await completeOnboarding(page)
     await dismissOverlays(page)
 
-    await page.getByRole('button', { name: 'Progress', exact: true }).click()
+    await page.getByRole('button', { name: 'Patterns', exact: true }).click()
     // Available from day one — it answers "what is this for?", which is the
     // question only a new user still has.
     await expect(page.getByRole('heading', { name: /what you have built/i })).toBeVisible()
@@ -215,7 +215,7 @@ test.describe('the sponsor slot', () => {
     await page.getByRole('button', { name: 'Journal', exact: true }).click()
     await expect(page.locator('.sponsor')).toHaveCount(0)
 
-    await page.getByRole('button', { name: 'Progress', exact: true }).click()
+    await page.getByRole('button', { name: 'Patterns', exact: true }).click()
     await expect(page.locator('.sponsor')).toHaveCount(0)
   })
 })

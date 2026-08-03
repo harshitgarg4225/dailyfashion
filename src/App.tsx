@@ -13,7 +13,6 @@ import { LockScreen } from './screens/LockScreen'
 import { WriteScreen } from './screens/WriteScreen'
 import { GymScreen } from './screens/GymScreen'
 import { OffersScreen } from './screens/OffersScreen'
-import { SummaryScreen } from './screens/SummaryScreen'
 import { WeekScreen } from './screens/WeekScreen'
 import { CaptureFollowUp, type FollowUpResult } from './screens/CaptureFollowUp'
 import { copy } from './lib/copy'
@@ -91,7 +90,7 @@ function visibleTabs(entryCount: number): Screen[] {
   // different zoom, and it appears as soon as there is a week worth recapping —
   // it is the only payoff that arrives before the fortnight is up.
   if (entryCount >= MIN_DAYS_FOR_WRAP) tabs.push('week')
-  tabs.push('gym', 'summary', 'insights', 'settings')
+  tabs.push('gym', 'insights', 'settings')
   return tabs
 }
 
@@ -821,7 +820,7 @@ export default function App() {
         return <GymScreen today={today} />
 
       case 'offers':
-        return <OffersScreen onBack={() => navigate('summary')} />
+        return <OffersScreen onBack={() => navigate('insights')} />
 
       case 'shortlist':
         return (
@@ -896,22 +895,6 @@ export default function App() {
       case 'week':
         return <WeekScreen entries={log.entries} today={today} />
 
-      case 'summary':
-        return (
-          <SummaryScreen
-            input={{
-              entries: log.entries,
-              outfitCount: log.outfits.length,
-              itemCount: log.items.length,
-              today,
-            }}
-            entries={log.entries}
-            today={today}
-            sponsorShown={sponsorShown}
-            onSponsorShown={() => setSponsorShown(true)}
-            onOpenOffers={() => navigate('offers')}
-          />
-        )
 
       case 'log':
       default:

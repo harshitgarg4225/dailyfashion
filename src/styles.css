@@ -1161,6 +1161,11 @@ button:focus-visible {
   color: var(--paper);
 }
 
+/* Settings reads in chapters, not one long scroll. */
+.settings-section {
+  margin: var(--s6) 0 var(--s3);
+}
+
 /* A note that carries good news. */
 .note--accent {
   color: var(--rose);
