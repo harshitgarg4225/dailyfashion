@@ -9,7 +9,7 @@ import { chipLabel } from '../lib/chips'
 import { mediumLabel } from '../lib/dates'
 import { Photo } from '../app/Photo'
 import { getPhoto } from '../db/db'
-import { COMMUNITY_SUBMIT_URL, COMMUNITY_URL } from '../lib/community'
+import { COMMUNITY_LIVE, COMMUNITY_SUBMIT_URL, COMMUNITY_URL } from '../lib/community'
 import type { Entry } from '../types'
 
 /**
@@ -233,35 +233,40 @@ export function WeekScreen({
           {week.photoIds.length > 0 ? (
             <>
               <hr className="rule" />
-              <h2 className="summary-heading">{copy.week.communityTitle}</h2>
-              <p className="note">{copy.week.communityBody}</p>
               {/*
                 * The ritual. Everyone's card this week answers the same small
                 * prompt — computed locally from the ISO week, so every copy of
-                * the app agrees with no server deciding anything.
+                * the app agrees with no server deciding anything. Shown even
+                * before the community goes live: a prompt is value on its own.
                 */}
               <p className="note">
                 <span className="eyebrow">{copy.week.themeLabel}</span>
                 {theme.title} — {theme.prompt}
               </p>
-              <div className="stack">
-                <a
-                  className="btn btn--ghost btn--block"
-                  href={`${COMMUNITY_SUBMIT_URL}&title=${encodeURIComponent(`${theme.title}: my week`)}`}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  {copy.week.communityGo}
-                </a>
-                <a
-                  className="btn btn--quiet btn--block"
-                  href={COMMUNITY_URL}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  {copy.week.communityJoin}
-                </a>
-              </div>
+              {COMMUNITY_LIVE ? (
+                <>
+                  <h2 className="summary-heading">{copy.week.communityTitle}</h2>
+                  <p className="note">{copy.week.communityBody}</p>
+                  <div className="stack">
+                    <a
+                      className="btn btn--ghost btn--block"
+                      href={`${COMMUNITY_SUBMIT_URL}&title=${encodeURIComponent(`${theme.title}: my week`)}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      {copy.week.communityGo}
+                    </a>
+                    <a
+                      className="btn btn--quiet btn--block"
+                      href={COMMUNITY_URL}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      {copy.week.communityJoin}
+                    </a>
+                  </div>
+                </>
+              ) : null}
             </>
           ) : null}
         </>

@@ -18,6 +18,14 @@
  */
 
 /** The one place the community lives. Navigation, not a request: the app never fetches from it. */
+/*
+ * Flip to true the day the subreddit actually exists. Until then the app
+ * shows the weekly theme (self-contained value) but not the buttons — a
+ * button that lands on Reddit's "community not found" page costs more trust
+ * than the feature is worth before launch.
+ */
+export const COMMUNITY_LIVE = false
+
 export const COMMUNITY_URL = 'https://www.reddit.com/r/DailyFashionLog/'
 
 /** Straight to the image-post composer, for the moment the card is in hand. */

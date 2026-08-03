@@ -70,6 +70,13 @@ function letterspaced(
   }
 }
 
+/** Width of a letterspaced run, for right-aligning it. */
+function letterspacedWidth(ctx: CanvasRenderingContext2D, text: string, spacing: number): number {
+  let width = 0
+  for (const char of text) width += ctx.measureText(char).width + spacing
+  return Math.max(0, width - spacing)
+}
+
 /**
  * Fills the box with the image, cropped to cover.
  *
@@ -271,6 +278,20 @@ export async function renderWeekCard({
   ctx.fillStyle = INK_MUTED
   ctx.font = `500 20px ${BODY}`
   letterspaced(ctx, handle ?? 'DAILY FASHION', MARGIN, height - MARGIN - 8, 5)
+
+  /*
+   * The destination, on every card that leaves. This image is the only
+   * artifact the product ever puts in front of strangers; a wordmark with
+   * no address is an ad with no door. Quiet, right-aligned, same footline.
+   */
+  const url = 'DAILYFASHION.CO'
+  letterspaced(
+    ctx,
+    url,
+    width - MARGIN - letterspacedWidth(ctx, url, 5),
+    height - MARGIN - 8,
+    5,
+  )
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(

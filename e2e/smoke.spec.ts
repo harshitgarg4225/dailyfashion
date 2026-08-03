@@ -473,14 +473,14 @@ test.describe('the week', () => {
     expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
 
     /*
-     * The community links: anchors, not fetches. They must point at the one
-     * community and open in a new tab — and their mere presence on the page
-     * must not have produced a request, which the assertion above already
-     * proved.
+     * The community stays dark until the subreddit actually exists — a
+     * button that lands on Reddit's "community not found" page costs more
+     * trust than it earns. The weekly theme still shows (a prompt is value
+     * on its own). When COMMUNITY_LIVE flips in src/lib/community.ts,
+     * restore the link assertions here: visible, href to the subreddit,
+     * target _blank.
      */
-    const communityLink = page.getByRole('link', { name: /post it in the community/i })
-    await expect(communityLink).toBeVisible()
-    await expect(communityLink).toHaveAttribute('href', /reddit\.com\/r\/DailyFashionLog/)
-    await expect(communityLink).toHaveAttribute('target', '_blank')
+    await expect(page.getByText(/this week.s theme/i)).toBeVisible()
+    await expect(page.getByRole('link', { name: /post it in the community/i })).toHaveCount(0)
   })
 })
