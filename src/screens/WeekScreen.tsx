@@ -4,6 +4,7 @@ import { buildWeekWrapped, buildYearWrapped, MIN_DAYS_FOR_WRAP } from '../lib/we
 import { themeForWeek } from '../lib/theme'
 import { track } from '../lib/telemetry'
 import { renderWeekCard } from '../lib/shareCard'
+import { renderWeekReel, reelMimeType, type ReelFrame } from '../lib/weekReel'
 import { shareImage } from '../lib/share'
 import { chipLabel } from '../lib/chips'
 import { mediumLabel } from '../lib/dates'
@@ -73,6 +74,56 @@ export function WeekScreen({
       })
 
       if (outcome !== 'dismissed') void track('share_card')
+      if (outcome === 'shared') setNote(copy.week.shareShared)
+      else if (outcome === 'saved') setNote(copy.week.shareSaved)
+    } catch {
+      setNote(copy.week.shareFailed)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /**
+   * The week as a short video, rendered entirely on this device — no model,
+   * no upload, nothing leaves. Rendering rides the canvas clock, so the
+   * button narrates while the seconds of the clip are actually elapsing.
+   */
+  const reel = async () => {
+    setBusy(true)
+    setNote(null)
+    try {
+      const ids = week.photoIds.slice(0, 7)
+      const frames: ReelFrame[] = []
+      for (const id of ids) {
+        const blob = await getPhoto(id)
+        if (!blob) continue
+        const entry = entries.find((e) => e.photo_id === id)
+        frames.push({
+          bitmap: await createImageBitmap(blob),
+          label: entry
+            ? new Date(`${entry.date}T12:00:00`)
+                .toLocaleDateString(undefined, { weekday: 'short' })
+                .toUpperCase()
+            : '',
+          felt: entry?.felt_score ?? null,
+        })
+      }
+
+      const video = await renderWeekReel({
+        frames,
+        range: copy.week.range(mediumLabel(week.from), mediumLabel(week.to)),
+        daysLogged: week.daysLogged,
+        repeated: week.repeats.length,
+      })
+      frames.forEach((frame) => frame.bitmap.close())
+
+      const outcome = await shareImage({
+        blob: video.blob,
+        filename: `daily-fashion-reel-${week.to}.${video.extension}`,
+        title: copy.week.shareCaption,
+      })
+
+      if (outcome !== 'dismissed') void track('share_card', { format: 'reel' })
       if (outcome === 'shared') setNote(copy.week.shareShared)
       else if (outcome === 'saved') setNote(copy.week.shareSaved)
     } catch {
@@ -196,6 +247,18 @@ export function WeekScreen({
               >
                 {busy ? copy.week.sharePreparing : copy.week.storyGo}
               </button>
+              {/* The reel: only offered where this platform can record video.
+                  A button that fails on tap is worse than no button. */}
+              {reelMimeType() ? (
+                <button
+                  type="button"
+                  className="btn btn--quiet btn--block"
+                  disabled={busy}
+                  onClick={() => void reel()}
+                >
+                  {busy ? copy.week.reelRendering : copy.week.reelGo}
+                </button>
+              ) : null}
               <p className="note">{copy.week.shareHint}</p>
             </>
           )}

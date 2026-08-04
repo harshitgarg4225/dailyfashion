@@ -468,6 +468,13 @@ test.describe('the week', () => {
     const storyFile = await storyDownload
     expect(storyFile.suggestedFilename()).toMatch(/^daily-fashion-story-\d{4}-\d{2}-\d{2}\.jpg$/)
 
+    // The reel: rendered on-device in real time (canvas → MediaRecorder), so
+    // this waits out the clip's actual seconds. A real video file must land.
+    const reelDownload = page.waitForEvent('download', { timeout: 40_000 })
+    await page.getByRole('button', { name: /make it a reel/i }).click()
+    const reelFile = await reelDownload
+    expect(reelFile.suggestedFilename()).toMatch(/^daily-fashion-reel-\d{4}-\d{2}-\d{2}\.(mp4|webm)$/)
+
     // The whole point of sharing this way: the image is made here, and nothing
     // about it leaves except by the user's own hand.
     expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
