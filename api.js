@@ -51,6 +51,10 @@ const MAX_BODY_BYTES = 16 * 1024
  * memory on purpose — this is abuse damping, not accounting, and a restart
  * forgetting the counters costs nothing.
  */
+/** The ads read is the hottest path in the product; it caches for a minute. */
+const ADS_CACHE_MS = 60_000
+let adsCache = null
+
 const RATE_LIMIT = 60
 const RATE_WINDOW_MS = 60_000
 const rateBuckets = new Map()
@@ -105,7 +109,23 @@ function db() {
         body TEXT NOT NULL DEFAULT '',
         url TEXT NOT NULL
       );
+      CREATE INDEX IF NOT EXISTS telemetry_events_event_ts ON telemetry_events (event, ts);
+      CREATE INDEX IF NOT EXISTS telemetry_events_client ON telemetry_events (client_id);
     `)
+    /*
+     * Usage events expire at 180 days — a retention promise as much as a
+     * scale one. At six figures of users the events table grows by millions
+     * of rows a month, and none of them mean anything after two quarters.
+     * Swept at boot and daily; failures are silent because pruning is
+     * housekeeping, never a request's problem.
+     */
+    const prune = () => {
+      pool
+        ?.query("DELETE FROM telemetry_events WHERE ts < now() - interval '180 days'")
+        .catch(() => undefined)
+    }
+    ready.then(prune).catch(() => undefined)
+    setInterval(prune, 24 * 60 * 60 * 1000).unref?.()
   }
   return pool
 }
@@ -170,6 +190,7 @@ export async function handleApi(req, res, url, send) {
       const body = JSON.parse(await readBody(req))
       if (body.deactivate) {
         await database.query('UPDATE ads SET active = false WHERE id = $1', [Number(body.deactivate)])
+        adsCache = null
         await send(res, 204, '')
         return true
       }
@@ -183,6 +204,7 @@ export async function handleApi(req, res, url, send) {
         'INSERT INTO ads (title, body, url) VALUES ($1, $2, $3) RETURNING id',
         [title, clean(body.body, 300) ?? '', adUrl],
       )
+      adsCache = null
       await send(res, 201, JSON.stringify({ id: result.rows[0].id }), {
         'Content-Type': 'application/json; charset=utf-8',
       })
@@ -193,6 +215,19 @@ export async function handleApi(req, res, url, send) {
   }
 
   if (url.pathname === '/api/ads' && req.method === 'GET') {
+    /*
+     * Every journal open asks for the ads. At scale that is the busiest read
+     * in the product, and its answer changes at most a few times a day — so
+     * it is served from memory for a minute at a time. One query per minute
+     * per instance, whatever the user count.
+     */
+    if (adsCache && Date.now() - adsCache.at < ADS_CACHE_MS) {
+      await send(res, 200, adsCache.body, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+      })
+      return true
+    }
     let ads = []
     if (database) {
       try {
@@ -201,6 +236,7 @@ export async function handleApi(req, res, url, send) {
           'SELECT id, title, body, url FROM ads WHERE active ORDER BY id DESC LIMIT 20',
         )
         ads = result.rows
+        adsCache = { at: Date.now(), body: JSON.stringify({ ads }) }
       } catch {
         ads = []
       }

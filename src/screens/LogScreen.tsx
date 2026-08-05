@@ -64,6 +64,7 @@ export function LogScreen({
   onOpenOffers,
   installNudgeDismissed,
   onDismissInstallNudge,
+  onInstall,
   sponsorShown,
   onSponsorShown,
 }: {
@@ -78,6 +79,8 @@ export function LogScreen({
   onOpenOffers?: (() => void) | undefined
   installNudgeDismissed: boolean
   onDismissInstallNudge: () => void
+  /** Present only where the browser offered a real install (Android Chrome). */
+  onInstall?: (() => void) | undefined
   sponsorShown: boolean
   onSponsorShown: () => void
 }) {
@@ -90,6 +93,19 @@ export function LogScreen({
    * history with it. Installing is the only defence, so the app has to say so.
    */
   const showInstallNudge = !installNudgeDismissed && isIos() && !isInstalled() && entries.length > 0
+  /*
+   * Android's version is a real button rather than instructions — the browser
+   * handed us the install moment, so the nudge can finish the job in one tap.
+   * Gated on having a log worth keeping, same as iOS.
+   */
+  const showAndroidInstall =
+    !installNudgeDismissed && !showInstallNudge && Boolean(onInstall) && !isInstalled() && entries.length > 0
+  /*
+   * The lapsed return: when the newest entry is days old, the person opening
+   * the app is the person every tracker punishes. No dismissal state — the
+   * card is an open door, and it closes itself the moment a day is logged.
+   */
+  const lapsed = entries.length > 0 && daysBetween(entries[0]!.date, today) >= 3
   /**
    * Entries newest-first with placeholder cells for skipped days, so the grid
    * stays calendar-shaped instead of collapsing a fortnight's absence into an
@@ -208,6 +224,16 @@ export function LogScreen({
         </div>
       ) : null}
 
+      {lapsed ? (
+        <div className="notice">
+          <span className="eyebrow">{copy.log.lapsedTitle}</span>
+          <p className="note">{copy.log.lapsedBody}</p>
+          <button type="button" className="btn btn--quiet" onClick={onAddPast}>
+            {copy.log.addPast}
+          </button>
+        </div>
+      ) : null}
+
       {showInstallNudge ? (
         <div className="notice">
           <span className="eyebrow">{copy.log.installTitle}</span>
@@ -215,6 +241,21 @@ export function LogScreen({
           <button type="button" className="btn btn--quiet" onClick={onDismissInstallNudge}>
             {copy.log.installDismiss}
           </button>
+        </div>
+      ) : null}
+
+      {showAndroidInstall ? (
+        <div className="notice">
+          <span className="eyebrow">{copy.log.installTitle}</span>
+          <p className="note">{copy.log.installBodyAndroid}</p>
+          <div className="btn-row">
+            <button type="button" className="btn btn--ghost" onClick={onInstall}>
+              {copy.log.installGo}
+            </button>
+            <button type="button" className="btn btn--quiet" onClick={onDismissInstallNudge}>
+              {copy.log.installDismiss}
+            </button>
+          </div>
         </div>
       ) : null}
 

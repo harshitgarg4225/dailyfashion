@@ -132,6 +132,21 @@ export default function App() {
   const [datePicker, setDatePicker] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState<Entry | null>(null)
   const [installNudgeDismissed, setInstallNudgeDismissed] = useState(false)
+  /*
+   * Chrome on Android hands the install moment to the page as an event; held
+   * here, it becomes a one-tap button in the journal instead of a browser
+   * banner the user already swiped away. Browsers that never fire it (iOS,
+   * the installed app itself) simply never show the button.
+   */
+  const [installEvent, setInstallEvent] = useState<(Event & { prompt: () => Promise<unknown> }) | null>(null)
+  useEffect(() => {
+    const onPrompt = (event: Event) => {
+      event.preventDefault()
+      setInstallEvent(event as Event & { prompt: () => Promise<unknown> })
+    }
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    return () => window.removeEventListener('beforeinstallprompt', onPrompt)
+  }, [])
   const [sponsorShown, setSponsorShown] = useState(false)
   const [lock, setLock] = useState<LockRecord | null | undefined>(undefined)
   const [unlocked, setUnlocked] = useState(false)
@@ -919,6 +934,14 @@ export default function App() {
             onSponsorShown={() => setSponsorShown(true)}
             installNudgeDismissed={installNudgeDismissed}
             onDismissInstallNudge={() => setInstallNudgeDismissed(true)}
+            onInstall={
+              installEvent
+                ? () => {
+                    void installEvent.prompt().catch(() => undefined)
+                    setInstallEvent(null)
+                  }
+                : undefined
+            }
           />
         )
     }

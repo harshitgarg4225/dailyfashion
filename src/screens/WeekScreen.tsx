@@ -71,6 +71,7 @@ export function WeekScreen({
         blob: card,
         filename: `${stem}${format === 'story' ? '-story' : ''}-${wrap.to}.jpg`,
         title: copy.week.shareCaption,
+        text: copy.week.shareText,
       })
 
       if (outcome !== 'dismissed') void track('share_card')
@@ -121,6 +122,7 @@ export function WeekScreen({
         blob: video.blob,
         filename: `daily-fashion-reel-${week.to}.${video.extension}`,
         title: copy.week.shareCaption,
+        text: copy.week.shareText,
       })
 
       if (outcome !== 'dismissed') void track('share_card', { format: 'reel' })

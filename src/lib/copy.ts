@@ -309,6 +309,9 @@ export const copy = {
     shareSaved: 'Saved to your device.',
     shareFailed: 'That did not come together. Try again.',
     shareCaption: 'My week in Daily Fashion',
+    // Travels with the image through the share sheet, so the picture arrives
+    // with a road back to the front door. Plain text; platforms make it a link.
+    shareText: 'My week, worn and counted. dailyfashion.co',
     shareNothing: 'Photograph a day or two first — the image is made of them.',
     // On a phone, the OS share sheet is the direct road to both apps.
     shareHint:
@@ -349,7 +352,20 @@ export const copy = {
     installTitle: 'Keep this on your home screen',
     installBodyIos:
       'Tap the share button, then “Add to Home Screen”. Browsers clear data for sites that are only open in a tab — on the home screen your log is far safer.',
+    // Android can install in one tap, so the nudge carries the button itself.
+    installBodyAndroid:
+      'One tap puts it on your home screen. It opens full screen like any other app, and your log is much safer from browser clean-ups.',
+    installGo: 'Add to home screen',
     installDismiss: 'Not now',
+    /*
+     * The lapsed return. Someone opening the app after days away is the most
+     * fragile moment in the whole product — most trackers meet it with a
+     * broken streak. This one holds the door open: no debt, and the missing
+     * days are offered as an option, never an assignment.
+     */
+    lapsedTitle: 'Welcome back',
+    lapsedBody:
+      'Gaps are whitespace here, not something to explain. Today is a fresh page — and if you remember what you wore, the last few days can still go in.',
     writtenDay: 'Written',
     /*
      * Search over the log.

@@ -51,7 +51,13 @@ function ping(event, props) {
   }
 }
 
-ping('landing_view')
+/*
+ * Where visitors come from, without knowing who they are: a share link can
+ * carry ?ref=reel or ?ref=card, and the anonymous view counter keeps the
+ * label. Still no cookie, still no per-visitor anything.
+ */
+var refParam = new URLSearchParams(location.search).get('ref')
+ping('landing_view', refParam ? { ref: String(refParam).slice(0, 32) } : {})
 
 document.addEventListener('click', function (event) {
   var target = event.target && event.target.closest ? event.target.closest('[data-cta]') : null

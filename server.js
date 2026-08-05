@@ -147,12 +147,21 @@ const server = createServer(async (req, res) => {
 
   // Hashed build assets are immutable; every page and the worker must not be,
   // or a deploy never reaches anyone who already loaded the site.
+  /*
+   * The vision model is the heaviest file the origin serves — eleven
+   * megabytes that never change in place (a new model gets a new path). At
+   * six figures of users, letting browsers and the worker keep it for a
+   * year is the difference between a static site and a bandwidth bill.
+   * Fonts get a month for the same reason at a smaller scale.
+   */
   const cacheControl =
     ext === '.html' || isWorker
       ? 'no-cache'
-      : found.filePath.includes('/assets/')
+      : found.filePath.includes('/assets/') || found.filePath.includes('/models/')
         ? 'public, max-age=31536000, immutable'
-        : 'public, max-age=3600'
+        : ext === '.woff2'
+          ? 'public, max-age=2592000'
+          : 'public, max-age=3600'
 
   const body = req.method === 'HEAD' ? '' : await readFile(found.filePath)
 
